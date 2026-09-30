@@ -1479,11 +1479,14 @@
         skor: b.skor ?? null,
         boxes: b.boxes || [],
         zone: b.zone || null,
-        // Kamera RTSP langsung tidak punya HLS portal yang bisa diputar
-        // peramban; Live-nya memakai snapshot yang diambil server.
+        // Kamera RTSP diarahkan ke HLS relay MediaMTX agar browser dapat
+        // memutar stream tanpa membuka RTSP langsung.
         rtsp: String(c.stream || "").toLowerCase().startsWith("rtsp"),
-        // LC-016: alamat HLS dari server (kamera bisa di server portal lain)
-        hls: /\.m3u8(\?|$)/i.test(String(c.stream || "")) ? c.stream : "",
+        // HLS portal atau relay MediaMTX untuk kamera RTSP.
+        hls: /\.m3u8(\?|$)/i.test(String(c.stream || "")) ? c.stream
+          : String(c.stream || "").toLowerCase().startsWith("rtsp")
+            ? `${window.location.protocol}//${window.location.hostname}:8888/${encodeURIComponent(c.key)}/index.m3u8`
+            : "",
         portalLain: !!c.stream && !String(c.stream).startsWith(LIVE_BASE)
                     && !String(c.stream).toLowerCase().startsWith("rtsp"),
         tampilan_hitung: c.tampilan_hitung || [],
@@ -1773,9 +1776,8 @@
     // jangan diganggu.
     if (videoKey === cam.key && (videoJalan || hls || v.src)) return true;
     stopVideo();
-    // RTSP tidak bisa diputar peramban tanpa gateway (WebRTC/HLS). Kamera
-    // semacam itu tetap tampil lewat snapshot berkala dari server.
-    if (!cam.id || cam.rtsp) return false;
+    // RTSP sudah diarahkan ke HLS relay MediaMTX di atas.
+    if (!cam.id) return false;
     videoKey = cam.key;
     const url = cam.hls || HLS_URL(cam.id);
     // Video harus SUDAH terpasang di tata letak sebelum play(): elemen dengan

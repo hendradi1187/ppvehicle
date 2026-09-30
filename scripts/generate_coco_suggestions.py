@@ -66,7 +66,7 @@ def main() -> int:
         ann_path = args.dataset / "annotations" / f"instances_{split}.json"
         payload = json.loads(ann_path.read_text(encoding="utf-8"))
         image_root = args.dataset / "images" / split
-        records.extend((split, image_root / image["file_name"], image) for image in payload["images"])
+        records.extend((split, image_root / Path(image["file_name"]).name, image) for image in payload["images"])
 
     detector = SDE_Detector(model_dir="/models/ppyoloe_plus_l_coco",
                             tracker_config="/app/configs/tracker_hitung.yml",

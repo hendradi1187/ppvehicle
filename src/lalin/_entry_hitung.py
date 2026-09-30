@@ -49,6 +49,18 @@ THRESHOLD = float(os.environ.get("LALIN_THRESHOLD", "0.35"))
 DEVICE = os.environ.get("LALIN_DEVICE", "CPU").upper()
 TRAIL_MAX = 60
 
+# Threshold per kelas hasil tuning pada benchmark val QA2. Detektor tetap
+# menerima ambang dasar terendah agar objek kecil tidak terpotong sebelum
+# filter semantik ini berjalan.
+AMBANG_KELAS = {
+    "car": float(os.environ.get("LALIN_THRESHOLD_CAR", "0.50")),
+    "motorcycle": float(os.environ.get("LALIN_THRESHOLD_MOTORCYCLE", "0.20")),
+    "person": float(os.environ.get("LALIN_THRESHOLD_PERSON", "0.40")),
+    "bus": float(os.environ.get("LALIN_THRESHOLD_BUS", "0.20")),
+    "truck": float(os.environ.get("LALIN_THRESHOLD_TRUCK", "0.45")),
+    "bicycle": float(os.environ.get("LALIN_THRESHOLD_BICYCLE", "0.20")),
+}
+
 sys.path.insert(0, PD_DIR)
 sys.path.insert(0, os.path.dirname(os.path.dirname(PD_DIR)))   # <root>/deploy
 
@@ -247,7 +259,11 @@ def main() -> int:
         b = out.get("boxes")
         if b is not None and len(b):
             simpan = [i for i, r in enumerate(b)
-                      if float(r[1]) >= ambang_efektif
+                      if float(r[1]) >= max(
+                          ambang_efektif,
+                          AMBANG_KELAS.get(
+                              labels[int(r[0])] if 0 <= int(r[0]) < n_kelas else "",
+                              ambang_efektif))
                       and wajar(float(r[2]), float(r[3]), float(r[4]), float(r[5]), W, H)]
             # Antarkelas: urut skor turun, buang kendaraan yang berimpit dengan
             # kendaraan BERLABEL LAIN yang skornya lebih tinggi.

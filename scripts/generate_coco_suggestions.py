@@ -10,11 +10,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import cv2
 import numpy as np
 
+sys.path.insert(0, "/app/vendor/PaddleDetection/deploy/pptracking/python")
+sys.path.insert(0, "/app/vendor/PaddleDetection/deploy")
 from mot_sde_infer import SDE_Detector
 
 

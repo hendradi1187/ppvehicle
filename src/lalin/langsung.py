@@ -207,8 +207,8 @@ class Langsung:
         if key not in cams:
             raise KeyError(key)
         cam = cams[key]
-        if cam.rtsp_url:
-            raise ValueError("kamera RTSP tidak diputar sebagai HLS di peramban")
+        # RTSP cameras are captured server-side by the live worker. Browser
+        # playback is handled separately through the MediaMTX HLS relay.
         self.last_poll = time.time()
         if (self.running and self.key == key
                 and getattr(self, "model_mode", None) == model_mode

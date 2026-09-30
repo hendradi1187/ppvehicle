@@ -23,7 +23,9 @@ from mot_sde_infer import SDE_Detector
 
 RAW_TO_DISHUB = {
     "motorcycle": 1,
-    "car": 2,
+    # Operator decision: kendaraan_sedang is represented operationally by
+    # the COCO detector label `car`.
+    "car": 3,
     "bus": 4,
     "truck": 5,
     "person": 6,

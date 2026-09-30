@@ -116,6 +116,9 @@ class App(BaseHTTPRequestHandler):
             self.send_json(d.get("images", [])); return
         if u.path == "/api/image":
             split, name = q.get("split", ["val"])[0], unquote(q.get("name", [""])[0])
+            # COCO metadata may store paths as images/<split>/<file>, while
+            # the route root already points at images/<split>.
+            name = Path(name).name
             root = (self.dataset / "images" / split).resolve(); path = (root / name).resolve()
             if root not in path.parents or not path.is_file(): self.send_error(404); return
             raw = path.read_bytes(); self.send_response(200); self.send_header("Content-Type", "image/jpeg"); self.send_header("Content-Length", str(len(raw))); self.end_headers(); self.wfile.write(raw); return

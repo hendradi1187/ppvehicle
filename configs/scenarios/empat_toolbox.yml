@@ -1,0 +1,33 @@
+name: empat_toolbox
+title: Empat toolbox PP-Vehicle sekaligus
+description: >
+  Menyalakan keempat toolbox PP-Vehicle dalam satu jalur: pengenalan pelat
+  nomor, atribut kendaraan, hitung kendaraan, dan deteksi parkir liar.
+
+  CATATAN PENTING soal "hitung kendaraan". Upstream memakai satu setelan
+  region_type untuk dua mode yang saling meniadakan: flow_statistic menuntut
+  'horizontal'/'vertical' untuk hitung garis-lintas (masuk DAN keluar),
+  sedangkan update_object_info menuntut 'custom' untuk parkir liar. Keduanya
+  tidak bisa aktif bersamaan dalam satu run.
+
+  Skenario ini memilih 'custom', sehingga yang dipakai adalah hitung
+  MASUK-ZONA (do_break_in_counting) - fungsi flow_statistic yang sama, mode
+  berbeda. Itu harga yang dibayar agar parkir liar tetap hidup. Untuk hitung
+  garis-lintas dengan angka keluar-masuk, pakai skenario `counting`, dan
+  parkir liar harus dimatikan.
+modules:
+  MOT: true
+  VEHICLE_ATTR: true
+  VEHICLE_PLATE: true
+args:
+  do_break_in_counting: true
+  region_type: custom
+  illegal_parking_time: 8
+  draw_center_traj: true
+overrides:
+  VEHICLE_ATTR:
+    color_threshold: 0.5
+    type_threshold: 0.5
+  VEHICLE_PLATE:
+    det_limit_side_len: 736
+    rec_batch_num: 6

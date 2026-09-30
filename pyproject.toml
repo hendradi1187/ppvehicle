@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ppvehicle"
+version = "0.1.0"
+description = "PP-Vehicle pipeline wrapper: configs, CLI and API over PaddleDetection"
+requires-python = ">=3.9"
+dependencies = [
+    "PyYAML>=6.0",
+    "requests>=2.32",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    # Driver PostgreSQL. Hanya dipakai bila PPVEHICLE_DB_HOST diisi; tanpa itu
+    # aplikasi tetap memakai SQLite (lihat lalin.store).
+    "psycopg[binary]>=3.2",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+lalin = "lalin.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lalin = ["web/*.html", "sql/*.sql"]

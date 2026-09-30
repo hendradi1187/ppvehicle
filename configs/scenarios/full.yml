@@ -1,0 +1,18 @@
+name: full
+title: Semua fitur sekaligus
+description: >
+  MOT + atribut + plat + marka + lawan arah + counting. Paling berat —
+  di CPU laptop jangan harap lebih dari ~0.3 FPS. Untuk GPU server demo.
+modules:
+  MOT: true
+  VEHICLE_ATTR: true
+  VEHICLE_PLATE: true
+  VEHICLE_PRESSING: true
+  VEHICLE_RETROGRADE: true
+args:
+  do_entrance_counting: true
+  region_type: horizontal
+  draw_center_traj: true
+overrides:
+  VEHICLE_RETROGRADE:
+    keep_right_flag: false

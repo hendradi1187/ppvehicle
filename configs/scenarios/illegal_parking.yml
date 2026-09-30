@@ -1,0 +1,13 @@
+name: illegal_parking
+title: Deteksi parkir liar
+description: >
+  Kendaraan yang diam lebih dari illegal_parking_time detik di dalam zona
+  akan ditandai, dan plat nomornya dibaca. Kamera harus statis.
+modules:
+  MOT: true
+  VEHICLE_PLATE: true
+args:
+  illegal_parking_time: 10     # detik
+  region_type: custom
+  region_polygon: [600, 300, 1300, 300, 1300, 800, 600, 800]
+  draw_center_traj: true

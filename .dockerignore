@@ -1,0 +1,16 @@
+# The image clones PaddleDetection itself and downloads weights to a volume,
+# so neither belongs in the build context.
+vendor/
+models/
+runs/
+output/
+.venv/
+data/samples/
+*.log
+setup.log
+
+.git/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/

@@ -1,0 +1,7 @@
+name: detection
+title: Deteksi kendaraan
+description: >
+  Bounding box per kendaraan, tanpa ID. Mode paling ringan.
+  Untuk gambar/folder gambar pakai skenario ini; MOT tidak jalan di mode gambar.
+modules:
+  MOT: false

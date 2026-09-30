@@ -1,0 +1,69 @@
+# Override untuk server GPU yang terpisah dari server CPU POC.
+#
+# Jalankan dari akar proyek target setelah .env.app dan .env.pg dibuat:
+#   PPVEHICLE_BIND_IP=100.102.74.70 \
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.gpu-server.yml up -d --build
+#
+# `ppvehicle` sengaja dipakai sebagai nama service agar URL/API dan prosedur
+# operasional sama dengan server awal. Jangan gabungkan dengan
+# docker-compose.server.yml: berkas itu khusus batas CPU dan IP sumber.
+services:
+  ppvehicle:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gpu
+    image: ppvehicle:gpu
+    environment:
+      PPVEHICLE_PROFILE: gpu
+      PPVEHICLE_MODELS_DIR: /models
+      PPVEHICLE_MAX_JOBS: "2"
+      LALIN_DEVICE: GPU
+      PPVEHICLE_DB_HOST: db
+      PPVEHICLE_DB_PORT: "5432"
+      PPVEHICLE_DB_NAME: lalin
+      PPVEHICLE_DB_USER: lalin_app
+    env_file: .env.app
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - models:/models
+      - ../runs:/app/runs
+      - ../data/samples:/app/data/samples
+      - ../src:/app/src
+      - ../configs:/app/configs
+      - ../data/demo:/app/data/demo
+    ports: !override
+      - "${PPVEHICLE_BIND_IP}:8100:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    shm_size: "2gb"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    env_file: .env.pg
+    environment:
+      POSTGRES_DB: lalin
+      POSTGRES_USER: lalin_admin
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./pg-init:/docker-entrypoint-initdb.d:ro
+    ports: !override
+      - "${PPVEHICLE_BIND_IP}:5433:5432"
+    cpus: "1"
+    mem_limit: 1g
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lalin_admin -d lalin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

@@ -1,0 +1,14 @@
+name: violation_all
+title: Pelanggaran lengkap (marka + lawan arah)
+description: >
+  Gabungan press line dan retrograde dalam satu run — sama dengan
+  infer_cfg_vehicle_violation.yml upstream.
+modules:
+  MOT: true
+  VEHICLE_PRESSING: true
+  VEHICLE_RETROGRADE: true
+overrides:
+  VEHICLE_RETROGRADE:
+    keep_right_flag: false
+    deviation: 45
+    fence_line: []

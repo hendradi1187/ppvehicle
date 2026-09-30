@@ -1,0 +1,33 @@
+# Native install. Docker is the supported path (docker/Dockerfile.cpu) —
+# use this file only on Linux/macOS with Python 3.9-3.11.
+#
+# It will NOT resolve on Python 3.12+: `lap` (needed by the MOT tracker) pins
+# Requires-Python <3.12, and `cython_bbox` / `pycocotools` have no wheels there
+# on Windows. That is the reason the container exists.
+
+# --- Inference runtime -----------------------------------------------------
+paddlepaddle==3.3.1          # GPU host: see requirements-gpu.txt instead
+
+# numpy stays on the 1.x line: PaddleDetection 2.9 and cython_bbox predate the
+# numpy 2 ABI break and fail at runtime, not at install time, against numpy 2.
+numpy==1.26.4
+
+# --- PaddleDetection pipeline dependencies ---------------------------------
+opencv-python>=4.8.0
+PyYAML>=6.0
+Pillow>=10.0
+shapely>=2.0
+scipy>=1.11
+pyclipper>=1.3
+Cython==3.0.11
+cython_bbox
+lap
+motmetrics>=1.4
+pycocotools
+setuptools>=65
+
+# --- Wrapper layer ---------------------------------------------------------
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+requests>=2.32

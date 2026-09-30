@@ -1,0 +1,33 @@
+name: lengkap_tanpa_marka
+title: Seluruh modul kecuali pelanggaran marka
+description: >
+  Sama dengan `lengkap`, tanpa VEHICLE_PRESSING. Untuk kamera yang tidak
+  memperlihatkan marka membujur garis utuh yang bermakna (Permenhub PM 67/2018):
+  tanpa garis operator, pressing jatuh ke segmentasi PP-Seg otomatis, yang pada
+  feed 640x360 terbukti mengikuti pagar dan separator sehingga menghasilkan
+  pelanggaran palsu.
+
+  Dipakai (24 Sep 2026):
+    - thamrin : batas kiri jalur sepeda putus-putus (boleh dilintasi); garis
+                utuh satu-satunya menempel separator beton, tidak bisa dilintasi.
+    - jatibaru: hanya ada marka melintang (pita penggaduh), tidak ada marka
+                membujur sama sekali.
+modules:
+  MOT: true
+  VEHICLE_ATTR: true
+  VEHICLE_PLATE: true
+  VEHICLE_RETROGRADE: true
+args:
+  do_break_in_counting: true
+  region_type: custom
+  illegal_parking_time: 8
+  draw_center_traj: true
+overrides:
+  VEHICLE_ATTR:
+    color_threshold: 0.5
+    type_threshold: 0.5
+  VEHICLE_PLATE:
+    det_limit_side_len: 736
+    rec_batch_num: 6
+  VEHICLE_RETROGRADE:
+    keep_right_flag: false

@@ -1,0 +1,66 @@
+# PP-Vehicle on CPU — development, demos, and any host without an NVIDIA GPU.
+#
+#   docker compose -f docker/docker-compose.yml up --build
+#
+# Why a container rather than a local venv: PaddleDetection's tracking code
+# needs lap, cython_bbox and pycocotools. Those are C extensions whose current
+# releases have no wheels for Python 3.12+ on Windows (lap pins
+# Requires-Python <3.12), so a native Windows install on a modern Python
+# cannot resolve. Python 3.10 on Linux has wheels for all of them.
+
+FROM python:3.10-slim-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PPVEHICLE_PROFILE=cpu \
+    PPVEHICLE_MODELS_DIR=/models \
+    FLAGS_enable_pir_api=0
+# FLAGS_enable_pir_api=0 above: Paddle 3.x turns PIR on by default, and its
+# Config(dir, prefix) form then looks for <prefix>.json. The official
+# PP-Vehicle weights are still .pdmodel, so VEHICLE_ATTR fails to load with
+# "Cannot open file model.json". MOT escapes it only because pptracking uses a
+# different, two-file loader. PaddleDetection 2.9 predates PIR entirely.
+
+# build-essential is needed because cython_bbox has no wheel and compiles from
+# source; ffmpeg and the libgl/glib pair are what OpenCV needs to open video.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git build-essential ffmpeg libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# numpy is pinned to the 1.x line before anything else: PaddleDetection 2.9 and
+# cython_bbox both predate the numpy 2 ABI break, and a later dependency that
+# pulls numpy 2 in will silently break MOT at runtime rather than at build time.
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    python -m pip install "numpy==1.26.4" "Cython==3.0.11"
+
+RUN python -m pip install paddlepaddle==3.3.1
+
+ARG PADDLEDET_BRANCH=release/2.9
+RUN git clone --depth 1 --branch ${PADDLEDET_BRANCH} --single-branch \
+        https://github.com/PaddlePaddle/PaddleDetection.git \
+        /app/vendor/PaddleDetection
+
+# Upstream's own requirement set is the tested one; install it, then the extras
+# the deploy/pipeline code needs on top, then restore the numpy pin in case a
+# transitive dependency bumped it.
+RUN python -m pip install -r /app/vendor/PaddleDetection/requirements.txt && \
+    python -m pip install lap cython_bbox pyclipper && \
+    python -m pip install "numpy==1.26.4"
+
+COPY pyproject.toml ./
+COPY src ./src
+COPY configs ./configs
+COPY data/demo ./data/demo
+RUN python -m pip install -e .
+
+RUN python -c "import paddle, cv2, lap, cython_bbox, pyclipper; \
+    print('paddle', paddle.__version__); print('opencv', cv2.__version__)"
+
+# Weights and results live on mounts so a rebuild does not re-download 282 MB.
+VOLUME ["/models", "/app/runs", "/app/data/samples"]
+
+EXPOSE 8000
+CMD ["python", "-m", "lalin", "serve", "--host", "0.0.0.0", "--port", "8000"]

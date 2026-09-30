@@ -1,0 +1,257 @@
+# Kamera yang dianalisis batch berkala, dikelompokkan per wilayah DKI.
+#
+# `id` adalah path stream di server Flussonic DKI; URL-nya dirakit jadi
+#   https://dki-jkt.balitower.co.id:7028/<id>/index.m3u8
+#
+# PEMILIHAN KAMERA BERBASIS UKURAN, BUKAN SELERA
+# Dipilih lewat `python scripts/survey_cameras.py`, yang menjalankan detector
+# pada satu snapshot tiap kamera lalu memberi skor = jumlah kendaraan x luas
+# bbox median (% frame). Kamera dengan banyak kotak mungil sama buruknya
+# dengan kamera dengan satu kotak besar; perkalian itu menghukum keduanya.
+# Hasil survei 22 Sep 2026 atas 46 kamera publik ada di runs/_survey/.
+#
+# CAKUPAN WILAYAH PORTAL PUBLIK - TIDAK LENGKAP
+#   Jakarta Pusat    : 36 kamera
+#   Jakarta Barat    :  8 kamera
+#   Jakarta Selatan  :  2 kamera, KEDUANYA TIDAK LAYAK (catatan di bawah)
+#   Jakarta Utara    :  0 kamera
+#   Jakarta Timur    :  0 kamera
+#   Kepulauan Seribu :  0 kamera
+# Jadi "satu kamera per wilayah DKI" tidak bisa dipenuhi dari sumber publik.
+# Itu justru bahan permintaan ke Dishub: jaringan CCTV internal mereka
+# mencakup seluruh wilayah, portal publik tidak.
+#
+# Jakarta Selatan sengaja dikosongkan. Kandidat terbaiknya, Taman Literasi
+# (501478_JKS_SATPOLPP_TAMAN-LITERASI-C01_CCTV-01), mendapat skor 23,68 hanya
+# karena badan bus terpotong di tepi frame - kameranya sendiri menghadap
+# plaza pejalan kaki, bukan jalan. Kamera JKS satunya berskor 0,29, praktis
+# buta. Menampilkan kamera taman di dashboard analitik kendaraan akan
+# terlihat buruk, bukan terlihat lengkap.
+#
+# `region_polygon` dalam piksel asli video (640x360), searah jarum jam.
+# Pakai `python scripts/grid_frame.py <video>` untuk membacanya.
+
+base_url: "https://dki-jkt.balitower.co.id:7028/"
+
+# PENTING: clip_seconds harus jauh lebih panjang dari illegal_parking_time.
+# Alarm parkir baru menyala setelah ambangnya terlampaui, jadi klip 12 detik
+# dengan ambang 8 detik cuma menyisakan jendela 4 detik - hampir selalu
+# menghasilkan nol kejadian. Patokan: klip minimal 3x ambang.
+#
+# analysis_fps default 10, bukan 5. Diukur 22 Sep 2026 di Gatot Subroto, satu
+# klip 30 dtk diturunkan ke tiga laju frame:
+#    5 fps -> 132 track, OUT  3, inferensi  29 dtk
+#   10 fps ->  63 track, OUT 22, inferensi  55 dtk
+#   20 fps ->  72 track, OUT 22, inferensi 101 dtk
+# Counting mensyaratkan track yang SAMA melintasi garis; pada 5 fps ID pecah
+# di tengah penyeberangan sehingga kendaraan tidak terhitung. 10 fps adalah
+# titik jenuhnya - 20 fps memberi angka identik dengan biaya dua kali lipat.
+# KALIBRASI AMBANG PARKIR - tidak boleh seragam.
+# Di simpang padat, kendaraan berhenti lama karena lampu merah, bukan karena
+# parkir. Ambang 8 detik di sana akan menandai setiap mobil yang antre. Jadi:
+#   zona jalur sepeda / bahu jalan -> 8 dtk  (tidak ada alasan sah berhenti)
+#   zona badan jalan simpang       -> 120 dtk (di atas siklus lampu merah)
+defaults:
+  clip_seconds: 20
+  analysis_fps: 10
+  # lengkap = seluruh modul pada diagram resmi PP-Vehicle. Sebelumnya
+  # empat_toolbox, yang tidak menyalakan marka (PP-Seg) dan lawan arah.
+  scenario: lengkap
+
+cameras:
+  # ========================================================= JAKARTA PUSAT
+  - key: gerbangpemuda
+    id: 502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03_CCTV-02
+    name: Jl. Gerbang Pemuda C03
+    area: Senayan
+    region: Jakarta Pusat
+    owner: Polda
+    # Skor survei TERTINGGI dari 46 kamera: 54,94 (bbox median 27% frame).
+    # Framing paling dekat yang ada - bus TransJakarta terlihat utuh, marka
+    # kotak kuning dan jalur sepeda ikut terlihat. Kamera terbaik untuk
+    # menunjukkan bahwa deteksinya benar-benar bekerja.
+    zone_label: Badan jalan arah Senayan
+    illegal_parking_time: 120     # simpang - di atas siklus lampu merah
+    region_polygon: [95, 45, 500, 30, 430, 345, 0, 350]
+
+  - key: thamrin
+    id: 502491_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C07_CCTV-02
+    name: Simpang Jl. MH. Thamrin C07
+    area: Menteng
+    region: Jakarta Pusat
+    owner: Satpol PP
+    # Skor 14,25. Dipilih juga karena ini Bundaran HI - langsung dikenali
+    # siapa pun di ruang rapat.
+    # Zonanya JALUR SEPEDA (hijau, berpembatas kuning). Kendaraan bermotor
+    # tidak punya alasan sah berada di sana, jadi ambang 8 detik aman dan
+    # kejadiannya langsung bermakna bagi Dishub.
+    zone_label: Jalur sepeda
+    illegal_parking_time: 8
+    region_polygon: [500, 145, 610, 155, 430, 358, 285, 358]
+
+  - key: jatibaru
+    id: 503675_JKP_BAKESBANGPOL_JL.-JATI-BARU-RAYA-C02_CCTV-01
+    name: Jl. Jati Baru Raya C02
+    area: Tanah Abang
+    region: Jakarta Pusat
+    owner: Bakesbangpol
+    illegal_parking_time: 8
+    clip_seconds: 30          # 3x ambang
+    zone_label: Badan jalan sisi barat
+    analysis_fps: 5
+    # Skor survei hanya 13,39 - dipertahankan bukan karena framing-nya, tapi
+    # karena INI SATU-SATUNYA kamera yang sudah menghasilkan pelanggaran
+    # nyata (track 2, diam 11,4 dtk, 18 Sep 2026). Lalu lintasnya lambat, dan
+    # di sini 5 vs 10 fps terukur nyaris tidak berbeda (14 vs 15 track), jadi
+    # tetap 5 fps untuk menghemat komputasi.
+    region_polygon: [0, 30, 175, 0, 240, 55, 40, 175]
+
+  # ========================================================= JAKARTA BARAT
+  - key: sparman02
+    id: 502540_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C02_CCTV-02
+    name: Simpang Jl. S. Parman C02
+    area: Grogol
+    region: Jakarta Barat
+    owner: Satpol PP
+    zone_label: Badan jalan arah Grogol
+    illegal_parking_time: 120     # simpang - di atas siklus lampu merah
+    region_polygon: [0, 55, 415, 40, 400, 358, 0, 358]
+    # Skor tertinggi Jakarta Barat: 30,51 (7 kendaraan, conf rata-rata 0,83).
+    # Paling banyak SEPEDA MOTOR dengan ukuran memadai - penting karena motor
+    # mendominasi lalu lintas Jakarta dan itu justru kelemahan model pada
+    # objek berjarak jauh.
+
+  - key: sparman07
+    id: 502535_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C07_CCTV-02
+    name: Simpang Jl. S. Parman C07
+    area: Grogol
+    region: Jakarta Barat
+    owner: Satpol PP
+    # Skor 13,46 dengan confidence tertinggi di seluruh survei (0,87).
+    # Simpang di bawah flyover, sangat padat. Zonanya JALUR SEPEDA, bukan
+    # badan jalan - kalau badan jalan dipakai, kemacetan normal akan memicu
+    # alarm parkir terus-menerus.
+    zone_label: Jalur sepeda
+    illegal_parking_time: 8
+    region_polygon: [250, 228, 640, 315, 640, 358, 300, 358]
+
+  - key: cctv01
+    id: 502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7_CCTV-01
+    name: JPO Jl. Gatot Subroto 7 CCTV-01
+    area: Gatot Subroto
+    region: Jakarta Pusat
+    owner: Polda
+    # source_url below points at the jakcctv-rtsp-production project's RTSP
+    # relay. Previously ignored (Camera.stream_url only built the HLS URL),
+    # but as of 24 Sep 2026 stream_url uses source_url when set - see
+    # batch.py. This camera now captures from that RTSP relay instead of
+    # JakCCTV's HLS.
+    source_url: rtsp://100.96.136.65:8554/cctv01
+    # No camera survey score or visual zone calibration done for this
+    # entry yet, so there is no region_polygon: counting and illegal
+    # parking both need one and would be meaningless here.
+    #
+    # press_line does not need a polygon - it needs a LINE, and that line
+    # is set by hand in configs/marka.yml. Automatic lane segmentation was
+    # tried on this exact camera first and failed: PP-LiteSeg followed the
+    # concrete median instead of the road marking, so buses driving legally
+    # in their own lane were reported as violations. See marka.yml.
+    scenario: press_line
+
+  - key: cctv02
+    id: 502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7_CCTV-02
+    name: JPO Jl. Gatot Subroto 7 CCTV-02
+    area: Gatot Subroto
+    region: Jakarta Pusat
+    owner: Polda
+    # Sourced from jakcctv-rtsp-production's mirror deployment on
+    # 31.97.63.60 - its public IP (reachable from anywhere), not its
+    # Tailscale IP, since this host has no reason to join that tailnet.
+    # That mirror itself pulls this camera from 100.96.136.65 over
+    # Tailscale and republishes on 31.97.63.60:8554 - see
+    # jakcctv-rtsp-production/deploy/mediamtx.mirror.yml.
+    source_url: rtsp://31.97.63.60:8554/cctv02
+    # No camera survey score or visual zone calibration done for this
+    # entry yet, so there is no region_polygon - same situation as cctv01.
+
+  # ------------------------------------------- KAMERA HD (LC-016, 27-09-2026)
+  # Server Bali Tower kedua (cctv-jsc :8011), resolusi 720p s.d. 3200x1800,
+  # dari portal resmi jakcctv.jakarta.go.id/publik (Kebon Melati, Senayan x2)
+  # dan tautan publik Bali Tower (detik.com 28-08-2025). Uji mesin Live yang
+  # sama, malam 27-09-2026 00:13-00:25 WIB, +-45 dtk per kamera (bergiliran):
+  #   kamera              resolusi   kend/frame  skor median  % di atas ambang
+  #   Senayan 001         1920x1080     3,8        0,64          69%
+  #   Bendungan Hilir 4   3200x1800     0,5        0,57          65%
+  #   Bendungan Hilir 2   3200x1800     2,8        0,57          61%
+  #   Kebon Melati        1280x720     17,8        0,46          45%
+  #   Senayan 018         1280x720      2,9        0,46          29%
+  #   Kuningan Barat      1920x1080     1,3        0,44          22%
+  #   (pembanding) Gerbang Pemuda 640x360  1,1   0,41          17%
+  # Frame tetap diperkecil ke 640x360 sebelum deteksi; manfaatnya dari gambar
+  # yang lebih bersih (bitrate tinggi), bukan dari piksel tambahan.
+  # Belum punya garis hitung - tarik lewat "Atur garis". Belum diuji siang.
+  - key: benhil2
+    id: Bendungan-Hilir-003-700014_2
+    base_url: "https://cctv-jsc.balitower.co.id:8011/"
+    name: Bendungan Hilir 003 CCTV-2 (HD)
+    area: Bendungan Hilir, Tanah Abang
+    region: Jakarta Pusat
+    owner: Bali Tower
+    scenario: counting
+    # 3200x1800, +-10 Mbps: memanjang jalan dengan lajur sepeda, dekat flyover.
+
+  - key: benhil4
+    id: Bendungan-Hilir-003-700014_4
+    base_url: "https://cctv-jsc.balitower.co.id:8011/"
+    name: Bendungan Hilir 003 CCTV-4 (HD)
+    area: Bendungan Hilir, Tanah Abang
+    region: Jakarta Pusat
+    owner: Bali Tower
+    scenario: counting
+    # 3200x1800, +-3 Mbps. Ada tiang di tengah frame.
+
+  - key: kebonmelati
+    id: Kebon-Melati-010-700332_2
+    base_url: "https://cctv-jsc.balitower.co.id:8011/"
+    name: Kebon Melati 010 CCTV-2 (HD)
+    area: Kebon Melati, Tanah Abang
+    region: Jakarta Pusat
+    owner: Bali Tower
+    scenario: counting
+    # 1280x720, +-2,3 Mbps. Persimpangan; tercantum di portal jakcctv.
+
+  # ======================================================= JAKARTA SELATAN
+  # Kamera portal 640x360 di wilayah ini menghadap plaza (lihat kepala berkas);
+  # yang di bawah adalah kamera HD Bali Tower (LC-016).
+  - key: senayan001
+    id: Senayan-001-705084_2
+    base_url: "https://cctv-jsc.balitower.co.id:8011/"
+    name: Senayan 001 CCTV-2 (HD)
+    area: Senayan, Kebayoran Baru
+    region: Jakarta Selatan
+    owner: Bali Tower
+    scenario: counting
+    # 1920x1080, bitrate rendah +-0,4 Mbps. Persimpangan; tercantum di portal jakcctv.
+
+  - key: senayan018
+    id: Senayan-018-705979_2
+    base_url: "https://cctv-jsc.balitower.co.id:8011/"
+    name: Senayan 018 CCTV-2 (HD)
+    area: Senayan, Kebayoran Baru
+    region: Jakarta Selatan
+    owner: Bali Tower
+    scenario: counting
+    # 1280x720, bitrate rendah +-0,3 Mbps. Memanjang jalan; tercantum di portal jakcctv.
+
+  - key: kuninganbarat
+    id: Kuningan-Barat-003-705052_3
+    base_url: "https://cctv-jsc.balitower.co.id:8011/"
+    name: Kuningan Barat 003 CCTV-3 (HD)
+    area: Kuningan Barat, Mampang Prapatan
+    region: Jakarta Selatan
+    owner: Bali Tower
+    scenario: counting
+    # 1920x1080, +-2 Mbps. Jalan multi-lajur; paling lemah malam hari (kabur).
+  #
+  # ================ JAKARTA UTARA / TIMUR / KEPULAUAN SERIBU ==============
+  # Tidak ada kamera di portal publik sama sekali.

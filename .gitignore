@@ -1,0 +1,18 @@
+# Vendored upstream + downloaded weights (fetched by scripts/setup.ps1)
+vendor/PaddleDetection/
+models/**
+!models/.gitkeep
+data/samples/**
+!data/samples/.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Runtime
+.env
+runs/
+*.log

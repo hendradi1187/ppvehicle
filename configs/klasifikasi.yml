@@ -1,0 +1,98 @@
+# Lapisan pemetaan pusat: SATU sumber kebenaran untuk kelas kendaraan.
+# Dipakai src/lalin/klasifikasi.py (Live). Mengubah isi kelas cukup di sini,
+# tanpa mengubah kode.
+#
+# Tiga lapisan (docs/accuracy-refinement/02-taxonomy-reconciliation.md):
+#   L1 label_detektor : apa yang dikenali detektor (COCO: car, bus, truck, ...)
+#   L2 jenis_rinci    : jenis kendaraan lokal (pikap, angkot, Metromini, bajaj, ...)
+#                       -> diisi classifier terlatih data DKI (BELUM ADA)
+#   L3 kelas          : 7 kelas surat resmi Dishub
+#
+# Status sumber: OFFICIAL | PROJECT_BASELINE | PROVISIONAL | PENDING_VALIDATION
+# Status klasifikasi per objek: CLASSIFIED | AMBIGUOUS | UNKNOWN | REJECTED
+# (UNKNOWN adalah STATUS, bukan kelas ke-8.)
+
+versi: "2026-09-26.1"
+
+acuan:
+  nama_kelas:
+    status: OFFICIAL
+    sumber: "Surat Pusdatin Dishub DKI No. 1316/KI.03.01, 21-09-2026 (PPK Paket Pekerjaan Software AI), lampiran butir 2"
+  isi_kelas:
+    status: PROVISIONAL
+    sumber: "PKJI 2023 Tabel 1-1 (Pedoman Kapasitas Jalan Indonesia, acuan nasional)"
+    catatan: >-
+      Keputusan pemilik proyek 26-09-2026 siang: "ikut aturan yang ada".
+      Pemakaian PKJI 2023 sebagai acuan isi kelas oleh Dishub belum
+      dikonfirmasi tertulis (02 bagian F). approved_by kosong sampai itu.
+    approved_by: ""
+
+# L3 — urutan dan nama persis surat resmi. `kunci` = kunci API (tetap).
+kelas:
+  - {no: 1, kunci: sepeda_motor,     nama: "Sepeda Motor",     warna: "#06b6d4"}
+  - {no: 2, kunci: mobil_penumpang,  nama: "Mobil Penumpang",  warna: "#3b82f6"}
+  - {no: 3, kunci: kendaraan_sedang, nama: "Kendaraan Sedang", warna: "#f59e0b"}
+  - {no: 4, kunci: bus_besar,        nama: "Bus Besar",        warna: "#ec4899"}
+  - {no: 5, kunci: truk_berat,       nama: "Truk Berat",       warna: "#ef4444"}
+  - {no: 6, kunci: pejalan_kaki,     nama: "Pejalan Kaki",     warna: "#10b981"}
+  - {no: 7, kunci: sepeda,           nama: "Sepeda",           warna: "#a855f7"}
+
+# L2 -> L3 menurut PKJI 2023 Tabel 1-1. Dipakai classifier jenis rinci
+# (belum ada) dan panduan pelabelan. kelas: null = UNKNOWN (di luar taksonomi).
+jenis_rinci:
+  sepeda_motor:        {kelas: sepeda_motor,     status: PROVISIONAL, sumber: "PKJI 2023 SM"}
+  bajaj:               {kelas: sepeda_motor,     status: PROVISIONAL, sumber: "PKJI 2023 SM (bermotor roda 3, panjang < 2,5 m)", catatan: "PP 55/2012 Ps.1 angka 4: roda tiga berkabin tidak otomatis Sepeda Motor - F17"}
+  bentor:              {kelas: sepeda_motor,     status: PROVISIONAL, sumber: "PKJI 2023 SM (bermotor roda 3, panjang < 2,5 m)"}
+  sedan_hatchback_mpv_suv: {kelas: mobil_penumpang, status: PROVISIONAL, sumber: "PKJI 2023 MP"}
+  taksi:               {kelas: mobil_penumpang,  status: PROVISIONAL, sumber: "PKJI 2023 MP (bentuk sedan)"}
+  minibus:             {kelas: mobil_penumpang,  status: PROVISIONAL, sumber: "PKJI 2023 MP"}
+  angkot:              {kelas: mobil_penumpang,  status: PROVISIONAL, sumber: "PKJI 2023 MP (minibus/angkutan kota)"}
+  mikrotrans:          {kelas: mobil_penumpang,  status: PROVISIONAL, sumber: "PKJI 2023 MP (Mikrotrans = angkot)"}
+  pikap:               {kelas: mobil_penumpang,  status: PROVISIONAL, sumber: "PKJI 2023 Tabel 1-1 MP (pickup, truk kecil)"}
+  truk_kecil:          {kelas: mobil_penumpang,  status: PROVISIONAL, sumber: "PKJI 2023 MP (angkutan barang panjang <= 5,5 m)"}
+  metromini:           {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 Tabel 1-1 KS (bus metromini)", catatan: "PKJI istilah 1.7.93 tidak konsisten (MP) - ikut Tabel 1-1"}
+  kopaja:              {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 KS (bus sedang)"}
+  bus_sedang:          {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 KS"}
+  truk_2_sumbu:        {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 KS (2 sumbu, panjang <= 9,0 m)", catatan: "truk 2 sumbu yang sangat besar -> AMBIGUOUS {KS, TB} (F8)"}
+  bus_besar:           {kelas: bus_besar,        status: PROVISIONAL, sumber: "PKJI 2023 BB"}
+  bus_transjakarta:    {kelas: bus_besar,        status: PROVISIONAL, sumber: "PKJI 2023 BB; Perda DKI 5/2014 Ps.111(3)a"}
+  truk_3_sumbu:        {kelas: truk_berat,       status: PROVISIONAL, sumber: "PKJI 2023 TB"}
+  tronton:             {kelas: truk_berat,       status: PROVISIONAL, sumber: "PKJI 2023 TB"}
+  trailer_kontainer:   {kelas: truk_berat,       status: PROVISIONAL, sumber: "PKJI 2023 TB (truk tempel/gandeng)"}
+  pejalan_kaki:        {kelas: pejalan_kaki,     status: PROVISIONAL, sumber: "Nama kelas surat resmi"}
+  sepeda:              {kelas: sepeda,           status: PROVISIONAL, sumber: "PKJI 2023 KTB; nama kelas surat resmi"}
+  becak:               {kelas: null,             status: PENDING_VALIDATION, sumber: "PKJI 2023 KTB (bukan sepeda)", catatan: "surat hanya menyebut Sepeda - F19"}
+  gerobak:             {kelas: null,             status: PENDING_VALIDATION, sumber: "PKJI 2023 KTB (bukan sepeda)", catatan: "F19"}
+  delman:              {kelas: null,             status: PENDING_VALIDATION, sumber: "PKJI 2023 KTB (bukan sepeda)"}
+
+# L1 -> keputusan DENGAN MODEL SAAT INI (PP-YOLOE+ L COCO, tanpa classifier).
+# COCO `bus` dan `truck` masing-masing mencakup lebih dari satu kelas PKJI,
+# jadi keduanya AMBIGUOUS dan tidak dipaksa ke satu kelas:
+#   bus   = Metromini/bus sedang (KS) atau bus besar/Transjakarta (BB)
+#   truck = pikap/truk kecil (MP), truk 2 sumbu (KS), atau truk berat (TB)
+# ambang_yakin: skor minimum agar satu pengamatan dihitung "yakin"
+# (dikalibrasi dari 104 kotak truk/bus 26-09-2026 untuk bus/truck; kelas lain
+# BELUM dikalibrasi). Tanpa cukup pengamatan yakin -> UNKNOWN.
+label_detektor:
+  motorcycle: {kelas: sepeda_motor,    ambang_yakin: 0.45}
+  car:        {kelas: mobil_penumpang, ambang_yakin: 0.50}
+  person:     {kelas: pejalan_kaki,    ambang_yakin: 0.50}
+  bicycle:    {kelas: sepeda,          ambang_yakin: 0.45}
+  bus:
+    kandidat: [kendaraan_sedang, bus_besar]
+    kunci_tampil: bus
+    nama_tampil: "Bus (Sedang/Besar belum terpilah)"
+    warna: "#db2777"
+    ambang_yakin: 0.60
+  truck:
+    kandidat: [mobil_penumpang, kendaraan_sedang, truk_berat]
+    kunci_tampil: truk
+    nama_tampil: "Truk (belum terpilah)"
+    warna: "#f97316"
+    ambang_yakin: 0.60
+
+gerbang:
+  # sebuah track CLASSIFIED/AMBIGUOUS bila >= porsi_yakin pengamatannya yakin
+  porsi_yakin: 0.5
+  kunci_tidak_dikenal: tidak_dikenal
+  nama_tidak_dikenal: "Tidak Dikenal"

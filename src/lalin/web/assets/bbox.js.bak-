@@ -1,0 +1,992 @@
+// Kotak deteksi dan penghitungan lalu lintas di atas video Live.
+//
+// SUMBER KOTAK: PP-YOLOE+ L + ByteTrack di SERVER (src/lalin/_entry_langsung.py),
+// bukan model mini di peramban. Versi pertama berkas ini memakai COCO-SSD lite
+// (port dari proyek dishub-dki-jakarta) dan gagal pada kasus yang paling
+// penting: pesepeda dibaca "Pejalan Kaki" karena sepedanya tidak terlihat oleh
+// model mini, dan di S. Parman C02 yang padat YOLOv10n menemukan 0 sepeda
+// motor sementara PP-YOLOE+ L menemukan 16 pada frame yang sama.
+//
+// SINKRON: peramban memutar HLS +-4 segmen (+-30 dtk) di belakang tepi siaran,
+// sedangkan server membaca dari dekat tepi. Jadi hasil tiap frame sudah ada
+// SEBELUM frame itu tampil. Tiap hasil membawa PTS asli (MPEG-TS); di sini
+// PTS itu dicocokkan dengan frame yang sedang diputar
+// (requestVideoFrameCallback -> mediaTime, + initPTS dari hls.js), dan kotak
+// diinterpolasi di antara dua hasil server (+-0,6 dtk) supaya bergerak mulus
+// bersama kendaraannya.
+(function () {
+  "use strict";
+
+  // 7 kelas POC - nama, warna, dan faktor SMP persis seperti OBJECT_CLASSES
+  // di dishub-dki-jakarta/src/data/mockData.ts. Warna tiap kelas berbeda
+  // jelas, termasuk Pejalan Kaki (hijau) vs Sepeda (ungu).
+  const KELAS = {
+    sepeda_motor:     { nama: "Sepeda Motor",     smp: 0.40, warna: "#06b6d4" },
+    mobil_penumpang:  { nama: "Mobil Penumpang",  smp: 1.00, warna: "#3b82f6" },
+    kendaraan_sedang: { nama: "Kendaraan Sedang", smp: 1.30, warna: "#f59e0b" },
+    bus_besar:        { nama: "Bus Besar",        smp: 1.80, warna: "#ec4899" },
+    truk_berat:       { nama: "Truk Berat",       smp: 2.20, warna: "#ef4444" },
+    pejalan_kaki:     { nama: "Pejalan Kaki",     smp: 0.00, warna: "#10b981" },
+    sepeda:           { nama: "Sepeda",           smp: 0.20, warna: "#a855f7" },
+  };
+  // Keluaran server yang BUKAN salah satu dari 7 kelas:
+  //  truk          - model mengenali truk, tetapi tidak bisa memisahkan
+  //                  Kendaraan Sedang (truk 2 sumbu) dari Truk Berat (3+ sumbu):
+  //                  COCO tidak punya kelas itu. Ditampilkan apa adanya, tidak
+  //                  dipecah dengan tebakan ukuran.
+  //  tidak_dikenal - model tidak yakin (gerobak, bajaj, kendaraan tercoreng
+  //                  blur, benda lapak). Tidak dipaksa masuk kelas mana pun.
+  // Cadangan bila server belum mengirim peta tampil (klasifikasi.yml). Nama
+  // dan warna sebenarnya datang dari server (LC-007), jadi berkas ini tidak
+  // lagi menentukan isi kelas.
+  const KELAS_LAIN = {
+    bus:           { nama: "Bus (Sedang/Besar belum terpilah)", smp: null, warna: "#db2777" },
+    truk:          { nama: "Truk (belum terpilah)", smp: null, warna: "#f97316" },
+    tidak_dikenal: { nama: "Belum jelas",          smp: null, warna: "#9ca3af" },
+  };
+  const infoKelas = (k) => KELAS[k] || KELAS_LAIN[k];
+
+  const ACUAN_W = 640, ACUAN_H = 360;
+  const PTS_PUTAR = 8589934592 / 90000;     // PTS MPEG-TS 33 bit berputar tiap +-26,5 jam
+  const TARIK_MS = 1000;
+  const CELAH_MAKS = 1.6;                   // dtk: lebih renggang dari ini tidak diinterpolasi
+
+  let status = "diam";                       // diam | menunggu | jalan | galat
+  let sesi = null;
+  // Suntingan yang sedang berjalan disimpan saat sesi berhenti, supaya video
+  // yang dimulai ulang sendiri (jaringan, tab sempat tersembunyi) tidak
+  // membuang garis yang sedang ditarik operator.
+  let sisaSunting = null;
+  // LC-011: lintasan yang sudah terhitung disimpan per kamera saat sesi
+  // berhenti, supaya video yang dimulai ulang tidak mengosongkan angka & log.
+  let arsip = null;       // { key, label, mulaiPts, mulaiPada, tercatat: Map }
+
+  const esc = (x) => String(x).replace(/[&<>"]/g, (m) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+  const salin = (g) => (g || []).map((r) => r.slice(0, 4).map(Number));
+  const skalakan = (g, W, H) => g.map(([a, b, c, d]) =>
+    [a * W / ACUAN_W, b * H / ACUAN_H, c * W / ACUAN_W, d * H / ACUAN_H]);
+  // selisih PTS dengan memperhitungkan putaran 33 bit
+  const beda = (a, b) => {
+    let d = (a - b) % PTS_PUTAR;
+    if (d > PTS_PUTAR / 2) d -= PTS_PUTAR;
+    if (d < -PTS_PUTAR / 2) d += PTS_PUTAR;
+    return d;
+  };
+
+  function kosongHitung() {
+    const h = {};
+    for (const k in KELAS) h[k] = 0;
+    return h;
+  }
+
+  // ------------------------------------------------------------ sesi
+  // opsi: { key, offsetPts: () => detik|null }
+  function mulai(video, kanvas, panel, label, tampilan, opsi) {
+    henti();
+    const s = {
+      video, kanvas, panel, label, key: opsi.key, offsetPts: opsi.offsetPts,
+      tampilan: salinTampilan(tampilan), edit: null,
+      hasil: [], peristiwa: [], sejak: null, tarikTimer: null, rvfc: null, raf: null,
+      server: null, galat: "", mediaTime: null, ptsKini: null, aktif: -1,
+      kotakKini: [], mulaiPts: null, mulaiPada: Date.now(), tarikGagal: 0,
+      tren: opsi.tren || null, trenPanel: opsi.trenPanel || null, tercatat: new Map(),
+    };
+    if (arsip && arsip.key === s.key) {
+      s.mulaiPts = arsip.mulaiPts;
+      s.mulaiPada = arsip.mulaiPada;
+      s.tercatat = arsip.tercatat;
+    }
+    arsip = null;
+    sesi = s;
+    if (s.trenPanel) s.trenPanel.hidden = false;
+    kanvas.hidden = false;
+    panel.hidden = false;
+    pasangPenyunting(s);
+    panel.onclick = (ev) => { if (ev.target.closest("summary")) s.detailBuka = !s.detailBuka; };
+    const sisa = sisaSunting && sisaSunting.key === s.key && Date.now() - sisaSunting.t < 120000
+      ? sisaSunting : null;
+    sisaSunting = null;
+    status = "menunggu";
+    gambarPanel(s);
+    fetch(`/api/langsung/mulai?key=${encodeURIComponent(s.key)}`, { method: "POST" })
+      .then((r) => r.ok ? r.json() : r.json().then((j) => { throw new Error(j.detail || r.statusText); }))
+      .then(() => { if (sesi === s) tarik(s); })
+      .catch((e) => { if (sesi === s) { status = "galat"; s.galat = e.message; gambarPanel(s); } });
+    ikutiFrame(s);
+    if (sisa) {
+      sunting(true, { onInfo: sisa.onInfo, onKunci: sisa.onKunci });
+      s.edit = sisa.edit;
+    }
+  }
+
+  function salinTampilan(t) {
+    return (t || []).map((x) => ({ garis: salin(x.garis), acuan: x.acuan || null,
+                                   pejalan: salin(x.garis_pejalan) }));
+  }
+
+  // Garis dibaca langsung dari server (bukan dari daftar kamera halaman,
+  // yang bisa belum termuat saat Live dimulai), dan disegarkan tiap 30 dtk
+  // supaya garis yang disimpan di tab lain ikut tampil.
+  async function muatGaris(s) {
+    try {
+      const j = await (await fetch(`/api/garis-hitung/${encodeURIComponent(s.key)}`)).json();
+      if (sesi === s && !s.edit) s.tampilan = salinTampilan(j.tampilan);
+    } catch (e) { /* biarkan yang lama */ }
+  }
+
+  async function tarik(s) {
+    if (sesi !== s) return;
+    s.nTarik = (s.nTarik || 0) + 1;
+    if (s.nTarik % 30 === 1) muatGaris(s);
+    try {
+      const q = (s.sejak == null ? "" : `&sejak=${s.sejak}`) + `&sejak_p=${s.sejakP || 0}`;
+      const r = await fetch(`/api/langsung?key=${encodeURIComponent(s.key)}${q}`);
+      const d = await r.json();
+      if (sesi !== s) return;
+      s.server = d;
+      s.tarikGagal = 0;
+      if (!d.running) {
+        // Server berhenti (restart, jaringan, atau berhenti sendiri): minta
+        // mulai lagi untuk kamera ini. Aman dipanggil berulang.
+        s.galat = "";
+        fetch(`/api/langsung/mulai?key=${encodeURIComponent(s.key)}`, { method: "POST" }).catch(() => {});
+      } else if (d.key !== s.key) {
+        s.galat = "Deteksi server sedang dipakai untuk kamera lain oleh penonton lain.";
+      } else if (d.sesi && s.sesiServer && d.sesi !== s.sesiServer) {
+        // LC-006: server memulai sesi baru (restart / sambung ulang). Nomor
+        // urut peristiwa dan PTS-nya mulai lagi, jadi penanda lama dibuang dan
+        // data diminta ulang dari awal sesi baru. Hitungan yang sudah tampil
+        // tetap; hasil per frame lama dibuang supaya urutan PTS tidak campur.
+        s.sesiServer = d.sesi;
+        s.sejak = null;
+        s.sejakP = 0;
+        s.hasil = [];
+        if (sesi === s) s.tarikTimer = setTimeout(() => tarik(s), 0);
+        return;
+      } else {
+        if (d.sesi) s.sesiServer = d.sesi;
+        s.galat = d.galat && !d.running ? d.galat : "";
+        for (const f of d.frames || []) s.hasil.push(f);
+        for (const p of d.peristiwa || []) {
+          p._sesi = d.sesi || s.sesiServer || "";
+          s.peristiwa.push(p);
+          if (p.seq > (s.sejakP || 0)) s.sejakP = p.seq;
+        }
+        if (s.hasil.length) s.sejak = s.hasil[s.hasil.length - 1].pts;
+        // simpan +-3 menit
+        if (s.hasil.length > 320) s.hasil.splice(0, s.hasil.length - 320);
+      }
+    } catch (e) {
+      s.tarikGagal += 1;
+    }
+    if (sesi === s) s.tarikTimer = setTimeout(() => tarik(s), TARIK_MS);
+  }
+
+  function henti(buang) {
+    if (!sesi) return;
+    sisaSunting = sesi.edit && !buang
+      ? { key: sesi.key, edit: sesi.edit, onInfo: sesi.onInfo, onKunci: sesi.onKunci, t: Date.now() }
+      : null;
+    clearTimeout(sesi.tarikTimer);
+    const v = sesi.video;
+    if (sesi.rvfc != null && v.cancelVideoFrameCallback) v.cancelVideoFrameCallback(sesi.rvfc);
+    if (sesi.raf != null) cancelAnimationFrame(sesi.raf);
+    lepasPenyunting(sesi);
+    if (sesi.mulaiPts != null) {
+      arsip = { key: sesi.key, label: sesi.label, mulaiPts: sesi.mulaiPts,
+                mulaiPada: sesi.mulaiPada, tercatat: sesi.tercatat, server: sesi.server };
+    }
+    const k = sesi.kanvas;
+    k.getContext("2d").clearRect(0, 0, k.width, k.height);
+    k.hidden = true;
+    sesi.panel.hidden = true;
+    sesi = null;
+    status = "diam";
+  }
+
+  // Setiap frame video yang ditampilkan: hitung PTS-nya, ambil kotak yang
+  // cocok, gambar.
+  function ikutiFrame(s) {
+    const v = s.video;
+    const langkah = (_now, meta) => {
+      if (sesi !== s) return;
+      s.mediaTime = meta && typeof meta.mediaTime === "number" ? meta.mediaTime : v.currentTime;
+      perbarui(s);
+      if (v.requestVideoFrameCallback) s.rvfc = v.requestVideoFrameCallback(langkah);
+      else s.raf = requestAnimationFrame(() => langkah(0, null));
+    };
+    if (v.requestVideoFrameCallback) s.rvfc = v.requestVideoFrameCallback(langkah);
+    else s.raf = requestAnimationFrame(() => langkah(0, null));
+  }
+
+  function perbarui(s) {
+    const off = s.offsetPts ? s.offsetPts() : null;
+    if (off == null || s.mediaTime == null) { s.ptsKini = null; s.kotakKini = []; gambar(s); return; }
+    const pts = s.mediaTime + off;
+    s.ptsKini = pts;
+    const H = s.hasil;
+    // cari dua hasil yang mengapit pts
+    let i = -1;
+    for (let j = H.length - 1; j >= 0; j--) { if (beda(H[j].pts, pts) <= 0) { i = j; break; } }
+    let kotak = [];
+    if (i >= 0) {
+      const a = H[i], b = H[i + 1];
+      const da = -beda(a.pts, pts);
+      if (b && beda(b.pts, a.pts) <= CELAH_MAKS) {
+        const t = da / beda(b.pts, a.pts);
+        const peta = new Map(b.kotak.map((k) => [k[0], k]));
+        for (const ka of a.kotak) {
+          const kb = peta.get(ka[0]);
+          if (kb) kotak.push(sisip(ka, kb, t));
+          else if (t < 0.5) kotak.push(ka);
+        }
+        s.aktif = a.tampilan;
+      } else if (da <= 0.8) {
+        kotak = a.kotak; s.aktif = a.tampilan;
+      }
+    }
+    s.kotakKini = kotak;
+    if (status !== "galat") status = H.length && i >= 0 ? "jalan" : "menunggu";
+    gambar(s);
+  }
+
+  function sisip(a, b, t) {
+    const l = (p, q) => p + (q - p) * t;
+    return [a[0], t < 0.5 ? a[1] : b[1], l(a[2], b[2]), l(a[3], b[3]), l(a[4], b[4]), l(a[5], b[5]),
+            t < 0.5 ? a[6] : b[6], t < 0.5 ? a[7] : b[7]];
+  }
+
+  // Garis yang ditampilkan = garis tampilan (posisi PTZ) yang cocok menurut
+  // server pada frame ini. -1 = kamera bergeser: tanpa garis, tanpa hitungan.
+  const garisTampil = (s) => (s.edit ? s.edit.garis
+    : (s.aktif >= 0 && s.tampilan[s.aktif] ? s.tampilan[s.aktif].garis : []));
+
+  // ------------------------------------------------------------ gambar
+  function gambar(s) {
+    const v = s.video, k = s.kanvas;
+    // LC-016: kanvas selalu berukuran acuan 640x360. Dulu = ukuran video; pada
+    // kamera HD (3200x1800) garis 1,7 px & huruf 9 px diperkecil ke +-0,4 px di
+    // layar sehingga kotak tidak terlihat. Kaca pembesar editor tetap membaca
+    // video pada resolusi aslinya (lihat gambarLup).
+    const W = ACUAN_W, H = ACUAN_H;
+    if (k.width !== W || k.height !== H) { k.width = W; k.height = H; }
+    const c = k.getContext("2d");
+    c.clearRect(0, 0, W, H);
+    const sx = W / ACUAN_W, sy = H / ACUAN_H;
+
+    if (s.edit) gambarLatarSunting(s, c, W, H);
+    const G = skalakan(garisTampil(s), W, H);
+    c.save();
+    c.font = "bold 9px ui-monospace, Consolas, monospace";
+    G.forEach(([ax, ay, bx, by], i) => {
+      c.setLineDash(s.edit ? [] : [9, 5]);
+      c.lineWidth = 3.2;
+      c.strokeStyle = "rgba(15, 23, 42, .7)";
+      c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+      c.lineWidth = s.edit ? 2 : 1.7;
+      c.strokeStyle = s.edit ? "#fde047" : "rgba(250, 204, 21, .95)";
+      c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+      c.setLineDash([]);
+      if (s.edit) {
+        [[ax, ay], [bx, by]].forEach(([hx, hy], u) => {
+          const dipilih = s.edit.terpilih && s.edit.terpilih.i === i && s.edit.terpilih.ujung === u;
+          c.fillStyle = dipilih ? "#f97316" : "#fde047"; c.strokeStyle = "#0f172a"; c.lineWidth = 1.5;
+          c.beginPath(); c.arc(hx, hy, dipilih ? 6 : 4.5, 0, Math.PI * 2); c.fill(); c.stroke();
+        });
+      }
+      const [lx, ly] = ay <= by ? [ax, ay] : [bx, by];
+      const teks = G.length > 1 ? `GARIS HITUNG ${i + 1}` : "GARIS HITUNG";
+      const lw = c.measureText(teks).width + 8;
+      const tx = Math.min(Math.max(lx - lw / 2, 2), W - lw - 2), ty = Math.max(ly - 16, 2);
+      c.fillStyle = "rgba(15, 23, 42, .85)";
+      c.fillRect(tx, ty, lw, 12);
+      c.fillStyle = "#facc15";
+      c.fillText(teks, tx + 4, ty + 9);
+    });
+    // LC-015: garis pejalan kaki (hijau), hanya menghitung orang
+    const GP = s.aktif >= 0 && s.tampilan[s.aktif] ? skalakan(s.tampilan[s.aktif].pejalan || [], W, H) : [];
+    GP.forEach(([ax, ay, bx, by], i) => {
+      c.setLineDash([6, 4]);
+      c.lineWidth = 3; c.strokeStyle = "rgba(15, 23, 42, .7)";
+      c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+      c.lineWidth = 1.6; c.strokeStyle = "rgba(16, 185, 129, .95)";
+      c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+      c.setLineDash([]);
+      const teks = GP.length > 1 ? `GARIS PEJALAN KAKI ${i + 1}` : "GARIS PEJALAN KAKI";
+      const lw = c.measureText(teks).width + 8;
+      const [lx, ly] = ay <= by ? [ax, ay] : [bx, by];
+      const tx = Math.min(Math.max(lx - lw / 2, 2), W - lw - 2), ty = Math.max(ly - 16, 2);
+      c.fillStyle = "rgba(15, 23, 42, .85)"; c.fillRect(tx, ty, lw, 12);
+      c.fillStyle = "#34d399"; c.fillText(teks, tx + 4, ty + 9);
+    });
+    if (s.edit && !G.length) {
+      const t = "Tarik garis sejajar garis henti / melintang jalan, dari kerb ke kerb";
+      const lw = c.measureText(t).width + 16;
+      c.fillStyle = "rgba(15, 23, 42, .85)";
+      c.fillRect(W / 2 - lw / 2, H / 2 - 12, lw, 22);
+      c.fillStyle = "#fde047";
+      c.fillText(t, W / 2 - lw / 2 + 8, H / 2 + 3);
+    }
+    c.restore();
+
+    if (!s.edit) {
+      c.font = "bold 9px ui-monospace, Consolas, monospace";
+      for (const [id, kelas, x0, y0, w0, h0, skor, terhitung] of s.kotakKini) {
+        const kl = infoKelas(kelas);
+        if (!kl) continue;
+        const x = x0 * sx, y = y0 * sy, w = w0 * sx, h = h0 * sy;
+        const tak = kelas === "tidak_dikenal";
+        c.strokeStyle = kl.warna;
+        c.lineWidth = terhitung ? 2.4 : 1.7;
+        c.setLineDash(tak ? [4, 3] : []);
+        c.strokeRect(x, y, w, h);
+        c.setLineDash([]);
+        if (terhitung) { c.fillStyle = kl.warna + "26"; c.fillRect(x, y, w, h); }
+        // Demo POC: jangan tampilkan status UNKNOWN sebagai label kelas di bbox.
+        // Identitas/status internal tetap `tidak_dikenal` untuk metrik, hitungan,
+        // dan log; teks netral ini hanya mengubah presentasi kotaknya.
+        const teks = tak ? "Belum jelas" : `${kl.nama} ${Math.round(skor * 100)}%`;
+        const lebar = c.measureText(teks).width + 9;
+        const ly = Math.max(y - 13, 0);
+        c.fillStyle = "rgba(15, 23, 42, .85)";
+        c.fillRect(x, ly, lebar, 12);
+        c.fillStyle = kl.warna;
+        c.fillRect(x, ly, 2.5, 12);
+        c.fillStyle = "#fff";
+        c.fillText(teks, x + 5, ly + 9);
+      }
+    }
+    if (s.edit) gambarLup(s, c, W, H);
+    // panel cukup diperbarui beberapa kali per detik
+    const kini = performance.now();
+    if (!s._panelT || kini - s._panelT > 400) { s._panelT = kini; gambarPanel(s); }
+  }
+
+  function gambarPanel(s) {
+    const p = s.panel;
+    const d = s.server || {};
+    const laju = d.ms ? ` · ${d.ms} ms/frame` : "";
+    const judul = `<span class="jdl">DETEKSI · PP-YOLOE+ L (server) · sinkron frame${laju}</span>`
+      + (s.galat || status === "galat" ? `<span class="k warn">${esc(s.galat || "galat")}</span>` : "");
+    if (status === "galat") { p.innerHTML = judul; return; }
+    // Hitungan: peristiwa lintas yang PTS-nya sudah terputar di layar. Server
+    // menghitung +-30 dtk lebih dulu; menampilkannya sekarang akan membuat
+    // angka naik sebelum kendaraannya terlihat melintas.
+    const lintas = kosongHitung();
+    lintas.bus = 0; lintas.truk = 0; lintas.tidak_dikenal = 0;
+    const arah = {};
+    let total = 0, smp = 0;
+    if (s.ptsKini != null) {
+      if (s.mulaiPts == null && s.hasil.length) s.mulaiPts = s.ptsKini;
+      // LC-011: peristiwa yang PTS-nya sudah terputar dicatat SEKALI, dengan
+      // jam saat tampil melintas di layar. Hitungan, tren, log, dan CSV
+      // semuanya dibaca dari catatan yang sama.
+      for (const e of s.peristiwa) {
+        const kc = `${e._sesi}:${e.seq}`;
+        if (s.tercatat.has(kc)) continue;
+        if (s.mulaiPts == null || beda(e.pts, s.mulaiPts) < 0 || beda(e.pts, s.ptsKini) > 0) continue;
+        if (!(e.kelas in lintas)) continue;
+        e._tampil = Date.now();
+        s.tercatat.set(kc, e);
+      }
+    }
+    for (const e of s.tercatat.values()) {
+      lintas[e.kelas] += 1; total += 1;
+      const kl = infoKelas(e.kelas);
+      if (kl && kl.smp != null) smp += kl.smp;
+      const kunci = `${e.tampilan}:${e.ruas}`;
+      (arah[kunci] = arah[kunci] || [0, 0])[e.arah] += 1;
+    }
+    if (s.tren && (s.tercatat.size !== s._trenN || Date.now() - (s._trenT || 0) > 5000)) gambarTren(s);
+    const diFrame = kosongHitung();
+    diFrame.bus = 0; diFrame.truk = 0; diFrame.tidak_dikenal = 0;
+    // nama & warna dari server (configs/klasifikasi.yml) bila ada
+    const tampil = (d.klasifikasi && d.klasifikasi.tampil) || {};
+    const kl2 = (k, cadangan) => {
+      const hasil = tampil[k] ? { ...cadangan, nama: tampil[k].nama, warna: tampil[k].warna || cadangan.warna } : cadangan;
+      // Status UNKNOWN tetap ada di server/DB; pada ringkasan presentasi gunakan
+      // bahasa netral dan tampilkan jumlah mentah hanya di Detail teknis.
+      return k === "tidak_dikenal" ? { ...hasil, nama: "Perlu validasi" } : hasil;
+    };
+    for (const k of s.kotakKini) if (k[1] in diFrame) diFrame[k[1]] += 1;
+    const sel1 = (k, kl, catatan) =>
+      `<span class="k" title="${kl.nama}: ${lintas[k]} melintas, ${diFrame[k]} di frame${catatan ? " — " + catatan : ""}">`
+      + `<i style="background:${kl.warna}"></i>${kl.nama} <b>${lintas[k]}</b>`
+      + `<small>(${diFrame[k]})</small></span>`;
+    const catatanPisah = "belum dapat dipisahkan model saat ini (butuh classifier jenis rinci terlatih data DKI)";
+    const menit = Math.max(1, Math.round((Date.now() - s.mulaiPada) / 60000));
+
+    // Peringatan yang MENENTUKAN apakah angka bisa dipercaya: selalu tampil,
+    // tidak disembunyikan di detail teknis.
+    const peringatan = [];
+    let posisiTeknis = "";
+    if (!s.tampilan.length) {
+      peringatan.push("Garis hitung belum ditetapkan untuk kamera ini — tekan “Atur garis”, lalu tarik garis melintang jalan.");
+    } else if (status !== "jalan") {
+      const tunggu = d.pts_awal != null && s.ptsKini != null ? Math.max(0, Math.round(beda(d.pts_awal, s.ptsKini))) : null;
+      peringatan.push(`Menyiapkan deteksi server… kotak dan hitungan muncul sebentar lagi${tunggu != null ? ` (±${tunggu} dtk)` : ""}.`);
+    } else if (s.aktif < 0) {
+      peringatan.push("KAMERA BERGESER dari posisi saat garis ditarik — hitungan dijeda supaya tidak salah hitung. "
+        + "Tekan “Atur garis” untuk menarik garis di posisi ini (posisi lama tetap tersimpan).");
+    } else {
+      const tanpaAcuan = d.skor_posisi == null;
+      if (tanpaAcuan) {
+        peringatan.push("Garis kamera ini belum punya acuan posisi: bila kamera PTZ bergeser, sistem tidak tahu. "
+          + "Buka “Atur garis” lalu tekan “Simpan garis” saat posisi kamera benar.");
+      }
+      posisiTeknis = `Posisi kamera: tampilan ${s.aktif + 1}/${s.tampilan.length} (${tanpaAcuan ? "tanpa acuan" : `cocok ${Number(d.skor_posisi).toFixed(2)}`})`;
+    }
+    const info = d.info || {};
+    if (info.malam) peringatan.push(`Malam hari: akurasi turun (ambang ${info.ambang}); motor yang kabur karena gerak bisa terlewat.`);
+    if (s.galat) peringatan.push(esc(s.galat));
+
+    const kartu = (k, kl, catatan, redup) =>
+      `<div class="bb-k${redup ? " redup" : ""}" title="${esc(kl.nama)}: ${redup ? "belum aktif — " + (catatan || "model belum dapat membedakan jenis ini") : `${lintas[k]} melintas, ${diFrame[k]} tampak di layar${catatan ? " — " + catatan : ""}`}">`
+      + `<i style="background:${kl.warna}"></i><span class="nm">${esc(kl.nama)}</span>`
+      + (redup ? `<small>Belum aktif · belum terpilah</small>` : `<b>${lintas[k]}</b><small>tampak ${diFrame[k]}</small>`) + `</div>`;
+    const kelas7 = ["sepeda_motor", "mobil_penumpang", "kendaraan_sedang", "bus_besar", "truk_berat", "pejalan_kaki", "sepeda"]
+      .map((k) => {
+        const redup = ["kendaraan_sedang", "bus_besar", "truk_berat"].includes(k);
+        return kartu(k, kl2(k, KELAS[k]), redup ? catatanPisah : "", redup);
+      }).join("");
+    const lain = sel1("bus", kl2("bus", KELAS_LAIN.bus), "COCO bus = Kendaraan Sedang (Metromini/bus sedang) atau Bus Besar menurut PKJI 2023")
+      + sel1("truk", kl2("truk", KELAS_LAIN.truk), "COCO truck = Mobil Penumpang (pikap), Kendaraan Sedang (2 sumbu), atau Truk Berat menurut PKJI 2023");
+    const tpl = s.aktif >= 0 ? s.tampilan[s.aktif] : null;
+    const garis = tpl ? (tpl.garis || []).map((_, i) => {
+      const [a0, a1] = arah[`${s.aktif}:${i}`] || [0, 0];
+      return `<span class="k">Garis ${i + 1}: <b>${a0}</b> ⇄ <b>${a1}</b></span>`;
+    }).concat((tpl.pejalan || []).map((_, i) => {
+      // LC-015: ruas pejalan kaki bernomor setelah ruas garis kendaraan
+      const [a0, a1] = arah[`${s.aktif}:${(tpl.garis || []).length + i}`] || [0, 0];
+      return `<span class="k">Pejalan${(tpl.pejalan || []).length > 1 ? " " + (i + 1) : ""}: <b>${a0}</b> ⇄ <b>${a1}</b></span>`;
+    })).join("") : "";
+
+    p.innerHTML =
+      `<div class="bb-kepala"><span class="jdl">PENGHITUNGAN LALU LINTAS</span>`
+      + `<b class="bb-kam">${esc(s.label || "")}</b>`
+      + `<span class="tot"><b class="bb-n">${total}</b> kendaraan melintas · ${menit} mnt</span></div>`
+      + peringatan.map((t) => `<div class="bb-warn">${t}</div>`).join("")
+      + `<div class="bb-kelas">${kelas7}</div>`
+      + `<div class="bb-lain"><span class="bb-sub">Belum terklasifikasi:</span>${lain}${garis ? `<span class="bb-garis">${garis}</span>` : ""}</div>`
+      + `<details class="bb-detail"${s.detailBuka ? " open" : ""}><summary>Detail teknis</summary>`
+      + `<div>${judul}</div>`
+      + (posisiTeknis ? `<div>${posisiTeknis}</div>` : "")
+      + `<div class="cat"><b>Metrik internal — Tidak Dikenal (UNKNOWN): ${lintas.tidak_dikenal} melintas, ${diFrame.tidak_dikenal} di frame.</b> Status asli tetap tersimpan untuk evaluasi model.</div>`
+      + `<div>SMP (faktor belum bersumber resmi, hanya kelas terklasifikasi): ${smp.toFixed(1)}</div>`
+      + `<div class="cat">Kotak & kelas dari PP-YOLOE+ L di server, ditampilkan pada frame yang sama dengan yang dianalisis. `
+      + `Angka = kendaraan yang melintasi garis hitung sejak Live dibuka; "tampak" = yang terlihat di layar saat ini. `
+      + `Pengendara dihitung sebagai kendaraannya, bukan pejalan kaki. Objek yang belum mencapai ambang keyakinan tidak dipaksa masuk ke salah satu kelas. `
+      + `Orang di badan jalan / lajur sepeda juga perlu validasi (sering pengendara yang kendaraannya tidak terdeteksi); pejalan kaki dihitung di garis hijau. `
+      + `Isi kelas mengikuti PKJI 2023 (sementara, menunggu konfirmasi Dishub). Kendaraan Sedang, Bus Besar, dan Truk Berat `
+      + `belum dapat dipisahkan model saat ini; bus dan truk tercatat di "Belum terklasifikasi".</div></details>`;
+  }
+
+  // ------------------------------------------------ tren & log (LC-011)
+  const URUT_KELAS = ["sepeda_motor", "mobil_penumpang", "kendaraan_sedang", "bus_besar", "truk_berat",
+                      "pejalan_kaki", "sepeda", "bus", "truk", "tidak_dikenal"];
+  function namaWarna(server, k) {
+    const t = (server && server.klasifikasi && server.klasifikasi.tampil) || {};
+    const c = infoKelas(k) || { nama: k, warna: "#9ca3af" };
+    const hasil = t[k] ? { nama: t[k].nama || c.nama, warna: t[k].warna || c.warna } : c;
+    // Status UNKNOWN tetap tersimpan untuk evaluasi. Pada layar demo gunakan
+    // nama netral agar satu track tidak terlihat sebagai kegagalan klasifikasi.
+    return k === "tidak_dikenal" ? { ...hasil, nama: "Belum jelas" } : hasil;
+  }
+  function namaPeristiwa(server, e) {
+    if (e.status !== "UNKNOWN") return namaWarna(server, e.kelas);
+    const indikasi = {
+      car: ["Mobil Penumpang (indikasi)", "#3b82f6"],
+      motorcycle: ["Sepeda Motor (indikasi)", "#06b6d4"],
+      bicycle: ["Sepeda (indikasi)", "#a855f7"],
+      person: ["Pejalan Kaki (indikasi)", "#10b981"],
+    }[e.label_detektor];
+    return indikasi ? { nama: indikasi[0], warna: indikasi[1] } : namaWarna(server, e.kelas);
+  }
+  const jamMenit = (ms) => new Date(ms).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const jamDetik = (ms) => new Date(ms).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  function teksStatus(e, server) {
+    if (e.status === "CLASSIFIED") return "Terklasifikasi";
+    if (e.status === "AMBIGUOUS") {
+      const k = (e.kandidat || []).map((x) => namaWarna(server, x).nama).join(" / ");
+      return k ? `Belum terpilah: ${k}` : "Belum terpilah";
+    }
+    if (e.status === "UNKNOWN" && e.alasan_status === "orang_di_badan_jalan")
+      return "Indikasi objek di badan jalan";
+    if (e.status === "UNKNOWN") return "Indikasi detektor — evaluasi internal";
+    return e.status || "—";
+  }
+  function urutCatatan(s) {
+    return [...s.tercatat.values()].sort((a, b) => a._tampil - b._tampil);
+  }
+
+  function gambarTren(s) {
+    const el = s.tren;
+    s._trenN = s.tercatat.size;
+    s._trenT = Date.now();
+    const ev = urutCatatan(s);
+    const sv = s.server;
+    const kini = Math.floor(Date.now() / 60000);
+    const awal = Math.max(Math.floor(s.mulaiPada / 60000), kini - 29);
+    const kolom = [];
+    for (let m = awal; m <= kini; m++) kolom.push({ m, n: {}, total: 0 });
+    for (const e of ev) {
+      const c = kolom[Math.floor(e._tampil / 60000) - awal];
+      if (!c) continue;
+      c.n[e.kelas] = (c.n[e.kelas] || 0) + 1;
+      c.total += 1;
+    }
+    const maks = Math.max(1, ...kolom.map((c) => c.total));
+    const menit = Math.max(1, (Date.now() - s.mulaiPada) / 60000);
+    let puncak = null;
+    for (const c of kolom) if (c.total && (!puncak || c.total > puncak.total)) puncak = c;
+    const batang = kolom.map((c) => {
+      const rinci = URUT_KELAS.filter((k) => c.n[k]).map((k) => `${namaWarna(sv, k).nama} ${c.n[k]}`).join(", ");
+      const seg = URUT_KELAS.filter((k) => c.n[k]).map((k) =>
+        `<i style="height:${(c.n[k] / maks * 100).toFixed(1)}%;background:${namaWarna(sv, k).warna}"></i>`).join("");
+      return `<div class="tr-kol" title="${jamMenit(c.m * 60000)} · ${c.total} melintas${rinci ? ": " + esc(rinci) : ""}">${seg}</div>`;
+    }).join("");
+    const sumbu = kolom.map((c, i) =>
+      // label tiap 5 menit; kolom pertama hanya bila label berikutnya >= 3 kolom lagi
+      `<span>${c.m % 5 === 0 || (i === 0 && (5 - c.m % 5) >= 3) ? jamMenit(c.m * 60000) : ""}</span>`).join("");
+    const ada = new Set(ev.map((e) => e.kelas));
+    const legenda = URUT_KELAS.filter((k) => ada.has(k)).map((k) => {
+      const nw = namaWarna(sv, k);
+      return `<span><i style="background:${nw.warna}"></i>${esc(nw.nama)}</span>`;
+    }).join("");
+    const grafik = `<div class="tr-grafik">`
+      + `<div class="tr-ring"><span>Rata-rata <b>${(ev.length / menit).toFixed(1)}</b>/menit</span>`
+      + `<span>Menit tersibuk <b>${puncak ? `${jamMenit(puncak.m * 60000)} (${puncak.total})` : "—"}</b></span>`
+      + `<span>Skala <b>${maks}</b>/menit</span></div>`
+      + `<div class="tr-bars">${batang}</div><div class="tr-sumbu">${sumbu}</div>`
+      + (legenda ? `<div class="tr-leg">${legenda}</div>` : "")
+      + `</div>`;
+    const akhir = ev.slice(-12).reverse();
+    const baris = akhir.map((e) => {
+      const nw = namaPeristiwa(sv, e);
+      const redup = e.status !== "CLASSIFIED";
+      return `<tr${redup ? ' class="tr-redup"' : ""}><td class="mono">${jamDetik(e._tampil)}</td>`
+        + `<td><i class="tr-dot" style="background:${nw.warna}"></i>${esc(nw.nama)}</td>`
+        + `<td class="tr-st">${esc(teksStatus(e, sv))}</td>`
+        + `<td class="mono">G${(e.ruas ?? 0) + 1} · arah ${(e.arah ?? 0) + 1}</td>`
+        + `<td class="mono" title="observasi yakin / observasi total">${e.n_yakin ?? "—"}/${e.n_lihat ?? "—"}</td></tr>`;
+    }).join("");
+    const log = `<div class="tr-log">`
+      + (akhir.length
+        ? `<table><thead><tr><th>Jam tampil</th><th>Kelas</th><th>Status</th><th>Garis</th><th>Yakin</th></tr></thead><tbody>${baris}</tbody></table>`
+        : `<div class="tr-kosong">Belum ada kendaraan yang melintasi garis hitung sejak Live dibuka.</div>`)
+      + `<div class="tr-cat">Jam = saat kendaraan tampil melintas di layar; video tertinggal beberapa puluh detik dari jam di video kamera. `
+      + `12 lintasan terakhir; semua lintasan ada di Unduh CSV.</div></div>`;
+    el.innerHTML = grafik + log;
+    const info = document.getElementById("trenInfo");
+    if (info) info.textContent = `${ev.length} lintasan · sejak ${jamMenit(s.mulaiPada)}`;
+  }
+
+  function csvSel(x) {
+    const t = x == null ? "" : String(x);
+    return /[;"\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  }
+  // Unduh semua lintasan sesi ini sebagai CSV (dibuat di peramban dari data
+  // yang sama dengan panel; tidak mengambil apa pun dari database).
+  function unduhCsv() {
+    const s = sesi || arsip;
+    if (!s || !s.tercatat || !s.tercatat.size) return false;
+    const sv = s.server;
+    const kepala = ["waktu_tampil", "kamera_key", "kamera_nama", "tampilan", "garis", "arah", "kelas_kunci",
+                    "kelas_nama", "status", "final_class", "kandidat", "label_detektor", "n_lihat", "n_yakin",
+                    "versi_aturan", "track_id", "pts", "alasan_status", "jenis_garis"];
+    const iso = (ms) => {
+      const d = new Date(ms), p = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    };
+    const baris = urutCatatan(s).map((e) => [
+      iso(e._tampil), s.key, s.label, (e.tampilan ?? 0) + 1, (e.ruas ?? 0) + 1, (e.arah ?? 0) + 1, e.kelas,
+      namaWarna(sv, e.kelas).nama, e.status, e.final_class, (e.kandidat || []).join("|"), e.label_detektor,
+      e.n_lihat, e.n_yakin, e.versi_aturan, e.id, e.pts, e.alasan_status, e.jenis_garis,
+    ].map(csvSel).join(";"));
+    // Pemisah ";" dan BOM UTF-8: dibuka rapi oleh Excel berlokal Indonesia.
+    const isi = "\ufeff" + [kepala.join(";"), ...baris].join("\r\n") + "\r\n";
+    const a = document.createElement("a");
+    const d = new Date(), p = (n) => String(n).padStart(2, "0");
+    a.download = `hitung-${s.key}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.csv`;
+    a.href = URL.createObjectURL(new Blob([isi], { type: "text/csv;charset=utf-8" }));
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    return true;
+  }
+
+  // ------------------------------------------------ acuan posisi (untuk simpan)
+  const AW = 80, AH = 36, POTONG_ATAS = 30, POTONG_BAWAH = 318;
+  let kanvasKecil = null;
+  function ambilAbu(video) {
+    if (!kanvasKecil) {
+      kanvasKecil = document.createElement("canvas");
+      kanvasKecil.width = ACUAN_W; kanvasKecil.height = ACUAN_H;
+    }
+    const c = kanvasKecil.getContext("2d", { willReadFrequently: true });
+    c.drawImage(video, 0, 0, ACUAN_W, ACUAN_H);
+    const tinggi = POTONG_BAWAH - POTONG_ATAS;
+    const d = c.getImageData(0, POTONG_ATAS, ACUAN_W, tinggi).data;
+    const out = new Float32Array(AW * AH);
+    const bw = ACUAN_W / AW, bh = tinggi / AH;
+    for (let y = 0; y < tinggi; y++) {
+      const oy = Math.min(AH - 1, Math.floor(y / bh)) * AW;
+      for (let x = 0; x < ACUAN_W; x++) {
+        const i = (y * ACUAN_W + x) * 4;
+        out[oy + Math.min(AW - 1, Math.floor(x / bw))] += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      }
+    }
+    for (let i = 0; i < out.length; i++) out[i] /= bw * bh;
+    return out;
+  }
+  const keB64 = (abu) => {
+    let biner = "";
+    for (let i = 0; i < abu.length; i++) biner += String.fromCharCode(Math.max(0, Math.min(255, Math.round(abu[i]))));
+    return btoa(biner);
+  };
+
+  function dataSimpan() {
+    if (!sesi || !sesi.edit) return null;
+    let acuan = null;
+    // Latar median (kendaraan terhapus) lebih bersih sebagai acuan posisi
+    // daripada satu frame video; server pun merata-rata beberapa frame.
+    const sumber = sesi.edit.latarBersih ? sesi.edit.latar : sesi.video;
+    try { acuan = keB64(ambilAbu(sumber)); } catch (e) { acuan = null; }
+    return { garis: salin(sesi.edit.garis), acuan,
+             indeks: sesi.edit.indeks >= 0 ? sesi.edit.indeks : null };
+  }
+
+  function aturGaris(tampilan) {
+    if (!sesi) return;
+    sesi.tampilan = salinTampilan(tampilan);
+    gambar(sesi);
+  }
+
+  // ------------------------------------------------ penyunting garis hitung
+  // Dirancang supaya operator bisa menggambar PRESISI:
+  //  - frame dibekukan: latar = median +-20 dtk dari server (kendaraan terhapus),
+  //    atau frame video saat penyunting dibuka bila latar belum siap;
+  //  - garis marka putih terdeteksi (Hough) tampil sebagai pemandu biru muda;
+  //    klik satu pemandu = acuan. Dengan "Kunci tegak lurus", garis baru dan
+  //    ujung yang diseret dipaksa tegak lurus acuan (PM 67/2018: garis
+  //    melintang tegak lurus sumbu lajur);
+  //  - kaca pembesar 4x di pojok, mengikuti kursor;
+  //  - tombol panah menggeser ujung terpilih 1 piksel (Shift: 5), Delete
+  //    menghapus garis terpilih;
+  //  - koordinat dan sudut terhadap acuan ditulis langsung (onInfo).
+  // Seret ujung = pindahkan ujung; seret badan garis = geser; tarik di tempat
+  // kosong = garis baru; klik dua kali garis = hapus.
+  const JARAK_UJUNG = 12, JARAK_RUAS = 8, JARAK_PEMANDU = 7;
+
+  function keAcuan(s, ev) {
+    const r = s.kanvas.getBoundingClientRect();
+    const x = (ev.clientX - r.left) / r.width * ACUAN_W;
+    const y = (ev.clientY - r.top) / r.height * ACUAN_H;
+    return [Math.max(0, Math.min(ACUAN_W, x)), Math.max(0, Math.min(ACUAN_H, y))];
+  }
+
+  function jarakKeRuas(g, x, y) {
+    const [ax, ay, bx, by] = g;
+    const dx = bx - ax, dy = by - ay;
+    const L = dx * dx + dy * dy || 1;
+    const u = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L));
+    return Math.hypot(ax + u * dx - x, ay + u * dy - y);
+  }
+
+  // arah satuan tegak lurus acuan (dalam piksel frame)
+  function arahTegak(e) {
+    const g = e.acuanGaris;
+    if (!g) return null;
+    const dx = g[2] - g[0], dy = g[3] - g[1];
+    const L = Math.hypot(dx, dy) || 1;
+    return [-dy / L, dx / L];
+  }
+
+  // Proyeksikan titik (x,y) ke garis yang melalui p dengan arah d
+  function proyeksi(px, py, d, x, y) {
+    const t = (x - px) * d[0] + (y - py) * d[1];
+    return [px + t * d[0], py + t * d[1]];
+  }
+
+  function sudutAntara(g, h) {
+    const a = Math.atan2(g[3] - g[1], g[2] - g[0]), b = Math.atan2(h[3] - h[1], h[2] - h[0]);
+    let d = Math.abs((a - b) * 180 / Math.PI) % 180;
+    if (d > 90) d = 180 - d;
+    return d;
+  }
+
+  function laporkan(s) {
+    if (!s.onInfo || !s.edit) return;
+    const e = s.edit;
+    const i = e.terpilih ? e.terpilih.i : e.garis.length - 1;
+    const g = e.garis[i];
+    let teks;
+    if (!g) teks = e.acuanGaris ? "Acuan dipilih. Tarik garis baru — arahnya dikunci tegak lurus acuan."
+      : "Klik garis putih (biru muda) sebagai acuan, atau tarik garis bebas.";
+    else {
+      const r = (v) => Math.round(v);
+      teks = `Garis ${i + 1}: (${r(g[0])}, ${r(g[1])}) – (${r(g[2])}, ${r(g[3])}) · panjang ${r(Math.hypot(g[2] - g[0], g[3] - g[1]))} px`;
+      if (e.acuanGaris) teks += ` · sudut thd garis putih ${sudutAntara(g, e.acuanGaris).toFixed(1)}°`;
+    }
+    if (e.kunci && e.acuanGaris) teks += " · 🔒 tegak lurus";
+    s.onInfo(teks);
+  }
+
+  function pasangPenyunting(s) {
+    const k = s.kanvas;
+    s._pd = (ev) => {
+      if (!s.edit) return;
+      ev.preventDefault();
+      k.focus?.();
+      const [x, y] = keAcuan(s, ev);
+      const e = s.edit, G = e.garis;
+      let aksi = null;
+      G.forEach((g, i) => {
+        if (aksi) return;
+        if (Math.hypot(g[0] - x, g[1] - y) <= JARAK_UJUNG) aksi = { i, ujung: 0 };
+        else if (Math.hypot(g[2] - x, g[3] - y) <= JARAK_UJUNG) aksi = { i, ujung: 1 };
+      });
+      if (!aksi) {
+        const i = G.findIndex((g) => jarakKeRuas(g, x, y) <= JARAK_RUAS);
+        if (i >= 0) aksi = { i, geser: [x, y, G[i].slice()] };
+      }
+      if (!aksi) {
+        // klik pada pemandu garis putih = pilih acuan
+        const j = (e.pemandu || []).findIndex((g) => jarakKeRuas(g, x, y) <= JARAK_PEMANDU);
+        if (j >= 0 && !ev.shiftKey) {
+          e.acuanGaris = e.pemandu[j].slice(0, 4);
+          e.kunci = true;
+          s.onKunci && s.onKunci(true);
+          gambar(s); laporkan(s);
+          return;
+        }
+      }
+      if (!aksi) {
+        if (G.length >= 6) return;
+        G.push([x, y, x, y]);
+        aksi = { i: G.length - 1, ujung: 1, baru: true, pangkal: [x, y] };
+      }
+      e.seret = aksi;
+      e.terpilih = { i: aksi.i, ujung: aksi.ujung ?? 1 };
+      try { k.setPointerCapture(ev.pointerId); } catch (err) { /* tidak wajib */ }
+      gambar(s); laporkan(s);
+    };
+    s._pm = (ev) => {
+      if (!s.edit) return;
+      const [x, y] = keAcuan(s, ev);
+      s.edit.kursor = [x, y];
+      const a = s.edit.seret;
+      if (a) {
+        const g = s.edit.garis[a.i];
+        const d = s.edit.kunci ? arahTegak(s.edit) : null;
+        if (a.geser) {
+          const [x0, y0, asal] = a.geser;
+          const dx = x - x0, dy = y - y0;
+          g[0] = asal[0] + dx; g[1] = asal[1] + dy; g[2] = asal[2] + dx; g[3] = asal[3] + dy;
+        } else if (d) {
+          // ujung yang diseret hanya boleh bergerak sepanjang arah tegak lurus
+          const [px, py] = a.ujung === 0 ? [g[2], g[3]] : [g[0], g[1]];
+          const [qx, qy] = proyeksi(px, py, d, x, y);
+          if (a.ujung === 0) { g[0] = qx; g[1] = qy; } else { g[2] = qx; g[3] = qy; }
+        } else if (a.ujung === 0) { g[0] = x; g[1] = y; }
+        else { g[2] = x; g[3] = y; }
+      }
+      gambar(s); if (a) laporkan(s);
+    };
+    s._pu = () => {
+      if (!s.edit || !s.edit.seret) return;
+      const a = s.edit.seret, g = s.edit.garis[a.i];
+      if (a.baru && Math.hypot(g[2] - g[0], g[3] - g[1]) < 20) {
+        s.edit.garis.splice(a.i, 1); s.edit.terpilih = null;
+      }
+      s.edit.garis = s.edit.garis.map((r) => r.map((v, j) =>
+        Math.round(Math.max(0, Math.min(v, j % 2 ? ACUAN_H : ACUAN_W)) * 10) / 10));
+      s.edit.seret = null;
+      gambar(s); laporkan(s);
+    };
+    s._pl = () => { if (s.edit) { s.edit.kursor = null; gambar(s); } };
+    s._dbl = (ev) => {
+      if (!s.edit) return;
+      const [x, y] = keAcuan(s, ev);
+      const i = s.edit.garis.findIndex((g) => jarakKeRuas(g, x, y) <= JARAK_RUAS);
+      if (i >= 0) { s.edit.garis.splice(i, 1); s.edit.terpilih = null; gambar(s); laporkan(s); }
+    };
+    s._key = (ev) => {
+      if (!s.edit) return;
+      const t = s.edit.terpilih;
+      if ((ev.key === "Delete" || ev.key === "Backspace") && t) {
+        s.edit.garis.splice(t.i, 1); s.edit.terpilih = null; ev.preventDefault();
+        gambar(s); laporkan(s); return;
+      }
+      const langkah = ev.shiftKey ? 5 : 1;
+      const d = { ArrowLeft: [-langkah, 0], ArrowRight: [langkah, 0],
+                  ArrowUp: [0, -langkah], ArrowDown: [0, langkah] }[ev.key];
+      if (!d || !t || !s.edit.garis[t.i]) return;
+      ev.preventDefault();
+      const g = s.edit.garis[t.i], o = t.ujung === 0 ? 0 : 2;
+      g[o] = Math.max(0, Math.min(ACUAN_W, g[o] + d[0]));
+      g[o + 1] = Math.max(0, Math.min(ACUAN_H, g[o + 1] + d[1]));
+      s.edit.kursor = [g[o], g[o + 1]];
+      gambar(s); laporkan(s);
+    };
+    k.tabIndex = 0;
+    k.addEventListener("pointerdown", s._pd);
+    k.addEventListener("pointermove", s._pm);
+    k.addEventListener("pointerup", s._pu);
+    k.addEventListener("pointercancel", s._pu);
+    k.addEventListener("pointerleave", s._pl);
+    k.addEventListener("dblclick", s._dbl);
+    k.addEventListener("keydown", s._key);
+  }
+
+  function lepasPenyunting(s) {
+    const k = s.kanvas;
+    k.removeEventListener("pointerdown", s._pd);
+    k.removeEventListener("pointermove", s._pm);
+    k.removeEventListener("pointerup", s._pu);
+    k.removeEventListener("pointercancel", s._pu);
+    k.removeEventListener("pointerleave", s._pl);
+    k.removeEventListener("dblclick", s._dbl);
+    k.removeEventListener("keydown", s._key);
+    k.classList.remove("sunting");
+  }
+
+  // Menyunting garis tampilan yang SEDANG cocok; bila kamera bergeser (tak
+  // ada yang cocok), garis baru disimpan sebagai tampilan baru.
+  // opsi: { onInfo(teks), onKunci(bool) }
+  function sunting(nyala, opsi) {
+    if (!sesi) return false;
+    const s = sesi, idx = s.aktif;
+    if (nyala) {
+      // bekukan frame saat ini sebagai latar sementara
+      let beku = null;
+      try {
+        beku = document.createElement("canvas");
+        beku.width = ACUAN_W; beku.height = ACUAN_H;
+        beku.getContext("2d").drawImage(s.video, 0, 0, ACUAN_W, ACUAN_H);
+      } catch (err) { beku = null; }
+      s.edit = { garis: salin(idx >= 0 && s.tampilan[idx] ? s.tampilan[idx].garis : []),
+                 seret: null, indeks: idx, terpilih: null, kursor: null,
+                 latar: beku, pemandu: [], acuanGaris: null, kunci: false };
+      s.onInfo = opsi && opsi.onInfo; s.onKunci = opsi && opsi.onKunci;
+      laporkan(s);
+    } else {
+      s.edit = null;
+    }
+    s.kanvas.classList.toggle("sunting", !!nyala);
+    if (nyala) s.kanvas.focus?.();
+    // Selama menyunting kanvas digambar ulang sendiri: bila video tersendat
+    // (buffering), callback per frame video berhenti dan penyunting tampak beku.
+    if (nyala && !s.rafSunting) {
+      const ulang = () => {
+        if (sesi !== s || !s.edit) { s.rafSunting = null; return; }
+        gambar(s);
+        s.rafSunting = requestAnimationFrame(ulang);
+      };
+      s.rafSunting = requestAnimationFrame(ulang);
+    }
+    gambar(s);
+    return true;
+  }
+
+  // Latar median + garis putih dari /api/garis-putih/<key>
+  function pasangPemandu(data) {
+    const s = sesi;
+    if (!s || !s.edit) return;
+    s.edit.pemandu = (data.garis_putih || []).map((g) => g.slice(0, 4));
+    if (data.latar) {
+      const img = new Image();
+      img.onload = () => { if (s.edit) { s.edit.latar = img; s.edit.latarBersih = true; gambar(s); } };
+      img.src = data.latar;
+    }
+    gambar(s); laporkan(s);
+  }
+
+  function aturKunci(nyala) {
+    if (!sesi || !sesi.edit) return;
+    sesi.edit.kunci = !!nyala;
+    gambar(sesi); laporkan(sesi);
+  }
+
+  // Buat satu garis tegak lurus acuan, melalui tengah acuan, sepanjang 60%
+  // lebar jalan yang wajar - operator lalu menyeret ujungnya sampai kerb.
+  function buatTegakLurus() {
+    const s = sesi;
+    if (!s || !s.edit || !s.edit.acuanGaris) return false;
+    const g = s.edit.acuanGaris, d = arahTegak(s.edit);
+    const cx = (g[0] + g[2]) / 2, cy = (g[1] + g[3]) / 2, L = 90;
+    s.edit.garis.push([cx - d[0] * L, cy - d[1] * L, cx + d[0] * L, cy + d[1] * L]
+      .map((v, j) => Math.round(Math.max(0, Math.min(v, j % 2 ? ACUAN_H : ACUAN_W)))));
+    s.edit.terpilih = { i: s.edit.garis.length - 1, ujung: 1 };
+    s.edit.kunci = true;
+    gambar(s); laporkan(s);
+    return true;
+  }
+
+  function gambarLatarSunting(s, c, W, H) {
+    const e = s.edit;
+    if (e.latar) { c.globalAlpha = 1; c.drawImage(e.latar, 0, 0, W, H); }
+    const sx = W / ACUAN_W, sy = H / ACUAN_H;
+    // pemandu garis putih
+    c.save();
+    for (const g of e.pemandu || []) {
+      const acuan = e.acuanGaris && g.every((v, i) => Math.abs(v - e.acuanGaris[i]) < 0.01);
+      c.strokeStyle = acuan ? "#f0abfc" : "rgba(34, 211, 238, .85)";
+      c.lineWidth = acuan ? 3 : 1.4;
+      c.setLineDash(acuan ? [] : [4, 3]);
+      c.beginPath(); c.moveTo(g[0] * sx, g[1] * sy); c.lineTo(g[2] * sx, g[3] * sy); c.stroke();
+    }
+    c.restore();
+  }
+
+  function gambarLup(s, c, W, H) {
+    const e = s.edit;
+    if (!e.kursor) return;
+    const [kx, ky] = e.kursor, sx = W / ACUAN_W, sy = H / ACUAN_H;
+    const Z = 4, R = 22;                          // 4x, jendela 44x44 px frame
+    const ukuran = R * 2 * Z * sx;
+    const kiri = kx < ACUAN_W / 2;
+    const ox = kiri ? W - ukuran - 6 : 6, oy = 6;
+    c.save();
+    c.fillStyle = "#000"; c.fillRect(ox - 2, oy - 2, ukuran + 4, ukuran + 4);
+    c.beginPath(); c.rect(ox, oy, ukuran, ukuran); c.clip();
+    const src = e.latar || s.video;
+    try {
+      const skala = src === s.video ? (s.video.videoWidth || ACUAN_W) / ACUAN_W : (src.width || ACUAN_W) / ACUAN_W;
+      c.imageSmoothingEnabled = false;
+      c.drawImage(src, (kx - R) * skala, (ky - R) * skala, R * 2 * skala, R * 2 * skala, ox, oy, ukuran, ukuran);
+    } catch (err) { /* sumber belum siap */ }
+    const ke = (x, y) => [ox + (x - kx + R) * Z * sx, oy + (y - ky + R) * Z * sy];
+    for (const g of e.garis) {
+      const [a1, b1] = ke(g[0], g[1]), [a2, b2] = ke(g[2], g[3]);
+      c.strokeStyle = "#fde047"; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(a1, b1); c.lineTo(a2, b2); c.stroke();
+    }
+    c.strokeStyle = "rgba(255,255,255,.9)"; c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(ox + ukuran / 2, oy); c.lineTo(ox + ukuran / 2, oy + ukuran);
+    c.moveTo(ox, oy + ukuran / 2); c.lineTo(ox + ukuran, oy + ukuran / 2);
+    c.stroke();
+    c.restore();
+    c.font = "bold 9px ui-monospace, Consolas, monospace";
+    c.fillStyle = "rgba(15,23,42,.9)"; c.fillRect(ox, oy + ukuran + 2, 86, 12);
+    c.fillStyle = "#fde047"; c.fillText(`x ${Math.round(kx)}  y ${Math.round(ky)}`, ox + 4, oy + ukuran + 11);
+  }
+
+  window.BBox = { mulai, henti, aturGaris, sunting, dataSimpan, pasangPemandu, aturKunci,
+                  buatTegakLurus, KELAS,
+                  get status() { return status; },
+                  unduhCsv,
+                  // LC-010: diagnostik hanya-baca (konsol): posisi PTS & jumlah peristiwa
+                  get diag() {
+                    if (!sesi) return null;
+                    const P = sesi.peristiwa;
+                    return { ptsKini: sesi.ptsKini, mulaiPts: sesi.mulaiPts, offset: sesi.offsetPts ? sesi.offsetPts() : null,
+                             mediaTime: sesi.mediaTime, nHasil: sesi.hasil.length, hasilAwal: sesi.hasil[0]?.pts,
+                             hasilAkhir: sesi.hasil[sesi.hasil.length - 1]?.pts, nPeristiwa: P.length,
+                             peristiwaAkhir: P.slice(-3).map((e) => e.pts), sejakP: sesi.sejakP, sesiServer: sesi.sesiServer };
+                  },
+                  get menyunting() { return !!(sesi && sesi.edit); },
+                  get sesi() { return sesi; } };
+})();

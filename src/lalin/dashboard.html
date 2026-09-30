@@ -1,0 +1,1168 @@
+<title>Ruang Kendali Lalin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --ground: #eef2f4;
+    --panel: #ffffff;
+    --panel-2: #f6f9fa;
+    --line: #d5e0e6;
+    --line-soft: #e5edf1;
+    --ink: #141e26;
+    --ink-2: #3d525f;
+    --muted: #64798a;
+    --accent: #0c8184;
+    --accent-soft: #d8efef;
+    --crit: #c0372f;
+    --crit-soft: #fae3e1;
+    --warn: #a36a10;
+    --warn-soft: #fbeed6;
+    --ok: #1a7a5a;
+    --ok-soft: #d9f0e6;
+    --info: #2a6aa8;
+    --info-soft: #dfecf8;
+    --shadow: 0 1px 2px rgba(20, 30, 38, .06), 0 8px 24px rgba(20, 30, 38, .05);
+
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #080c10;
+      --panel: #10181f;
+      --panel-2: #16212a;
+      --line: #223240;
+      --line-soft: #1a2831;
+      --ink: #dde8ee;
+      --ink-2: #a8bcc8;
+      --muted: #748b9a;
+      --accent: #2ec4c6;
+      --accent-soft: #0e2f33;
+      --crit: #f2685c;
+      --crit-soft: #351a18;
+      --warn: #e4a33e;
+      --warn-soft: #33260f;
+      --ok: #45c294;
+      --ok-soft: #102e24;
+      --info: #5d9ede;
+      --info-soft: #132636;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #080c10;
+    --panel: #10181f;
+    --panel-2: #16212a;
+    --line: #223240;
+    --line-soft: #1a2831;
+    --ink: #dde8ee;
+    --ink-2: #a8bcc8;
+    --muted: #748b9a;
+    --accent: #2ec4c6;
+    --accent-soft: #0e2f33;
+    --crit: #f2685c;
+    --crit-soft: #351a18;
+    --warn: #e4a33e;
+    --warn-soft: #33260f;
+    --ok: #45c294;
+    --ok-soft: #102e24;
+    --info: #5d9ede;
+    --info-soft: #132636;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--body); font-size: 14px; line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { margin: 0; font-family: var(--display); font-weight: 600;
+               letter-spacing: .01em; text-wrap: balance; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------------------------------------------------------- header */
+  header {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30;
+    background: var(--panel); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 10px 16px;
+  }
+  .mark {
+    display: flex; align-items: center; gap: 9px; margin-right: 2px;
+  }
+  .mark .glyph {
+    width: 26px; height: 26px; border-radius: 5px; flex: none;
+    background: var(--accent); color: var(--panel);
+    display: grid; place-items: center;
+    font-family: var(--display); font-weight: 700; font-size: 16px;
+  }
+  .mark h1 { font-size: 20px; line-height: 1; text-transform: uppercase;
+             letter-spacing: .04em; }
+  .mark .tag { display: block; font-family: var(--body); font-size: 10px;
+               font-weight: 500; color: var(--muted); letter-spacing: .06em;
+               text-transform: uppercase; margin-top: 2px; }
+  .spacer { flex: 1 1 auto; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 4px 9px; border-radius: 4px; border: 1px solid var(--line);
+    color: var(--ink-2); background: var(--panel-2); white-space: nowrap;
+  }
+  .chip.proto { color: var(--warn); border-color: var(--warn);
+                background: var(--warn-soft); font-weight: 600; }
+  .chip.live { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+  .chip.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+  /* Marks a region whose numbers are still illustrative. Deliberately small
+     and always visible: a viewer must be able to tell real output from mockup
+     without reading the header chip. */
+  .demo-tag {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--warn);
+    border: 1px solid var(--warn); border-radius: 3px; padding: 1px 5px;
+    margin-left: 7px; vertical-align: 2px; white-space: nowrap;
+  }
+  .chip.live::before {
+    content: ""; display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--ok); margin-right: 6px;
+    vertical-align: 1px; animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .chip.live::before { animation: none; } }
+  button.icon {
+    font-family: var(--body); font-size: 12px; font-weight: 500;
+    padding: 5px 11px; border-radius: 5px; cursor: pointer;
+    background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line);
+  }
+  button.icon:hover { color: var(--ink); border-color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ----------------------------------------------------------- shell */
+  .shell {
+    display: grid; gap: 12px; padding: 12px 16px 24px;
+    grid-template-columns: 224px minmax(0, 1fr) 330px;
+    align-items: start; max-width: 1680px; margin: 0 auto;
+  }
+  @media (max-width: 1180px) { .shell { grid-template-columns: 200px minmax(0, 1fr); } }
+  @media (max-width: 820px)  { .shell { grid-template-columns: minmax(0, 1fr); } }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow);
+  }
+  .panel > .head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line-soft);
+  }
+  .panel > .head h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); font-weight: 600;
+  }
+  .count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* ------------------------------------------------------ camera rail */
+  .cams { display: flex; flex-direction: column; max-height: 62vh; overflow: auto; }
+  .cam {
+    display: grid; grid-template-columns: 8px 1fr; gap: 9px; align-items: start;
+    padding: 10px 12px; border: 0; border-bottom: 1px solid var(--line-soft);
+    background: transparent; color: inherit; text-align: left; cursor: pointer;
+    font: inherit; width: 100%;
+  }
+  .cam:hover { background: var(--panel-2); }
+  .cam[aria-current="true"] { background: var(--accent-soft); }
+  .cam .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px;
+              background: var(--ok); }
+  .cam.alert .dot { background: var(--crit); }
+  .cam .name { display: block; font-weight: 600; font-size: 13px; line-height: 1.25; }
+  .cam .meta { display: block; font-family: var(--mono); font-size: 10.5px;
+               color: var(--muted); margin-top: 3px; }
+  .cam .owner { display: inline-block; font-size: 10px; font-weight: 600;
+                letter-spacing: .05em; text-transform: uppercase;
+                color: var(--info); margin-top: 4px; }
+  .cam.alert .owner { color: var(--crit); }
+
+  /* Kepala kelompok wilayah di rail kamera. */
+  .wil {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 9px 12px 6px; font-family: var(--display); font-size: 13px;
+    font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-2); background: var(--panel-2);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .wil span { font-family: var(--mono); font-size: 11px; font-weight: 500;
+              color: var(--muted); }
+  .wil.kosong { color: var(--muted); }
+  .wil.kosong span { color: var(--warn); }
+  .wil-note {
+    padding: 5px 12px 9px; font-size: 11px; line-height: 1.35;
+    color: var(--muted); border-bottom: 1px solid var(--line-soft);
+  }
+
+  /* -------------------------------------------------------- live view */
+  .stage { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .viewport {
+    position: relative; background: #000; border-radius: 7px 7px 0 0;
+    overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%;
+  }
+  .viewport img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .viewport svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .stamp {
+    position: absolute; left: 10px; bottom: 10px; z-index: 2;
+    font-family: var(--mono); font-size: 10px; color: #cfe3e8;
+    background: rgba(4, 10, 14, .72); padding: 3px 7px; border-radius: 3px;
+    letter-spacing: .02em;
+  }
+  .toolbar {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 9px 12px; border-bottom: 1px solid var(--line-soft);
+  }
+  .toolbar .label { font-size: 11px; font-weight: 600; letter-spacing: .08em;
+                    text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+  .seg {
+    font-family: var(--body); font-size: 12px; font-weight: 500;
+    padding: 4px 10px; border-radius: 99px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-2);
+  }
+  .seg[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: var(--panel);
+  }
+  .seg[disabled] { opacity: .45; cursor: not-allowed; }
+  .hint {
+    margin: 0; padding: 0 12px 10px; font-size: 11.5px; line-height: 1.45;
+    color: var(--muted); border-bottom: 1px solid var(--line-soft);
+  }
+  .hint:empty { display: none; }
+  .readout {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 1px; background: var(--line-soft);
+  }
+  .readout .cell { background: var(--panel); padding: 10px 12px; }
+  .readout .k { font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
+                text-transform: uppercase; color: var(--muted); }
+  .readout .v { font-family: var(--mono); font-size: 20px; font-weight: 600;
+                margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .readout .v small { font-size: 11px; font-weight: 400; color: var(--muted); }
+
+  /* ------------------------------------------------- source quality */
+  .quality { padding: 12px; display: grid; gap: 10px; }
+  .spec { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+  .grade { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px;
+           align-items: center; }
+  .grade .task { font-size: 12.5px; }
+  .bar { height: 5px; border-radius: 99px; background: var(--line-soft);
+         grid-column: 1 / -1; overflow: hidden; margin-top: -4px; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+  .verdict { font-size: 11px; font-weight: 600; letter-spacing: .04em;
+             text-transform: uppercase; white-space: nowrap; }
+  .ask {
+    font-size: 12px; color: var(--ink-2); border-left: 2px solid var(--accent);
+    padding: 2px 0 2px 10px; line-height: 1.5;
+  }
+
+  /* -------------------------------------------------------- event feed */
+  .feed { display: flex; flex-direction: column; max-height: 58vh; overflow: auto; }
+  .ev {
+    display: grid; grid-template-columns: 3px 1fr; gap: 10px;
+    border: 0; border-bottom: 1px solid var(--line-soft); background: transparent;
+    color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%;
+    padding: 0 12px 0 0;
+  }
+  .ev:hover { background: var(--panel-2); }
+  .ev .stripe { background: var(--muted); }
+  .ev.dishub .stripe { background: var(--crit); }
+  .ev.rujuk  .stripe { background: var(--info); }
+  .ev .body { padding: 10px 0; min-width: 0; }
+  .ev .top { display: flex; align-items: baseline; gap: 8px; }
+  .ev .kind { font-weight: 600; font-size: 13px; line-height: 1.25; flex: 1; }
+  .ev .time { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .ev .where { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px;
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+  .pill {
+    font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 3px; border: 1px solid transparent;
+  }
+  .pill.act  { color: var(--crit); background: var(--crit-soft); border-color: var(--crit); }
+  .pill.ref  { color: var(--info); background: var(--info-soft); border-color: var(--info); }
+  .pill.conf { color: var(--ink-2); background: var(--panel-2); border-color: var(--line); }
+  .pill.ver  { color: var(--ok);   background: var(--ok-soft);   border-color: var(--ok); }
+
+  /* --------------------------------------------------------- kpi strip */
+  .kpis {
+    grid-column: 1 / -1; display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+  .kpi { padding: 12px 14px; }
+  .kpi .k { font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
+            text-transform: uppercase; color: var(--muted); }
+  .kpi .v { font-family: var(--mono); font-size: 28px; font-weight: 600;
+            line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .split { display: flex; gap: 3px; margin-top: 9px; height: 6px; }
+  .split i { display: block; border-radius: 2px; }
+  .chartcard { grid-column: span 2; padding: 12px 14px; min-width: 0; }
+  @media (max-width: 620px) { .chartcard { grid-column: span 1; } }
+  .chartcard svg { width: 100%; height: auto; display: block; margin-top: 6px; }
+
+  /* ------------------------------------------------------------ modal */
+  dialog {
+    border: 1px solid var(--line); border-radius: 10px; padding: 0;
+    background: var(--panel); color: var(--ink); max-width: 760px; width: calc(100% - 32px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, .35);
+  }
+  dialog::backdrop { background: rgba(4, 10, 14, .62); }
+  .ev-head { display: flex; align-items: flex-start; gap: 12px;
+             padding: 14px 16px; border-bottom: 1px solid var(--line-soft); }
+  .ev-head h2 { font-size: 21px; }
+  .ev-head .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .ev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+  @media (max-width: 680px) { .ev-grid { grid-template-columns: 1fr; } }
+  .evidence { position: relative; border-radius: 6px; overflow: hidden;
+              background: #000; aspect-ratio: 16 / 9; }
+  .evidence img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .evidence svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  dl.facts { margin: 0; display: grid; grid-template-columns: auto 1fr;
+             gap: 7px 14px; align-items: baseline; }
+  dl.facts dt { font-size: 11px; font-weight: 600; letter-spacing: .05em;
+                text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  dl.facts dd { margin: 0; font-size: 13px; }
+  dl.facts dd.mono { font-size: 12px; }
+  .legal { margin-top: 14px; padding: 10px 12px; border-radius: 6px;
+           background: var(--panel-2); border: 1px solid var(--line-soft); }
+  .legal .k { font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
+              text-transform: uppercase; color: var(--muted); }
+  .legal .v { font-size: 12.5px; margin-top: 3px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap;
+             padding: 0 16px 16px; }
+  .actions button {
+    font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px;
+    border-radius: 6px; cursor: pointer; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--ink-2);
+  }
+  .actions button.primary { background: var(--crit); border-color: var(--crit); color: #fff; }
+  .actions button.ghost:hover { border-color: var(--muted); color: var(--ink); }
+  .note { padding: 0 16px 16px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+</style>
+
+<header>
+  <div class="mark">
+    <span class="glyph" aria-hidden="true">RK</span>
+    <div>
+      <h1>Ruang Kendali Lalin</h1>
+      <span class="tag">Analitik CCTV · Prototipe</span>
+    </div>
+  </div>
+  <span class="chip proto" id="proto">Prototipe · tampilan contoh</span>
+  <span class="chip" id="liveState">Menyambung…</span>
+  <span class="chip">50 kamera publik</span>
+  <span class="spacer"></span>
+  <span class="chip mono" id="clock">—</span>
+  <button class="icon" id="reanalyse" type="button">Analisis ulang</button>
+  <button class="icon" id="theme" type="button">Mode gelap</button>
+</header>
+
+<div class="shell">
+
+  <!-- ------------------------------------------------- camera rail -->
+  <section class="panel">
+    <div class="head">
+      <h2>Kamera</h2>
+      <span class="count" id="camCount">4 / 50</span>
+    </div>
+    <div class="cams" id="cams"></div>
+  </section>
+
+  <!-- --------------------------------------------------- live stage -->
+  <div class="stage">
+    <section class="panel" style="overflow:hidden">
+      <div class="viewport">
+        <img id="frame" alt="" >
+        <svg id="overlay" viewBox="0 0 640 360" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <span class="stamp mono" id="stamp">—</span>
+      </div>
+      <div class="toolbar">
+        <span class="label">Sumber</span>
+        <button class="seg" type="button" data-src="live" aria-pressed="true">Live</button>
+        <button class="seg" type="button" data-src="analisis" aria-pressed="false">Analisis</button>
+        <button class="seg" type="button" data-src="cuplikan" aria-pressed="false">Cuplikan</button>
+        <span class="label" style="margin-left:6px">Tampilkan</span>
+        <button class="seg" type="button" data-layer="zone" aria-pressed="true">Zona</button>
+        <button class="seg" type="button" data-layer="box" aria-pressed="true">Objek</button>
+        <button class="seg" type="button" data-layer="track" aria-pressed="false">Lintasan</button>
+        <button class="seg" type="button" data-layer="blur" aria-pressed="false">Samarkan pelat</button>
+      </div>
+      <p class="hint" id="hint"></p>
+      <div class="readout" id="readout"></div>
+    </section>
+
+    <section class="panel">
+      <div class="head">
+        <h2>Kualitas sumber</h2>
+        <span class="count" id="specStream">—</span>
+      </div>
+      <div class="quality">
+        <p class="spec" id="spec">—</p>
+        <div class="grade" id="grades"></div>
+        <p class="ask" id="ask"></p>
+      </div>
+    </section>
+  </div>
+
+  <!-- --------------------------------------------------- event feed -->
+  <section class="panel">
+    <div class="head">
+      <h2>Kejadian</h2>
+      <span class="count"><span id="evCount">0</span> belum diverifikasi</span>
+    </div>
+    <div class="feed" id="feed"></div>
+  </section>
+
+  <!-- ---------------------------------------------------- kpi strip -->
+  <div class="kpis">
+    <section class="panel kpi" id="kpi1"></section>
+    <section class="panel kpi" id="kpi2"></section>
+    <section class="panel kpi" id="kpi3"></section>
+    <section class="panel chartcard">
+      <div class="k" id="chartLabel" style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)">
+        Kejadian per jam
+      </div>
+      <svg id="chart" viewBox="0 0 320 84" role="img"
+           aria-label="Kejadian per jam, puncak 24 kejadian pada pukul 17"></svg>
+    </section>
+  </div>
+</div>
+
+<dialog id="detail">
+  <div class="ev-head">
+    <div style="flex:1;min-width:0">
+      <h2 id="dKind">—</h2>
+      <div class="sub" id="dWhere">—</div>
+    </div>
+    <button class="icon" type="button" id="dClose">Tutup</button>
+  </div>
+  <div class="ev-grid">
+    <div>
+      <div class="evidence">
+        <img id="dImg" alt="">
+        <svg id="dOverlay" viewBox="0 0 640 360" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+      <div class="legal">
+        <div class="k">Dasar hukum</div>
+        <div class="v" id="dLegal">—</div>
+      </div>
+    </div>
+    <div>
+      <dl class="facts" id="dFacts"></dl>
+    </div>
+  </div>
+  <div class="actions" id="dActions"></div>
+  <p class="note">
+    Setiap kejadian adalah <strong>usulan sistem</strong>, bukan penetapan pelanggaran.
+    Penindakan baru berjalan setelah diverifikasi petugas. Rekaman disimpan 30 hari
+    sesuai kebijakan retensi, wajah dan pelat kendaraan non-terduga disamarkan otomatis.
+  </p>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------------------------------------------------------------- data
+  // Camera ids, names and stream specs are the real ones published on
+  // jakcctv.jakarta.go.id (Flussonic, 640x360 @ 20fps). Boxes, zones and
+  // events below are illustrative placeholders for the layout - they are
+  // replaced by real PP-Vehicle output once the pipeline is wired in.
+  // Lima kamera terpilih dari 46 kamera publik, dikelompokkan per wilayah DKI.
+  // Pemilihannya berbasis ukuran objek, bukan selera: scripts/survey_cameras.py
+  // menjalankan detector pada satu snapshot tiap kamera dan memberi skor =
+  // jumlah kendaraan x luas bbox median. Skor itu dicantumkan di bawah supaya
+  // pilihan ini bisa ditelusuri, bukan diperdebatkan.
+  //
+  // Jakarta Selatan kosong dan Utara/Timur tidak ada sama sekali di portal
+  // publik. Itu ditampilkan apa adanya di rail kamera - celah cakupan justru
+  // bahan permintaan ke Dishub, bukan sesuatu yang perlu ditutupi.
+  const CAMS = [
+    {
+      key: "gerbangpemuda",
+      id: "502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03_CCTV-02",
+      name: "Jl. Gerbang Pemuda C03", area: "Senayan",
+      region: "Jakarta Pusat", owner: "Polda",
+      img: "cam/gerbangpemuda.jpg", scenario: "Hitung kendaraan",
+      skor: 54.94, zone: null, boxes: []
+    },
+    {
+      key: "thamrin",
+      id: "502491_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C07_CCTV-02",
+      name: "Simpang Jl. MH. Thamrin C07", area: "Menteng",
+      region: "Jakarta Pusat", owner: "Satpol PP",
+      img: "cam/thamrin.jpg", scenario: "Hitung kendaraan",
+      skor: 14.25, zone: null, boxes: []
+    },
+    {
+      key: "jatibaru",
+      id: "503675_JKP_BAKESBANGPOL_JL.-JATI-BARU-RAYA-C02_CCTV-01",
+      name: "Jl. Jati Baru Raya C02", area: "Tanah Abang",
+      region: "Jakarta Pusat", owner: "Bakesbangpol",
+      img: "cam/jatibaru.jpg", scenario: "Parkir liar", alert: true,
+      skor: 13.39,
+      // Satu-satunya zona nyata: koordinat ini yang dipakai pipeline, bukan
+      // ilustrasi. Kamera ini sudah menghasilkan pelanggaran sungguhan.
+      zone: { label: "Badan jalan sisi barat", pts: "0,30 175,0 240,55 40,175" },
+      boxes: []
+    },
+    {
+      key: "sparman02",
+      id: "502540_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C02_CCTV-02",
+      name: "Simpang Jl. S. Parman C02", area: "Grogol",
+      region: "Jakarta Barat", owner: "Satpol PP",
+      img: "cam/sparman02.jpg", scenario: "Hitung kendaraan",
+      skor: 30.51, zone: null, boxes: []
+    },
+    {
+      key: "sparman07",
+      id: "502535_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C07_CCTV-02",
+      name: "Simpang Jl. S. Parman C07", area: "Grogol",
+      region: "Jakarta Barat", owner: "Satpol PP",
+      img: "cam/sparman07.jpg", scenario: "Hitung kendaraan",
+      skor: 13.46, zone: null, boxes: []
+    }
+  ];
+
+  // Wilayah tanpa kamera publik. Ditampilkan sebagai baris kosong di rail,
+  // bukan disembunyikan.
+  const WILAYAH_KOSONG = [
+    { region: "Jakarta Selatan", note: "2 kamera publik, keduanya menghadap plaza" },
+    { region: "Jakarta Utara", note: "tidak ada kamera di portal publik" },
+    { region: "Jakarta Timur", note: "tidak ada kamera di portal publik" }
+  ];
+
+  const EVENTS = [
+    {
+      t: "12:15:04", cam: 0, kind: "Parkir di badan jalan",
+      wewenang: "dishub", conf: .91, verified: false,
+      kendaraan: "Angkutan umum (angkot) · biru · 6 unit",
+      durasi: "4 mnt 20 dtk diam", plat: null,
+      legal: "Perda DKI Jakarta No. 5 Tahun 2012 tentang Perparkiran — penertiban dan penderekan kendaraan yang parkir di badan jalan.",
+      tindak: ["Terbitkan perintah derek", "Kirim petugas", "Bukan pelanggaran"]
+    },
+    {
+      t: "12:14:37", cam: 0, kind: "Angkutan umum ngetem",
+      wewenang: "dishub", conf: .87, verified: false,
+      kendaraan: "Mikrolet · biru · 3 unit",
+      durasi: "7 mnt 02 dtk di luar halte", plat: null,
+      legal: "Perda DKI Jakarta No. 5 Tahun 2014 tentang Transportasi — kewajiban angkutan umum menaikkan/menurunkan penumpang pada tempat yang ditetapkan.",
+      tindak: ["Teguran petugas lapangan", "Catat ke berkas trayek", "Bukan pelanggaran"]
+    },
+    {
+      t: "12:13:11", cam: 1, kind: "Kendaraan bermotor di jalur sepeda",
+      wewenang: "dishub", conf: .79, verified: false,
+      kendaraan: "Sepeda motor · hitam",
+      durasi: "melintas 12 dtk", plat: null,
+      legal: "Pergub DKI Jakarta tentang penyediaan jalur sepeda — larangan kendaraan bermotor memasuki lajur khusus sepeda.",
+      tindak: ["Teguran petugas lapangan", "Catat statistik", "Bukan pelanggaran"]
+    },
+    {
+      t: "12:12:48", cam: 2, kind: "Parkir di trotoar",
+      wewenang: "dishub", conf: .72, verified: false,
+      kendaraan: "Sepeda motor + gerobak dagang",
+      durasi: "11 mnt 40 dtk diam", plat: null,
+      legal: "Perda DKI Jakarta No. 5 Tahun 2012 tentang Perparkiran jo. penertiban fungsi trotoar — koordinasi dengan Satpol PP.",
+      tindak: ["Koordinasi Satpol PP", "Kirim petugas", "Bukan pelanggaran"]
+    },
+    {
+      t: "12:09:22", cam: 1, kind: "Okupansi lajur TransJakarta",
+      wewenang: "rujuk", conf: .84, verified: true,
+      kendaraan: "Mobil penumpang · putih",
+      durasi: "melintas 22 dtk", plat: null,
+      legal: "UU No. 22 Tahun 2009 Pasal 287 — penindakan tilang merupakan kewenangan Kepolisian. Sistem hanya meneruskan berkas ke Ditlantas.",
+      tindak: ["Teruskan ke Ditlantas", "Arsipkan", "Bukan pelanggaran"]
+    },
+    {
+      t: "12:05:59", cam: 3, kind: "Angkutan barang pada jam larangan",
+      wewenang: "dishub", conf: .90, verified: true,
+      kendaraan: "Truk box · sumbu 2",
+      durasi: "melintas 8 dtk", plat: null,
+      legal: "Pergub DKI Jakarta tentang pembatasan operasional angkutan barang pada ruas jalan tertentu.",
+      tindak: ["Teguran petugas lapangan", "Catat ke berkas angkutan barang", "Bukan pelanggaran"]
+    }
+  ];
+
+  const GRADES = [
+    { task: "Deteksi & hitung kendaraan", pct: 92, verdict: "Memadai",      tone: "ok" },
+    { task: "Klasifikasi jenis kendaraan", pct: 68, verdict: "Cukup",        tone: "warn" },
+    { task: "Deteksi diam / masuk zona",   pct: 88, verdict: "Memadai",      tone: "ok" },
+    { task: "Baca pelat nomor",            pct: 14, verdict: "Tidak memadai", tone: "crit" }
+  ];
+
+  const HOURLY = [
+    [6, 4], [7, 12], [8, 18], [9, 11], [10, 8], [11, 9], [12, 14],
+    [13, 7], [14, 6], [15, 10], [16, 19], [17, 24], [18, 16]
+  ];
+
+  // ------------------------------------------------------------- helpers
+  const $ = (id) => document.getElementById(id);
+  const layers = { zone: true, box: true, track: false, blur: false };
+  let active = 0;
+
+  // ------------------------------------------------------------ live feed
+  // Flussonic publishes a still per camera at <id>/preview.jpg. Polling it is
+  // enough for an operator console and avoids shipping an HLS player.
+  // It only works where the page may load that host: served from this app it
+  // does, but a published artifact's CSP blocks it, so every failure falls
+  // back to the snapshot bundled in cam/. That fallback is the whole reason
+  // the bundled stills exist - a demo must not depend on the venue's wifi.
+  const LIVE_BASE = "https://dki-jkt.balitower.co.id:7028/";
+  const LIVE_EVERY_MS = 3000;
+  // "live" = still from the camera, "analisis" = the pipeline's own annotated
+  // frame from the last batch cycle, "cuplikan" = the snapshot bundled with
+  // the page (works with no network at all).
+  let srcMode = "live";
+  let liveWorking = null;   // null = belum diketahui
+  let liveTimer = null;
+  let liveFails = 0;
+  let batch = null;         // payload terakhir dari /api/batch
+  let stats = null;         // payload terakhir dari /api/stats
+
+  // Real figures only once at least one batch cycle has been recorded today;
+  // before that the tiles keep their illustrative values, clearly tagged.
+  const statsReal = () => !!(stats && stats.has_data);
+
+  const camBatch = (cam) => (batch?.cameras || []).find((c) => c.key === cam.key);
+  const hasAnalysis = (cam) => {
+    const b = camBatch(cam);
+    return !!(b && b.has_frame && b.record && b.record.ok);
+  };
+
+  // "Live" only counts once a frame has actually arrived. Until then, and
+  // after a failure, the page behaves exactly as it does in snapshot mode.
+  const liveActive = () => srcMode === "live" && liveWorking === true;
+
+  // What is still illustrative right now. The header chip must describe the
+  // actual mix on screen, not just the viewport mode: even with a real analysed
+  // frame, the daily recap below is still a mockup.
+  function demoParts() {
+    const parts = [];
+    // Gambar kamera tidak pernah karangan lagi: mode live menarik frame
+    // sungguhan, mode cuplikan memakai snapshot asli, mode analisis memakai
+    // keluaran pipeline. Angka kamera pun kini kosong bila belum dianalisis,
+    // bukan diisi contoh. Yang tersisa hanya dua hal di bawah.
+    if (!batchEvents().length) parts.push("daftar kejadian");
+    if (!statsReal()) parts.push("rekap harian");
+    return parts;
+  }
+
+  function updateProtoChip() {
+    const parts = demoParts();
+    const el = $("proto");
+    if (parts.length) {
+      el.className = "chip proto";
+      el.textContent = "Contoh: " + parts.join(" · ");
+      el.title = "Bagian yang disebut di sini masih tampilan contoh, bukan "
+               + "keluaran model. Penanda kuning menandai tiap bagiannya.";
+    } else {
+      el.className = "chip live";
+      el.textContent = "Seluruhnya keluaran pipeline";
+      el.title = "Tidak ada data contoh yang sedang tampil.";
+    }
+  }
+
+  function setLiveChip() {
+    const el = $("liveState");
+    if (srcMode === "analisis") {
+      el.className = "chip live"; el.textContent = "Hasil analisis pipeline"; return;
+    }
+    if (srcMode === "cuplikan") {
+      el.className = "chip"; el.textContent = "Cuplikan tersimpan"; return;
+    }
+    if (liveWorking === true) {
+      el.className = "chip live";
+      el.textContent = `Live · segar tiap ${LIVE_EVERY_MS / 1000} dtk`;
+    } else if (liveWorking === false) {
+      el.className = "chip warn";
+      el.textContent = "Live tak terjangkau · pakai cuplikan";
+    } else {
+      el.className = "chip";
+      el.textContent = "Menyambung…";
+    }
+  }
+
+  // Hand-placed boxes describe the bundled snapshot, not whatever the camera
+  // is looking at right now. Showing them over a live frame would be a lie,
+  // so live mode hides them. The zone polygon stays: the camera is fixed, so
+  // the polygon is just as true on a live frame as on the snapshot.
+  function applyLiveConstraints() {
+    const boxBtn = document.querySelector('[data-layer="box"]');
+    boxBtn.disabled = srcMode !== "cuplikan";
+    boxBtn.setAttribute("aria-pressed",
+                        String(srcMode === "cuplikan" && layers.box));
+    const cam = CAMS[active];
+    let hint = "";
+    if (srcMode === "live") {
+      hint = "Frame kamera sungguhan, disegarkan tiap 3 detik. Kotak deteksi "
+           + "disembunyikan karena overlay contoh tidak cocok dengan frame nyata. "
+           + "Poligon zona tetap berlaku (kamera statis).";
+    } else if (srcMode === "analisis") {
+      hint = hasAnalysis(cam)
+        ? "Frame dan kotak di bawah digambar oleh pipeline PP-Vehicle, bukan "
+          + "ilustrasi. Angka di kanan berasal dari siklus batch terakhir."
+        : "Kamera ini belum punya hasil analisis. Jalankan siklus batch "
+          + "(tombol Analisis ulang) lalu tunggu — satu kamera makan ±1 menit di CPU.";
+    } else {
+      hint = "Cuplikan tersimpan dengan overlay ilustrasi — untuk demo tanpa "
+           + "jaringan. Kotak di sini bukan keluaran model.";
+    }
+    $("hint").textContent = hint;
+  }
+
+  function pullLive() {
+    if (srcMode !== "live") return;
+    const cam = CAMS[active];
+    const probe = new Image();
+    probe.onload = () => {
+      if (srcMode !== "live" || CAMS[active] !== cam) return;   // pengguna sudah pindah
+      const first = liveWorking !== true;
+      $("frame").src = probe.src;
+      liveWorking = true;
+      liveFails = 0;
+      setLiveChip();
+      if (first) { applyLiveConstraints(); $("overlay").innerHTML = overlaySvg(cam); }
+      updateProtoChip();
+      const jam = new Date().toLocaleTimeString("id-ID", { hour12: false });
+      $("stamp").textContent = `${cam.id.slice(0, 6)} · ${cam.name} · 640×360 · ${jam}`;
+    };
+    probe.onerror = () => {
+      if (srcMode !== "live") return;
+      liveWorking = false;
+      setLiveChip();
+      applyLiveConstraints();
+      $("overlay").innerHTML = overlaySvg(CAMS[active]);
+      updateProtoChip();
+      // A blocked host (a published artifact's CSP does exactly this) will
+      // never recover, so stop hammering it after a couple of tries.
+      if (++liveFails >= 2) clearInterval(liveTimer);
+    };
+    probe.src = `${LIVE_BASE}${cam.id}/preview.jpg?t=${Date.now()}`;
+  }
+
+  function startLive() {
+    clearInterval(liveTimer);
+    if (srcMode !== "live") return;
+    pullLive();
+    liveTimer = setInterval(pullLive, LIVE_EVERY_MS);
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  async function api(path, opts) {
+    const res = await fetch(path, opts);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  }
+
+  // --------------------------------------------------------- rendering
+  function overlaySvg(cam, only, forceBoxes) {
+    // Illustrative boxes only make sense over the snapshot they were drawn for.
+    const showBoxes = forceBoxes || (layers.box && srcMode === "cuplikan");
+    const parts = [];
+    if (layers.zone && cam.zone) {
+      parts.push(
+        `<polygon points="${cam.zone.pts}" fill="var(--crit)" fill-opacity=".14"` +
+        ` stroke="var(--crit)" stroke-width="2" stroke-dasharray="7 5"/>`,
+        `<text x="${cam.zone.pts.split(" ")[0].split(",")[0]}" y="14"` +
+        ` fill="var(--crit)" font-family="IBM Plex Mono, monospace" font-size="11"` +
+        ` font-weight="600">${esc(cam.zone.label.toUpperCase())}</text>`
+      );
+    }
+    if (showBoxes) {
+      for (const b of cam.boxes) {
+        if (only != null && b.id !== only) continue;
+        const stroke = b.bad ? "var(--crit)" : "var(--accent)";
+        const label = `#${b.id} ${b.cls} ${Math.round(b.conf * 100)}%`;
+        const w = label.length * 5.6 + 10;
+        parts.push(
+          `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="none"` +
+          ` stroke="${stroke}" stroke-width="2" rx="2"/>`,
+          `<rect x="${b.x}" y="${Math.max(0, b.y - 15)}" width="${w}" height="15"` +
+          ` fill="${stroke}" rx="2"/>`,
+          `<text x="${b.x + 5}" y="${Math.max(0, b.y - 15) + 11}" fill="#06131a"` +
+          ` font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600">` +
+          `${esc(label)}</text>`
+        );
+        if (layers.track && !b.bad) {
+          parts.push(
+            `<path d="M${b.x + b.w / 2},${b.y + b.h} q -30,-40 -64,-58" fill="none"` +
+            ` stroke="var(--accent)" stroke-width="2" stroke-opacity=".55"` +
+            ` stroke-dasharray="4 4"/>`
+          );
+        }
+        if (layers.blur) {
+          parts.push(
+            `<rect x="${b.x + b.w * .34}" y="${b.y + b.h * .74}"` +
+            ` width="${b.w * .32}" height="${Math.max(5, b.h * .12)}"` +
+            ` fill="var(--ink-2)" fill-opacity=".92" rx="1"/>`
+          );
+        }
+      }
+    }
+    return parts.join("");
+  }
+
+  function renderCams() {
+    const urut = ["Jakarta Pusat", "Jakarta Barat"];
+    let html = "";
+    for (const wil of urut) {
+      const anggota = CAMS.map((c, i) => ({ c, i })).filter((x) => x.c.region === wil);
+      if (!anggota.length) continue;
+      html += `<div class="wil">${esc(wil)}<span>${anggota.length}</span></div>`;
+      html += anggota.map(({ c, i }) => `
+        <button class="cam${c.alert ? " alert" : ""}" type="button"
+                aria-current="${i === active}" data-i="${i}">
+          <span class="dot" aria-hidden="true"></span>
+          <span>
+            <span class="name">${esc(c.name)}</span>
+            <span class="meta">${esc(c.area)} · skor ${c.skor}</span>
+            <span class="owner">${esc(c.owner)}${c.alert ? " · perlu tindakan" : ""}</span>
+          </span>
+        </button>`).join("");
+    }
+    // Wilayah tanpa kamera ditampilkan, tidak disembunyikan: celah cakupan
+    // adalah informasi, dan menyembunyikannya membuat portal publik terlihat
+    // lebih lengkap daripada kenyataannya.
+    html += WILAYAH_KOSONG.map((w) => `
+      <div class="wil kosong">${esc(w.region)}<span>0</span></div>
+      <div class="wil-note">${esc(w.note)}</div>`).join("");
+    $("cams").innerHTML = html;
+    $("camCount").textContent = `${CAMS.length} / 46`;
+  }
+
+  function renderStage() {
+    const c = CAMS[active];
+    const b = camBatch(c);
+
+    if (srcMode === "analisis" && hasAnalysis(c)) {
+      // The pipeline already burned its boxes, zone and track ids into the
+      // frame, so there is nothing for our SVG layer to add.
+      $("frame").src = `/api/batch/frame/${encodeURIComponent(c.key)}?t=${Date.now()}`;
+      $("overlay").innerHTML = "";
+      const at = (b.record.finished_at || "").slice(11, 19);
+      $("stamp").textContent =
+        `${c.name} · analisis ${at} UTC · ${b.record.results?.frames ?? "?"} frame`;
+    } else {
+      // Paint the bundled snapshot first so the panel is never blank, then let
+      // the live poll swap it in if the host is reachable.
+      $("frame").src = c.img;
+      $("overlay").innerHTML = overlaySvg(c);
+      $("stamp").textContent = `${c.id.slice(0, 6)} · ${c.name} · 640×360 20fps`;
+    }
+    $("frame").alt = `Kamera ${c.name}`;
+
+    const r = b && b.record && b.record.ok ? b.record : null;
+    const cells = (srcMode === "analisis" && r)
+      ? [["Track unik", String(r.results?.unique_tracks ?? 0)],
+         ["Frame dianalisis", String(r.results?.frames ?? 0)],
+         ["Kejadian", String((r.results?.events || []).length)],
+         ["Waktu proses", `${r.elapsed_sec ?? "?"} dtk`]]
+      // Tidak ada angka cadangan yang dikarang. Sebelum dianalisis, sel
+      // ditampilkan kosong - itu jujur, dan "belum ada data" adalah keadaan
+      // yang sah untuk ditunjukkan.
+      : [["Track unik", "—"], ["Frame dianalisis", "—"],
+         ["Kejadian", "—"], ["Waktu proses", "—"]];
+    $("readout").innerHTML = cells.map(([k, v]) =>
+      `<div class="cell"><div class="k">${esc(k)}</div>` +
+      `<div class="v">${esc(v)}</div></div>`
+    ).join("");
+    updateProtoChip();
+    $("specStream").textContent = c.scenario;
+    $("spec").textContent =
+      "index.fmp4.m3u8 · H.264 Main · 640×360 · 20 fps · 534 kbps · Flussonic";
+    document.querySelectorAll(".cam").forEach((el, i) =>
+      el.setAttribute("aria-current", String(i === active)));
+    applyLiveConstraints();
+    startLive();
+  }
+
+  function renderGrades() {
+    $("grades").innerHTML = GRADES.map((g) => `
+      <span class="task">${esc(g.task)}</span>
+      <span class="verdict" style="color:var(--${g.tone})">${esc(g.verdict)}</span>
+      <span class="bar"><i style="width:${g.pct}%;background:var(--${g.tone})"></i></span>
+    `).join("");
+    $("ask").innerHTML =
+      "Pada feed publik 640×360, pelat nomor hanya selebar 8–15 piksel — di bawah " +
+      "ambang baca OCR (±100 piksel). <strong>Identifikasi pelat memerlukan akses " +
+      "feed sumber Dishub (≥1080p)</strong>; seluruh fungsi lain sudah berjalan " +
+      "pada feed publik.";
+  }
+
+  const PARKIR_LEGAL =
+    "Perda DKI Jakarta No. 5 Tahun 2012 tentang Perparkiran — penertiban dan "
+    + "penderekan kendaraan yang parkir di badan jalan.";
+
+  function batchEvents() {
+    const out = [];
+    CAMS.forEach((cam, idx) => {
+      const b = camBatch(cam);
+      for (const e of b?.record?.results?.events || []) {
+        out.push({
+          real: true,
+          t: (b.record.finished_at || "").slice(11, 19),
+          cam: idx,
+          kind: "Parkir di badan jalan",
+          wewenang: "dishub",
+          conf: null,
+          verified: false,
+          kendaraan: `Objek terlacak #${e.track_id}`,
+          durasi: `${e.duration_sec} dtk diam (ambang ${e.threshold_sec} dtk)`,
+          plat: null,
+          legal: PARKIR_LEGAL,
+          tindak: ["Terbitkan perintah derek", "Kirim petugas", "Bukan pelanggaran"],
+        });
+      }
+    });
+    return out;
+  }
+
+  const TAG_DEMO = '<span class="demo-tag">contoh</span>';
+  let FEED = EVENTS;
+
+  function renderFeed() {
+    const real = batchEvents();
+    FEED = real.length ? real : EVENTS;
+    const head = document.querySelector("#feed").previousElementSibling;
+    head.querySelector("h2").innerHTML =
+      real.length ? "Kejadian" : `Kejadian ${TAG_DEMO}`;
+    $("feed").innerHTML = FEED.map((e, i) => {
+      const cam = CAMS[e.cam];
+      return `
+        <button class="ev ${e.wewenang}" type="button" data-e="${i}">
+          <span class="stripe" aria-hidden="true"></span>
+          <span class="body">
+            <span class="top">
+              <span class="kind">${esc(e.kind)}</span>
+              <span class="time">${esc(e.t)}</span>
+            </span>
+            <span class="where">${esc(cam.name)} · ${esc(cam.area)}</span>
+            <span class="pills">
+              <span class="pill ${e.wewenang === "dishub" ? "act" : "ref"}">
+                ${e.wewenang === "dishub" ? "Ranah Dishub" : "Rujuk Ditlantas"}</span>
+              ${e.conf != null
+                ? `<span class="pill conf">Keyakinan ${Math.round(e.conf * 100)}%</span>`
+                : '<span class="pill conf">Dari pipeline</span>'}
+              ${e.verified ? '<span class="pill ver">Terverifikasi</span>' : ""}
+            </span>
+          </span>
+        </button>`;
+    }).join("");
+    $("evCount").textContent = String(FEED.filter((e) => !e.verified).length);
+    updateProtoChip();
+  }
+
+  function renderKpi() {
+    const real = statsReal();
+    const tag = real ? "" : " " + TAG_DEMO;
+    const d = real ? stats : {
+      events_today: 148, by_authority: { dishub: 112, rujuk: 36 },
+      verified: 86, unverified: 62, vehicles_tracked: 24318, cycles_today: 0,
+    };
+    const nf = (n) => n.toLocaleString("id-ID");
+    const dis = d.by_authority.dishub, ruj = d.by_authority.rujuk;
+
+    $("kpi1").innerHTML =
+      `<div class="k">Kejadian hari ini${tag}</div>` +
+      `<div class="v">${nf(d.events_today)}</div>` +
+      `<div class="sub">${nf(dis)} ranah Dishub · ${nf(ruj)} dirujuk</div>` +
+      `<div class="split" aria-hidden="true">` +
+      `<i style="flex:${dis || 0};background:var(--crit)"></i>` +
+      `<i style="flex:${ruj || 0};background:var(--info)"></i>` +
+      `<i style="flex:${(dis + ruj) ? 0 : 1};background:var(--line)"></i></div>`;
+
+    $("kpi2").innerHTML =
+      `<div class="k">Diverifikasi petugas${tag}</div>` +
+      `<div class="v">${nf(d.verified)} <small>/ ${nf(d.events_today)}</small></div>` +
+      `<div class="sub">${nf(d.unverified)} menunggu antrean verifikasi</div>` +
+      `<div class="split" aria-hidden="true">` +
+      `<i style="flex:${d.verified || 0};background:var(--ok)"></i>` +
+      `<i style="flex:${d.unverified || 0};background:var(--line)"></i>` +
+      `<i style="flex:${d.events_today ? 0 : 1};background:var(--line)"></i></div>`;
+
+    $("kpi3").innerHTML =
+      `<div class="k">Kendaraan terpantau${tag}</div>` +
+      `<div class="v">${nf(d.vehicles_tracked)}</div>` +
+      `<div class="sub">${real
+        ? `${nf(d.cycles_today)} siklus analisis hari ini (WIB)`
+        : "4 kamera aktif · sejak 06.00"}</div>`;
+
+    $("chartLabel").innerHTML = "Kejadian per jam" + tag;
+  }
+
+  function renderChart() {
+    const series = statsReal()
+      ? stats.hourly.map((h) => [h.hour, h.count])
+      : HOURLY;
+    const max = Math.max(1, ...series.map((h) => h[1]));
+    const W = 320, H = 84, base = 66, bw = W / series.length;
+    const bars = series.map(([hr, v], i) => {
+      const h = (v / max) * 52;
+      const x = i * bw + 2, y = base - h;
+      const peak = v === max && v > 0;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 4).toFixed(1)}"` +
+        ` height="${h.toFixed(1)}" rx="1.5"` +
+        ` fill="${peak ? "var(--crit)" : "var(--accent)"}"` +
+        ` fill-opacity="${peak ? "1" : ".55"}"/>` +
+        (peak ? `<text x="${(x + (bw - 4) / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}"` +
+          ` text-anchor="middle" fill="var(--crit)" font-family="IBM Plex Mono, monospace"` +
+          ` font-size="10" font-weight="600">${v}</text>` : "") +
+        (hr % 3 === 0 ? `<text x="${(x + (bw - 4) / 2).toFixed(1)}" y="80"` +
+          ` text-anchor="middle" fill="var(--muted)"` +
+          ` font-family="IBM Plex Mono, monospace" font-size="9">${hr}</text>` : "");
+    }).join("");
+    // An all-zero chart with a bare axis reads as broken rather than as "no
+    // violations yet", so say so in words.
+    const empty = series.every(([, v]) => v === 0);
+    const note = empty
+      ? `<text x="${W / 2}" y="40" text-anchor="middle" fill="var(--muted)"` +
+        ` font-family="IBM Plex Sans, sans-serif" font-size="11">` +
+        `${statsReal() ? "Belum ada kejadian hari ini" : "Tidak ada data"}</text>`
+      : "";
+    $("chart").innerHTML =
+      `<line x1="0" y1="${base + .5}" x2="${W}" y2="${base + .5}"` +
+      ` stroke="var(--line)" stroke-width="1"/>${bars}${note}`;
+  }
+
+  // ------------------------------------------------------------- modal
+  function openEvent(i) {
+    const e = FEED[i], cam = CAMS[e.cam];
+    const badBox = cam.boxes.find((b) => b.bad) || cam.boxes[0];
+    $("dKind").textContent = e.kind;
+    $("dWhere").textContent = `${cam.name} · ${cam.area} · 18 Sep 2026 ${e.t} WIB`;
+    $("dImg").src = e.real && hasAnalysis(cam)
+      ? `/api/batch/frame/${encodeURIComponent(cam.key)}`
+      : cam.img;
+    $("dImg").alt = `Bukti kejadian di ${cam.name}`;
+    $("dOverlay").innerHTML = e.real ? ""
+      : overlaySvg(cam, badBox ? badBox.id : null, true);
+    $("dFacts").innerHTML = [
+      ["Kamera", `<span class="mono">${esc(cam.id)}</span>`],
+      ["Operator", esc(cam.owner)],
+      ["Kendaraan", esc(e.kendaraan)],
+      ["Durasi", esc(e.durasi)],
+      ["Pelat nomor", e.plat
+        ? `<span class="mono">${esc(e.plat)}</span>`
+        : '<span style="color:var(--crit)">Tidak terbaca — resolusi sumber 360p</span>'],
+      ["Keyakinan", e.conf != null
+        ? `<span class="mono">${Math.round(e.conf * 100)}%</span>`
+        : '<span style="color:var(--muted)">— (aturan zona, bukan skor)</span>'],
+      ["Kewenangan", e.wewenang === "dishub"
+        ? '<strong style="color:var(--crit)">Dishub DKI Jakarta</strong>'
+        : '<strong style="color:var(--info)">Ditlantas Polda Metro Jaya</strong>'],
+      ["Status", e.verified ? "Sudah diverifikasi petugas" : "Menunggu verifikasi"]
+    ].map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("");
+    $("dLegal").textContent = e.legal;
+    $("dActions").innerHTML = e.tindak.map((t, j) =>
+      `<button type="button" class="${j === 0 ? "primary" : "ghost"}">${esc(t)}</button>`
+    ).join("");
+    $("detail").showModal();
+  }
+
+  // ------------------------------------------------------------- wiring
+  $("cams").addEventListener("click", (ev) => {
+    const el = ev.target.closest(".cam");
+    if (!el) return;
+    active = Number(el.dataset.i);
+    renderStage();
+  });
+
+  $("feed").addEventListener("click", (ev) => {
+    const el = ev.target.closest(".ev");
+    if (el) openEvent(Number(el.dataset.e));
+  });
+
+  document.querySelector(".toolbar").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-layer]");
+    if (!b || b.disabled) return;
+    const key = b.dataset.layer;
+    layers[key] = !layers[key];
+    b.setAttribute("aria-pressed", String(layers[key]));
+    renderStage();
+  });
+
+  document.querySelector(".toolbar").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-src]");
+    if (!b) return;
+    srcMode = b.dataset.src;
+    document.querySelectorAll("[data-src]").forEach((el) =>
+      el.setAttribute("aria-pressed", String(el.dataset.src === srcMode)));
+    clearInterval(liveTimer);
+    liveWorking = null;
+    liveFails = 0;
+    setLiveChip();
+    renderStage();
+    renderFeed();
+  });
+
+  $("dClose").addEventListener("click", () => $("detail").close());
+  $("dActions").addEventListener("click", (ev) => {
+    if (ev.target.tagName === "BUTTON") $("detail").close();
+  });
+
+  // Theme toggle: the viewer's own theme wins until they press this.
+  const themeBtn = $("theme");
+  themeBtn.addEventListener("click", () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+    themeBtn.textContent = dark ? "Mode gelap" : "Mode terang";
+    try { localStorage.setItem("rkl-theme", dark ? "light" : "dark"); } catch (_) {}
+  });
+  try {
+    const saved = localStorage.getItem("rkl-theme");
+    if (saved) {
+      document.documentElement.setAttribute("data-theme", saved);
+      themeBtn.textContent = saved === "dark" ? "Mode terang" : "Mode gelap";
+    }
+  } catch (_) {}
+
+  const clock = () => {
+    const d = new Date();
+    $("clock").textContent = d.toLocaleTimeString("id-ID", { hour12: false }) + " WIB";
+  };
+  clock();
+  setInterval(clock, 1000);
+
+  async function refreshBatch() {
+    try {
+      batch = await api("/api/batch");
+      stats = await api("/api/stats");
+    } catch {
+      // no backend (a published artifact): stay on snapshots and demo figures
+      batch = null;
+      stats = null;
+    }
+    $("reanalyse").disabled = !batch;
+    renderStage();
+    renderFeed();
+    renderKpi();
+    renderChart();
+  }
+
+  $("reanalyse").addEventListener("click", async () => {
+    const btn = $("reanalyse");
+    btn.disabled = true;
+    btn.textContent = "Menganalisis…";
+    try { await api("/api/batch/run?background=true", { method: "POST" }); }
+    catch { /* tombol dinyalakan lagi oleh refreshBatch */ }
+    setTimeout(() => { btn.textContent = "Analisis ulang"; refreshBatch(); }, 4000);
+  });
+
+  setLiveChip();
+  renderCams();
+  renderStage();
+  renderGrades();
+  renderFeed();
+  renderKpi();
+  renderChart();
+  refreshBatch();
+  setInterval(refreshBatch, 20000);
+})();
+</script>

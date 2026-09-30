@@ -1,0 +1,13 @@
+name: plate
+title: Pengenalan plat nomor (LPR)
+description: >
+  PP-OCRv3 detection + recognition di dalam crop kendaraan.
+  PENTING: bobot bawaan dilatih untuk plat Cina (CCPD). Untuk plat Indonesia
+  akurasinya rendah — lihat bagian "Plat Indonesia" di README.
+modules:
+  MOT: true
+  VEHICLE_PLATE: true
+overrides:
+  VEHICLE_PLATE:
+    det_limit_side_len: 736
+    rec_batch_num: 6

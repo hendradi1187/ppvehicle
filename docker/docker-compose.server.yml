@@ -1,0 +1,96 @@
+# Override untuk deployment di pupr-argo-dev.
+#
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.server.yml up -d
+#
+# Server ini SHARED: ada 15 container project lain (atevent, regahu, antrean)
+# beserta MySQL/Postgres/Redis mereka yang sudah berjalan berminggu-minggu.
+# Karena itu override ini memasang batas keras CPU dan memori — tanpa batas,
+# satu siklus inferensi bisa memakan seluruh 16 core dan membuat layanan
+# tetangga timeout. Jangan pernah jalankan `docker system prune` di sini.
+services:
+  ppvehicle:
+    # Catatan: Compose MENGGABUNGKAN daftar volumes, tidak menimpanya, jadi
+    # bind mount ../src dari file dasar tetap ikut ke sini. Itu disengaja
+    # dibiarkan selama aplikasi masih prototipe yang sering berubah: satu
+    # `tar` push lalu `restart` jauh lebih murah daripada rebuild 10 menit.
+    # Untuk deployment yang benar-benar beku, tambahkan `!override` pada
+    # volumes di bawah dan buang ../src.
+    volumes:
+      - models:/models
+      - ../runs:/app/runs
+      - ../data/samples:/app/data/samples
+      - ../configs:/app/configs
+
+    environment:
+      PPVEHICLE_PROFILE: server
+      PPVEHICLE_MODELS_DIR: /models
+      PPVEHICLE_MAX_JOBS: "1"
+      # Basis data utama: PostgreSQL di layanan `db` (tahap 2, 25 Sep 2026).
+      # Hapus PPVEHICLE_DB_HOST untuk kembali ke SQLite runs/lalin.db.
+      PPVEHICLE_DB_HOST: db
+      PPVEHICLE_DB_PORT: "5432"
+      PPVEHICLE_DB_NAME: lalin
+      PPVEHICLE_DB_USER: lalin_app
+    # HANYA kata sandi akun aplikasi - bukan .env.pg, yang juga memuat kata
+    # sandi admin dan akun baca tim DB.
+    env_file: .env.app
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Setengah dari 16 core, seperempat dari 19 GB. Cukup longgar untuk satu
+    # pipeline sekaligus menyisakan ruang untuk tetangga.
+    cpus: "8"
+    mem_limit: 5g
+    mem_reservation: 1g
+
+    # Hanya dengarkan di antarmuka Tailscale, bukan 0.0.0.0. Port 80/443
+    # server ini menghadap jaringan lain, dan dashboard ini belum punya
+    # autentikasi apa pun.
+    ports: !override
+      - "100.96.136.65:8100:8000"
+
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Basis data PostgreSQL untuk aplikasi dan tim DB.
+  #
+  # Terikat ke antarmuka Tailscale SAJA, seperti dashboard. Port 5433, bukan
+  # 5432, supaya jelas terpisah dari PostgreSQL milik proyek lain di server
+  # bersama ini (mereka tidak mem-publish port, tetapi nomor yang sama
+  # mengundang salah sambung).
+  #
+  # Kata sandi di .env.pg (dibuat acak di server, izin 600, tidak ada di
+  # repositori). Akun: lalin_admin (superuser), lalin_app (aplikasi, tulis),
+  # lalin_baca (tim DB, hanya baca). Lihat pg-init/01-peran.sh.
+  db:
+    image: postgres:16-alpine
+    env_file: .env.pg
+    environment:
+      POSTGRES_DB: lalin
+      POSTGRES_USER: lalin_admin
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./pg-init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "100.96.136.65:5433:5432"
+    cpus: "1"
+    mem_limit: 1g
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lalin_admin -d lalin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:

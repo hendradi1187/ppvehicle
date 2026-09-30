@@ -1,0 +1,97 @@
+# Run from the project root.
+#
+#   docker compose -f docker/docker-compose.yml up --build        # CPU (default)
+#   docker compose -f docker/docker-compose.yml --profile gpu up --build
+#   docker compose -f docker/docker-compose.yml --profile rtsp up -d rtsp
+#
+# The UI lands on http://localhost:8100 (dashboard at /demo).
+# Override with PPVEHICLE_HOST_PORT - Docker Desktop on Windows holds 8000.
+services:
+  ppvehicle:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cpu
+    image: ppvehicle:cpu
+    ports:
+      - "${PPVEHICLE_HOST_PORT:-8100}:8000"
+    environment:
+      PPVEHICLE_PROFILE: cpu
+      PPVEHICLE_MODELS_DIR: /models
+      PPVEHICLE_MAX_JOBS: "1"
+      # PaddleDetection 2.9 memuat model lewat Config(direktori, prefix).
+      # Paddle 3.x menyalakan PIR secara default, dan bentuk itu lalu mencari
+      # <prefix>.json - padahal bobot resmi PP-Vehicle masih format .pdmodel,
+      # sehingga VEHICLE_ATTR gagal dimuat ("Cannot open file model.json").
+      # MOT lolos hanya karena pptracking memakai loader dua-file yang berbeda.
+      # Mematikan PIR mengembalikan resolusi lama; PaddleDetection 2.9 memang
+      # dibangun sebelum PIR ada.
+      FLAGS_enable_pir_api: "0"
+    volumes:
+      - models:/models
+      - ../runs:/app/runs
+      - ../data/samples:/app/data/samples
+      # Dev convenience: edit the wrapper (and the dashboard HTML) on the host
+      # and just restart the service instead of rebuilding the image. The
+      # editable install already points at /app/src, so this shadows it
+      # cleanly. Drop this line for an immutable production deployment.
+      - ../src:/app/src
+      # Camera list, zone polygons and device profiles are operational settings:
+      # an operator retunes a zone far more often than the image is rebuilt.
+      - ../configs:/app/configs
+      # Snapshot cadangan per kamera. Ikut berubah setiap pilihan kamera
+      # berubah, jadi di-mount seperti configs - bukan ikut terpanggang ke
+      # image, yang membuatnya butuh rebuild hanya untuk mengganti gambar.
+      - ../data/demo:/app/data/demo
+    shm_size: "1gb"
+    restart: unless-stopped
+
+  # Same app on a CUDA host. Needs the NVIDIA Container Toolkit.
+  ppvehicle-gpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gpu
+    image: ppvehicle:gpu
+    ports:
+      - "${PPVEHICLE_HOST_PORT:-8100}:8000"
+    environment:
+      PPVEHICLE_PROFILE: gpu
+      PPVEHICLE_MODELS_DIR: /models
+      PPVEHICLE_MAX_JOBS: "2"
+    volumes:
+      - models:/models
+      - ../runs:/app/runs
+      - ../data/samples:/app/data/samples
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    # Paddle's GPU allocator wants more than Docker's 64 MB default /dev/shm.
+    shm_size: "2gb"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles: ["gpu"]
+
+  # Optional: RTSP server to receive --pushurl output, so you can watch the
+  # annotated stream at rtsp://<host>:8554/<name> in VLC.
+  rtsp:
+    image: bluenviron/mediamtx:latest
+    ports:
+      - "8554:8554"
+      - "1935:1935"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles: ["rtsp"]
+
+volumes:
+  models:

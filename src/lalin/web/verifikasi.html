@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antrean Verifikasi</title>
+<link rel="icon" href="/aset/dishub-dki.png">
+<link rel="stylesheet" href="/aset/fonts/fonts.css">
+<style>
+  /* Token DISHUB, sama persis dengan Ruang Kendali. */
+  :root {
+    --biru-900:#063B73; --biru-800:#07539A; --biru-700:#0868C7;
+    --biru-600:#0B78E3; --biru-500:#168AF5;
+    --emas:#F2C94C; --ai:#22C7D6; --ai-terang:#35E0EF;
+    --ground:#eef2f4; --panel:#fff; --panel-2:#f5f8fa; --panel-3:#eaf0f5;
+    --line:rgba(6,59,115,.14); --line-soft:rgba(6,59,115,.07);
+    --line-hover:rgba(6,59,115,.26); --line-active:rgba(11,120,227,.55);
+    --ink:#0B1A25; --ink-2:#33495a; --muted:#5d7385; --disabled:#93a7b4;
+    --accent:var(--biru-800); --accent-soft:#e3eefb; --accent-ink:#fff;
+    --crit:#B02318; --crit-soft:#fbe6e4;
+    --warn:#8f5e0b; --warn-soft:#fcf0d5;
+    --ok:#0F7A45; --ok-soft:#dcf1e5;
+    --info:#8a6410; --info-soft:#fcf2d6;
+    --ai-soft:#d8f4f7; --ai-ink:#0a6c76;
+    --emblem-bg:#fff; --emblem-ring:rgba(6,59,115,.16); --emblem-shadow:none;
+    --wordmark-sub:#8a6410;
+    --shadow:0 1px 2px rgba(6,59,115,.07),0 8px 24px rgba(6,59,115,.06);
+    --display:"Barlow Condensed","Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --ground:#07131D; --panel:#0B1A25; --panel-2:#0F2230; --panel-3:#132B3A;
+    --line:rgba(148,180,200,.12); --line-soft:rgba(148,180,200,.07);
+    --line-hover:rgba(148,180,200,.22); --line-active:rgba(11,120,227,.55);
+    --ink:#F1F6FA; --ink-2:#A6BAC8; --muted:#718898; --disabled:#4F6574;
+    --accent:var(--biru-500); --accent-soft:rgba(11,120,227,.16); --accent-ink:#04121f;
+    --crit:#F87A6E; --crit-soft:rgba(217,45,32,.18);
+    --warn:#F5C451; --warn-soft:rgba(245,196,81,.15);
+    --ok:#3FD08C; --ok-soft:rgba(21,153,87,.18);
+    --info:var(--emas); --info-soft:rgba(242,201,76,.15);
+    --ai-soft:rgba(34,199,214,.14); --ai-ink:var(--ai-terang);
+    --emblem-ring:rgba(148,180,200,.28); --emblem-shadow:0 0 0 3px rgba(255,255,255,.06);
+    --wordmark-sub:var(--emas);
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 28px rgba(0,0,0,.35);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#07131D; --panel:#0B1A25; --panel-2:#0F2230; --panel-3:#132B3A;
+    --line:rgba(148,180,200,.12); --line-soft:rgba(148,180,200,.07);
+    --line-hover:rgba(148,180,200,.22); --line-active:rgba(11,120,227,.55);
+    --ink:#F1F6FA; --ink-2:#A6BAC8; --muted:#718898; --disabled:#4F6574;
+    --accent:var(--biru-500); --accent-soft:rgba(11,120,227,.16); --accent-ink:#04121f;
+    --crit:#F87A6E; --crit-soft:rgba(217,45,32,.18);
+    --warn:#F5C451; --warn-soft:rgba(245,196,81,.15);
+    --ok:#3FD08C; --ok-soft:rgba(21,153,87,.18);
+    --info:var(--emas); --info-soft:rgba(242,201,76,.15);
+    --ai-soft:rgba(34,199,214,.14); --ai-ink:var(--ai-terang);
+    --emblem-ring:rgba(148,180,200,.28); --emblem-shadow:0 0 0 3px rgba(255,255,255,.06);
+    --wordmark-sub:var(--emas);
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+       font-family:var(--body);font-size:14px;line-height:1.55}
+  header{position:sticky;top:0;z-index:20;background:var(--panel);
+         border-bottom:1px solid var(--line);display:flex;align-items:center;
+         gap:12px;flex-wrap:wrap;padding:10px 16px}
+  .emblem{width:34px;height:34px;flex:none;border-radius:50%;
+          background:var(--emblem-bg);border:1px solid var(--emblem-ring);
+          box-shadow:var(--emblem-shadow);display:grid;place-items:center}
+  .emblem img{width:26px;height:26px;display:block}
+  .brandlock{display:flex;align-items:center;gap:11px}
+  .wm b{display:block;font-family:var(--display);font-size:19px;font-weight:700;
+        line-height:1;letter-spacing:.02em}
+  .wm span{display:block;font-size:9px;font-weight:700;letter-spacing:.17em;
+           text-transform:uppercase;color:var(--wordmark-sub);margin-top:3px}
+  h1{font-family:var(--display);font-size:22px;font-weight:700;margin:0 0 0 6px}
+  .spacer{flex:1 1 auto}
+  .icon,button.icon{font:inherit;font-size:12.5px;padding:6px 11px;border-radius:7px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);
+        cursor:pointer;text-decoration:none;display:inline-block}
+  .icon:hover{border-color:var(--line-hover);color:var(--ink)}
+  main{max-width:1180px;margin:0 auto;padding:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+         box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+  .head{display:flex;align-items:center;gap:10px;padding:11px 14px;
+        border-bottom:1px solid var(--line)}
+  .head h2{font-family:var(--display);font-size:15px;font-weight:700;margin:0;
+           letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 12px;font-size:10px;letter-spacing:.08em;
+     text-transform:uppercase;color:var(--muted);background:var(--panel-2);
+     border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.n{font-family:var(--mono);white-space:nowrap}
+  /* Id portal panjangnya 50+ karakter; ia harus boleh melipat, kalau tidak
+     selnya melebar dan menimpa kolom sebelahnya. */
+  .sumber{font-family:var(--mono);font-size:10px;line-height:1.45;
+          word-break:break-all;white-space:normal;max-width:210px}
+  .tag{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+       padding:2px 6px;border-radius:4px;border:1px solid var(--line);
+       color:var(--muted);white-space:nowrap}
+  .tag.bawaan{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .tag.ubah{color:var(--info);border-color:var(--info);background:var(--info-soft)}
+  .tag.zona{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+  .tag.nol{color:var(--crit);border-color:var(--crit);background:var(--crit-soft)}
+  .aksi{display:flex;gap:4px;flex-wrap:nowrap}
+  td:last-child{white-space:nowrap;width:1%}
+  .aksi button{font:inherit;font-size:10.5px;padding:3px 7px;border-radius:5px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);
+        cursor:pointer}
+  .aksi button:hover{border-color:var(--line-hover);color:var(--ink)}
+  .aksi button.bahaya:hover{border-color:var(--crit);color:var(--crit)}
+  .primary{background:var(--accent);border-color:var(--accent);
+           color:var(--accent-ink);font-weight:600}
+  .catatan{padding:11px 14px;font-size:12px;color:var(--muted);line-height:1.5}
+  .catatan strong{color:var(--ink-2)}
+  /* ---------------------------------------------------- antrean verifikasi */
+  main{max-width:1360px}
+  .kerja{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:14px;align-items:start}
+  @media (max-width:1060px){ .kerja{grid-template-columns:1fr} }
+  .saring{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;
+          border-bottom:1px solid var(--line)}
+  .saring select{width:auto;min-width:140px;padding:5px 8px;font:inherit;font-size:12.5px;
+          border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  .saring label.cek{display:flex;gap:6px;align-items:center;font-size:12.5px;
+          color:var(--ink-2);text-transform:none;letter-spacing:0;font-weight:500;margin:0}
+  .tabs{display:flex;gap:4px}
+  .tab{font:inherit;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:99px;
+       border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);cursor:pointer}
+  .tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .tab b{font-family:var(--mono);font-weight:600;margin-left:4px}
+  tbody tr{cursor:pointer}
+  tbody tr:hover td{background:var(--panel-2)}
+  tbody tr[aria-selected="true"] td{background:var(--accent-soft)}
+  tbody tr[aria-selected="true"] td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  td.w{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--ink-2)}
+  td.kam{max-width:220px}
+  td.kam small{display:block;color:var(--muted);font-size:11px}
+  .st{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      padding:2px 7px;border-radius:4px;white-space:nowrap;border:1px solid}
+  .st.belum{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+  .st.benar{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+  .st.bukan{color:var(--muted);border-color:var(--line);background:var(--panel-2)}
+  .kw{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+  .kw.dishub{color:var(--accent)} .kw.rujuk{color:var(--info)}
+  .jenis{font-weight:600}
+  .halaman{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);
+           font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+  .halaman .spacer{flex:1}
+  .halaman button{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:6px;
+           border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);cursor:pointer}
+  .halaman button:disabled{opacity:.45;cursor:default}
+  .halaman select{width:auto;padding:4px 6px;font-size:12px}
+  /* ---- panel rincian ---- */
+  .rinci{position:sticky;top:70px}
+  .bukti{position:relative;background:#000;aspect-ratio:16/9}
+  .bukti img{width:100%;height:100%;object-fit:contain;display:block}
+  .bukti .nihil{position:absolute;inset:0;display:grid;place-items:center;padding:18px;
+          text-align:center;color:#c9d6df;font-size:12.5px;line-height:1.5}
+  .fakta{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;padding:12px 14px;font-size:13px}
+  .fakta dt{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.04em;
+          text-transform:uppercase;padding-top:2px}
+  .fakta dd{margin:0}
+  .narasi{margin:0;padding:0 14px 12px;font-size:12.5px;color:var(--ink-2);line-height:1.55}
+  .putus{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+  .putus button{flex:1;font:inherit;font-size:13.5px;font-weight:600;padding:9px 12px;
+          border-radius:7px;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  .putus button.benar{background:var(--ok);border-color:var(--ok);color:#fff}
+  .putus button.bukan:hover{border-color:var(--crit);color:var(--crit)}
+  .putus button:disabled{opacity:.5;cursor:default}
+  .putus kbd,.pintas kbd{font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:3px;
+          border:1px solid currentColor;opacity:.75;margin-left:5px}
+  .pintas{padding:0 14px 12px;font-size:11px;color:var(--muted)}
+  .pintas kbd{margin:0 2px}
+  .pesan{padding:9px 14px;font-size:12px}
+  .pesan.ok{color:var(--ok)} .pesan.gagal{color:var(--crit)}
+  .kosongbesar{padding:40px 16px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="brandlock">
+    <span class="emblem"><img src="/aset/dishub-emblem.png" width="26" height="26" alt=""></span>
+    <span class="wm"><b>DISHUB</b><span>DKI Jakarta</span></span>
+  </span>
+  <h1>Antrean Verifikasi</h1>
+  <span class="spacer"></span>
+  <a class="icon" href="/demo">Ruang Kendali</a>
+  <a class="icon" href="/kamera">Manajemen Kamera</a>
+  <button class="icon" id="tema" type="button">Mode gelap</button>
+</header>
+
+<main>
+  <div class="kerja">
+    <section class="panel">
+      <div class="saring">
+        <span class="tabs" role="group" aria-label="Status">
+          <button class="tab" type="button" data-status="belum" aria-pressed="true">Belum <b id="nBelum">–</b></button>
+          <button class="tab" type="button" data-status="sudah" aria-pressed="false">Sudah <b id="nSudah">–</b></button>
+          <button class="tab" type="button" data-status="" aria-pressed="false">Semua <b id="nSemua">–</b></button>
+        </span>
+        <span class="spacer" style="flex:1"></span>
+        <select id="fKamera" aria-label="Kamera"><option value="">Semua kamera</option></select>
+        <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option></select>
+        <select id="fWewenang" aria-label="Kewenangan">
+          <option value="">Semua kewenangan</option>
+          <option value="dishub">Ranah Dishub</option>
+          <option value="rujuk">Rujuk Ditlantas</option>
+        </select>
+        <label class="cek"><input type="checkbox" id="fHariIni"> Hari ini saja</label>
+      </div>
+      <div id="tabel"><p class="kosongbesar">Memuat…</p></div>
+      <div class="halaman">
+        <span id="rentang">–</span>
+        <span class="spacer"></span>
+        <label class="cek" style="gap:5px">Per halaman
+          <select id="perHal"><option>20</option><option>50</option><option>100</option></select></label>
+        <button type="button" id="sebelum">‹ Sebelumnya</button>
+        <span id="posisi">–</span>
+        <button type="button" id="berikut">Berikutnya ›</button>
+      </div>
+    </section>
+
+    <section class="panel rinci" id="rinci" aria-live="polite">
+      <div class="head"><h2>Rincian kejadian</h2></div>
+      <p class="kosongbesar">Pilih kejadian di daftar.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  async function api(path, opts) {
+    const res = await fetch(path, opts);
+    if (!res.ok) {
+      let d = {};
+      try { d = await res.json(); } catch (_) {}
+      throw new Error(d.detail || `${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  // Waktu selalu WIB, apa pun zona waktu peramban petugas.
+  const WIB = { timeZone: "Asia/Jakarta" };
+  const jamWIB = (iso) => new Date(iso).toLocaleTimeString("id-ID", { ...WIB, hour12: false });
+  const tglWIB = (iso) => new Date(iso).toLocaleDateString("id-ID",
+    { ...WIB, day: "2-digit", month: "short" });
+
+  const KAMERA = {};          // key -> {name, area}
+  let DATA = null;            // jawaban /api/events/list
+  let pilih = null;           // id kejadian yang sedang dibuka
+  let sibuk = false;
+
+  // ---- keadaan di URL: tautan dan tombol kembali tetap bekerja
+  const Q = new URLSearchParams(location.search);
+  const S = {
+    status: Q.has("status") ? Q.get("status") : "belum",
+    camera: Q.get("camera") || "", kind: Q.get("kind") || "",
+    authority: Q.get("authority") || "", today: Q.get("today") === "1",
+    page: Math.max(1, +Q.get("page") || 1), per: +Q.get("per") || 20,
+  };
+  function simpanURL() {
+    const q = new URLSearchParams();
+    if (S.status !== "belum") q.set("status", S.status);
+    for (const k of ["camera", "kind", "authority"]) if (S[k]) q.set(k, S[k]);
+    if (S.today) q.set("today", "1");
+    if (S.page > 1) q.set("page", S.page);
+    if (S.per !== 20) q.set("per", S.per);
+    history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
+  }
+
+  const namaKamera = (k) => KAMERA[k]?.name || k;
+  const statusDari = (e) => !e.verified ? ["belum", "Belum"]
+    : e.verdict === "bukan" ? ["bukan", "Bukan pelanggaran"] : ["benar", "Benar"];
+  const wewenang = (a) => a === "dishub"
+    ? '<span class="kw dishub">Dishub</span>'
+    : '<span class="kw rujuk">Rujuk Ditlantas</span>';
+  const durasi = (e) => e.duration_sec == null ? "—"
+    : `${Number(e.duration_sec).toLocaleString("id-ID", { maximumFractionDigits: 1 })} dtk`;
+
+  // Narasi mengikuti JENIS kejadian. Dialog lama selalu menulis "terdeteksi
+  // diam di zona", juga untuk pelanggaran marka dan lawan arah.
+  function narasi(e) {
+    const t = `Kendaraan terlacak #${e.track_id ?? "?"}`;
+    if (e.kind === "parkir_liar")
+      return `${t} diam di zona pengawasan selama ${durasi(e)}, melampaui ambang `
+        + `${e.threshold_sec ?? "?"} dtk.`;
+    if (e.kind === "langgar_marka")
+      return `${t}: sisi bawah kotaknya memotong garis marka selama ${durasi(e)}. `
+        + "Periksa pada foto apakah garis itu benar marka jalan. Bila garisnya "
+        + "berasal dari segmentasi model, ia bisa mengikuti pagar pembatas.";
+    if (e.kind === "lawan_arah")
+      return `${t} bergerak berlawanan dengan arah arus dominan di lajurnya.`;
+    return `${t} memicu aturan ${e.label}.`;
+  }
+
+  // ----------------------------------------------------------- daftar
+  async function muat(pertahankan = false) {
+    const q = new URLSearchParams({ page: S.page, per_page: S.per });
+    if (S.status) q.set("status", S.status);
+    for (const [k, v] of [["camera", S.camera], ["kind", S.kind], ["authority", S.authority]])
+      if (v) q.set(k, v);
+    if (S.today) q.set("today_only", "true");
+    try {
+      DATA = await api("/api/events/list?" + q);
+    } catch (err) {
+      $("tabel").innerHTML = `<p class="kosongbesar">Gagal memuat: ${esc(err.message)}</p>`;
+      return;
+    }
+    // Halaman yang diminta bisa lenyap setelah verifikasi mengosongkannya.
+    if (DATA.items.length === 0 && S.page > 1 && S.page > DATA.pages) {
+      S.page = DATA.pages;
+      return muat(pertahankan);
+    }
+    isiPilihan();
+    render();
+    if (!pertahankan || !DATA.items.some((e) => e.id === pilih)) {
+      buka(DATA.items[0]?.id ?? null);
+    } else {
+      buka(pilih);
+    }
+    simpanURL();
+  }
+
+  function isiPilihan() {
+    const isi = (el, daftar, nilai) => {
+      const semua = el.options[0].outerHTML;
+      el.innerHTML = semua + daftar.map((o) =>
+        `<option value="${esc(o.v)}"${o.v === nilai ? " selected" : ""}>${esc(o.t)}</option>`).join("");
+    };
+    isi($("fKamera"), DATA.pilihan.kamera.map((k) => ({ v: k, t: namaKamera(k) })), S.camera);
+    isi($("fJenis"), DATA.pilihan.jenis.map((j) => ({ v: j.kind, t: j.label })), S.kind);
+    $("fWewenang").value = S.authority;
+    $("fHariIni").checked = S.today;
+    $("perHal").value = String(S.per);
+    $("nBelum").textContent = DATA.jumlah.belum;
+    $("nSudah").textContent = DATA.jumlah.sudah;
+    $("nSemua").textContent = DATA.jumlah.semua;
+    document.querySelectorAll(".tab").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.status === S.status)));
+  }
+
+  function render() {
+    const it = DATA.items;
+    if (!it.length) {
+      $("tabel").innerHTML = `<p class="kosongbesar">${S.status === "belum"
+        ? "Tidak ada kejadian yang menunggu verifikasi dengan saringan ini."
+        : "Tidak ada kejadian dengan saringan ini."}</p>`;
+    } else {
+      $("tabel").innerHTML = `<table><thead><tr>
+          <th>Waktu (WIB)</th><th>Kamera</th><th>Jenis</th><th>Kewenangan</th>
+          <th>Durasi</th><th>Status</th></tr></thead><tbody>${it.map((e) => {
+        const [cls, teks] = statusDari(e);
+        return `<tr data-id="${e.id}" aria-selected="${e.id === pilih}">
+          <td class="w">${esc(tglWIB(e.detected_at))} ${esc(jamWIB(e.detected_at))}</td>
+          <td class="kam">${esc(namaKamera(e.camera))}<small>${esc(KAMERA[e.camera]?.area || "")}</small></td>
+          <td class="jenis">${esc(e.label)}</td>
+          <td>${wewenang(e.authority)}</td>
+          <td class="w">${esc(durasi(e))}</td>
+          <td><span class="st ${cls}">${esc(teks)}</span></td></tr>`;
+      }).join("")}</tbody></table>`;
+    }
+    const awal = DATA.total ? (DATA.page - 1) * DATA.per_page + 1 : 0;
+    const akhir = Math.min(DATA.total, DATA.page * DATA.per_page);
+    $("rentang").textContent = `${awal}–${akhir} dari ${DATA.total}`;
+    $("posisi").textContent = `Hal. ${DATA.page} / ${DATA.pages}`;
+    $("sebelum").disabled = DATA.page <= 1;
+    $("berikut").disabled = DATA.page >= DATA.pages;
+  }
+
+  // ---------------------------------------------------------- rincian
+  function buka(id) {
+    pilih = id;
+    document.querySelectorAll("tbody tr").forEach((tr) =>
+      tr.setAttribute("aria-selected", String(+tr.dataset.id === id)));
+    const e = DATA?.items.find((x) => x.id === id);
+    const el = $("rinci");
+    if (!e) {
+      el.innerHTML = `<div class="head"><h2>Rincian kejadian</h2></div>
+        <p class="kosongbesar">Pilih kejadian di daftar.</p>`;
+      return;
+    }
+    const [cls, teks] = statusDari(e);
+    const foto = e.ada_bukti
+      ? `<img src="/api/events/${e.id}/bukti" alt="Foto bukti kejadian ${e.id}">`
+      : `<div class="nihil">Foto bukti tidak tersedia.<br>Kejadian ini tercatat sebelum
+         foto per-kejadian dibangun, atau klip siklusnya gagal dibaca.
+         Jangan memutus tanpa bukti; buka kameranya di Ruang Kendali.</div>`;
+    el.innerHTML = `<div class="head"><h2>Kejadian #${e.id}</h2>
+        <span class="spacer" style="flex:1"></span><span class="st ${cls}">${esc(teks)}</span></div>
+      <div class="bukti">${foto}</div>
+      <dl class="fakta">
+        <dt>Jenis</dt><dd class="jenis">${esc(e.label)}</dd>
+        <dt>Kamera</dt><dd>${esc(namaKamera(e.camera))}</dd>
+        <dt>Waktu</dt><dd style="font-family:var(--mono)">${esc(tglWIB(e.detected_at))} · ${esc(jamWIB(e.detected_at))} WIB</dd>
+        <dt>Kendaraan</dt><dd>Track #${esc(e.track_id ?? "—")}</dd>
+        <dt>Durasi</dt><dd>${esc(durasi(e))}</dd>
+        <dt>Kewenangan</dt><dd>${wewenang(e.authority)}</dd>
+      </dl>
+      <p class="narasi">${esc(narasi(e))}</p>
+      <div class="putus">
+        <button type="button" class="benar" data-v="benar" ${sibuk ? "disabled" : ""}>Benar pelanggaran<kbd>B</kbd></button>
+        <button type="button" class="bukan" data-v="bukan" ${sibuk ? "disabled" : ""}>Bukan pelanggaran<kbd>X</kbd></button>
+      </div>
+      <p class="pintas"><kbd>J</kbd>/<kbd>K</kbd> berikut/sebelumnya ·
+        <kbd>B</kbd> benar · <kbd>X</kbd> bukan${e.verified ? " · keputusan dapat diubah" : ""}</p>
+      <div class="pesan" id="pesan"></div>`;
+  }
+
+  async function putuskan(verdict) {
+    const e = DATA?.items.find((x) => x.id === pilih);
+    if (!e || sibuk) return;
+    sibuk = true;
+    document.querySelectorAll(".putus button").forEach((b) => (b.disabled = true));
+    try {
+      await api(`/api/events/${e.id}/verify?verdict=${verdict}`, { method: "POST" });
+    } catch (err) {
+      sibuk = false;
+      buka(e.id);
+      $("pesan").className = "pesan gagal";
+      $("pesan").textContent = `Gagal menyimpan: ${err.message}`;
+      return;
+    }
+    sibuk = false;
+    // Maju ke kejadian belum-terverifikasi berikutnya di halaman ini. Di tab
+    // "Belum" baris yang barusan diputus hilang setelah dimuat ulang, jadi
+    // tujuannya ditentukan SEBELUM memuat.
+    const i = DATA.items.findIndex((x) => x.id === e.id);
+    const berikut = DATA.items.slice(i + 1).find((x) => !x.verified)
+      || DATA.items.slice(0, i).find((x) => !x.verified);
+    pilih = berikut ? berikut.id : e.id;
+    await muat(true);
+  }
+
+  function geser(arah) {
+    if (!DATA?.items.length) return;
+    const i = DATA.items.findIndex((x) => x.id === pilih);
+    const j = Math.min(DATA.items.length - 1, Math.max(0, (i < 0 ? 0 : i) + arah));
+    buka(DATA.items[j].id);
+    document.querySelector(`tbody tr[data-id="${DATA.items[j].id}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }
+
+  // ----------------------------------------------------------- wiring
+  $("tabel").addEventListener("click", (ev) => {
+    const tr = ev.target.closest("tr[data-id]");
+    if (tr) buka(+tr.dataset.id);
+  });
+  $("rinci").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-v]");
+    if (b) putuskan(b.dataset.v);
+  });
+  document.querySelector(".tabs").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-status]");
+    if (!b) return;
+    S.status = b.dataset.status;
+    S.page = 1;
+    muat();
+  });
+  const ubah = (id, kunci, fn = (v) => v) => $(id).addEventListener("change", (ev) => {
+    S[kunci] = fn(ev.target.type === "checkbox" ? ev.target.checked : ev.target.value);
+    S.page = 1;
+    muat();
+  });
+  ubah("fKamera", "camera");
+  ubah("fJenis", "kind");
+  ubah("fWewenang", "authority");
+  ubah("fHariIni", "today");
+  ubah("perHal", "per", Number);
+  $("sebelum").addEventListener("click", () => { if (S.page > 1) { S.page--; muat(); } });
+  $("berikut").addEventListener("click", () => {
+    if (DATA && S.page < DATA.pages) { S.page++; muat(); }
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.target.closest("input,select,textarea") || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    const k = ev.key.toLowerCase();
+    if (k === "j" || ev.key === "ArrowDown") { ev.preventDefault(); geser(1); }
+    else if (k === "k" || ev.key === "ArrowUp") { ev.preventDefault(); geser(-1); }
+    else if (k === "b") putuskan("benar");
+    else if (k === "x") putuskan("bukan");
+  });
+
+  // -------------------------------------------------------------- tema
+  const tema = $("tema");
+  tema.addEventListener("click", () => {
+    const gelap = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", gelap ? "light" : "dark");
+    tema.textContent = gelap ? "Mode gelap" : "Mode terang";
+    try { localStorage.setItem("rkl-theme", gelap ? "light" : "dark"); } catch (_) {}
+  });
+  try {
+    const s = localStorage.getItem("rkl-theme");
+    if (s) {
+      document.documentElement.setAttribute("data-theme", s);
+      tema.textContent = s === "dark" ? "Mode terang" : "Mode gelap";
+    }
+  } catch (_) {}
+
+  (async () => {
+    try {
+      const k = await api("/api/kamera");
+      for (const c of k.cameras) KAMERA[c.key] = { name: c.name, area: c.area };
+    } catch (_) { /* nama kamera tidak wajib; kuncinya tetap tampil */ }
+    muat();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+name: attribute
+title: Atribut kendaraan
+description: >
+  Warna (10 kelas) dan tipe bodi (9 kelas) per kendaraan, PP-LCNet di atas MOT.
+  Catatan: model dilatih pada dataset VeRi (Cina) — tidak ada kelas untuk
+  angkot/bajaj/bentor.
+modules:
+  MOT: true
+  VEHICLE_ATTR: true
+overrides:
+  VEHICLE_ATTR:
+    color_threshold: 0.5
+    type_threshold: 0.5

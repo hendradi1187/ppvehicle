@@ -1,0 +1,72 @@
+# Ditulis oleh editor zona visual (/zona) - JANGAN disunting
+# tangan kecuali paham: berkas ini MENIMPA region_polygon,
+# zone_label dan illegal_parking_time dari cameras.yml.
+# Hapus entri di sini untuk kembali ke nilai di cameras.yml.
+
+zones:
+  cctv01:
+    region_polygon:
+    - 173
+    - 93
+    - 223
+    - 58
+    - 323
+    - 356
+    - 199
+    - 358
+    updated_at: '2026-09-24T13:23:49+00:00'
+  cctv02:
+    region_polygon:
+    - 309
+    - 353
+    - 440
+    - 70
+    - 461
+    - 70
+    - 427
+    - 358
+    updated_at: '2026-09-26T15:00:43+00:00'
+    zone_label: Jalur Sepeda
+  jatibaru:
+    illegal_parking_time: 8
+    region_polygon:
+    - 0
+    - 133
+    - 162
+    - 23
+    - 212
+    - 22
+    - 94
+    - 114
+    - 4
+    - 197
+    updated_at: '2026-09-22T12:31:21+00:00'
+    zone_label: Badan jalan sisi barat
+  sparman02:
+    illegal_parking_time: 120
+    region_polygon:
+    - 323
+    - 84
+    - 443
+    - 109
+    - 354
+    - 360
+    - 36
+    - 360
+    - 270
+    - 131
+    updated_at: '2026-09-22T13:20:26+00:00'
+    zone_label: Badan jalan arah Grogol
+  thamrin:
+    illegal_parking_time: 8
+    region_polygon:
+    - 336
+    - 354
+    - 608
+    - 141
+    - 638
+    - 161
+    - 566
+    - 354
+    updated_at: '2026-09-26T15:01:47+00:00'
+    zone_label: Jalur sepeda

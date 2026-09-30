@@ -1,0 +1,18 @@
+# Development profile — this laptop (i5-8250U, no CUDA GPU).
+# Lightweight detector + MKLDNN + frame skipping. Expect ~0.5-2 FPS on the
+# full pipeline; use it for correctness, not for throughput.
+name: cpu
+device: cpu
+run_mode: paddle
+enable_mkldnn: true
+cpu_threads: 4
+
+# Key into MODEL_ZOO (src/ppvehicle/models.py)
+detector: ppyoloe_s
+
+# MOT.skip_frame_num — run detection every Nth frame, reuse tracks in between.
+# Upstream warns: preferably no more than 3.
+skip_frame_num: 2
+
+# Draw annotated frames. Turn off for headless throughput runs.
+visual: true

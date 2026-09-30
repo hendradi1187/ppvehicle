@@ -1,0 +1,9 @@
+name: tracking
+title: Tracking kendaraan (MOT)
+description: >
+  Deteksi + ID unik per kendaraan lintas frame (OC-SORT). Fondasi semua
+  skenario lain — counting, parkir liar, lawan arah semuanya butuh MOT.
+modules:
+  MOT: true
+args:
+  draw_center_traj: true

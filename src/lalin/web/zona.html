@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor Zona</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Ctext%20y='14'%20font-size='14'%3E%F0%9F%93%90%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/aset/fonts/fonts.css">
+<style>
+  :root {
+    --ground:#eef2f4; --panel:#fff; --panel-2:#f6f9fa; --line:#d5e0e6;
+    --line-soft:#e5edf1; --ink:#141e26; --ink-2:#3d525f; --muted:#64798a;
+    --accent:#0c8184; --accent-soft:#d8efef; --crit:#c0372f; --warn:#a36a10;
+    --ok:#1a7a5a; --ok-soft:#d9f0e6;
+    --display:"Barlow Condensed","Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#080c10; --panel:#10181f; --panel-2:#16212a; --line:#223240;
+      --line-soft:#1a2831; --ink:#dde8ee; --ink-2:#a8bcc8; --muted:#748b9a;
+      --accent:#2ec4c6; --accent-soft:#0e2f33; --crit:#f2685c; --warn:#e4a33e;
+      --ok:#45c294; --ok-soft:#102e24;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+       font-family:var(--body);font-size:14px;line-height:1.45}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+         padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+  h1{margin:0;font-family:var(--display);font-size:20px;font-weight:700;
+     text-transform:uppercase;letter-spacing:.04em}
+  a{color:var(--accent);font-size:13px;font-weight:600;text-decoration:none}
+  .spacer{flex:1 1 auto}
+  main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;
+       padding:14px 16px 32px;max-width:1500px;margin:0 auto;align-items:start}
+  @media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+  .panel>.head{display:flex;align-items:center;justify-content:space-between;
+               gap:8px;padding:9px 12px;border-bottom:1px solid var(--line-soft)}
+  .panel>.head h2{margin:0;font-family:var(--display);font-size:12px;
+                  text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .body{padding:12px}
+  label{display:block;margin:12px 0 4px;font-size:11px;font-weight:600;
+        letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  label:first-child{margin-top:0}
+  input,select{width:100%;padding:8px 10px;border-radius:6px;font:inherit;
+               background:var(--panel-2);color:var(--ink);border:1px solid var(--line)}
+  button{font:inherit;font-size:13px;font-weight:600;padding:8px 12px;
+         border-radius:6px;cursor:pointer;border:1px solid var(--line);
+         background:var(--panel-2);color:var(--ink-2)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+  .stage{position:relative;background:#000;border-radius:8px 8px 0 0;
+         overflow:hidden;aspect-ratio:16/9}
+  .stage img{width:100%;height:100%;object-fit:cover;display:block;
+             user-select:none;-webkit-user-drag:none}
+  .stage svg{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;
+             touch-action:none}
+  .hint{margin:0;padding:9px 12px;font-size:11.5px;color:var(--muted);
+        line-height:1.5;border-top:1px solid var(--line-soft)}
+  .coords{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);
+          border:1px solid var(--line);border-radius:6px;padding:9px 10px;
+          margin-top:10px;word-break:break-all;line-height:1.6;color:var(--ink-2)}
+  .src{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:3px;
+       border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .src.editor{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .msg{margin-top:12px;padding:9px 11px;border-radius:6px;font-size:12px;line-height:1.5}
+  .msg.ok{color:var(--ok);background:var(--ok-soft);border:1px solid var(--ok)}
+  .msg.err{color:var(--crit);background:var(--panel-2);border:1px solid var(--crit)}
+  .msg:empty{display:none}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:14px 0 0;
+        border-left:2px solid var(--warn);padding-left:10px}
+
+  /* Penuntun langkah - sama pola dengan Ruang Kendali supaya operator tidak
+     perlu belajar dua kali. */
+  .tour-hole{position:fixed;z-index:60;border-radius:9px;pointer-events:none;
+             border:2px solid var(--accent);
+             box-shadow:0 0 0 9999px rgba(4,10,14,.74);transition:all .22s ease}
+  .tour-card{position:fixed;z-index:61;width:min(350px,calc(100vw - 32px));
+             background:var(--panel);border:1px solid var(--accent);
+             border-radius:9px;padding:14px 16px 12px;
+             box-shadow:0 18px 46px rgba(0,0,0,.4)}
+  .tour-card .no{font-family:var(--mono);font-size:10.5px;font-weight:600;
+                 letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .tour-card h3{font-family:var(--display);font-size:19px;font-weight:700;
+                margin:3px 0 6px;color:var(--ink)}
+  .tour-card p{margin:0;font-size:13px;line-height:1.55;color:var(--ink-2)}
+  .tour-nav{display:flex;gap:7px;align-items:center;margin-top:13px}
+  .tour-nav .sp{flex:1 1 auto}
+  .tour-nav button{padding:6px 11px;font-size:12.5px}
+  @media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Editor Zona</h1>
+  <span class="src" id="srcBadge">—</span>
+  <span class="spacer"></span>
+  <button id="tourBtn" style="padding:5px 11px;font-size:12.5px">? Panduan</button>
+  <a href="/">← Konsol operator</a>
+  <a href="/demo">Ruang Kendali →</a>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="stage">
+      <img id="frame" alt="Frame kamera">
+      <svg id="ov" viewBox="0 0 640 360" preserveAspectRatio="none"></svg>
+    </div>
+    <p class="hint" id="hint">Klik pada gambar untuk menambah titik. Seret titik
+      untuk menggesernya. Minimal 3 titik.</p>
+  </section>
+
+  <section class="panel">
+    <div class="head"><h2>Pengaturan</h2><span class="src" id="updated"></span></div>
+    <div class="body">
+      <label for="cam">Kamera</label>
+      <select id="cam"></select>
+
+      <label for="label">Nama zona</label>
+      <input type="text" id="label" placeholder="Jalur sepeda">
+
+      <label for="parking">Ambang parkir liar (detik)</label>
+      <input type="number" id="parking" min="3" max="600">
+
+      <label>Koordinat (piksel asli 640×360)</label>
+      <div class="coords" id="coords">belum ada titik</div>
+
+      <div class="btns" id="btnsGambar">
+        <button id="undo">Undo</button>
+        <button id="clear">Kosongkan</button>
+        <button id="reload">Muat ulang frame</button>
+      </div>
+      <div class="btns" id="btnsSimpan">
+        <button class="primary" id="saveRun">Simpan &amp; analisis</button>
+        <button id="save">Simpan saja</button>
+        <button id="reset">Kembalikan bawaan</button>
+      </div>
+
+      <div class="msg" id="msg"></div>
+
+      <p class="note"><strong>Simpan &amp; analisis</strong> langsung menjalankan
+        ulang kamera ini (±40 detik) sehingga mode Analisis di Ruang Kendali
+        memakai zona baru. <strong>Simpan saja</strong> hanya menyimpan — mode
+        Live dan Cuplikan langsung berubah, tapi mode Analisis tetap memakai
+        zona lama sampai ada analisis baru, karena pipeline menggambar zona ke
+        dalam gambar saat siklus berjalan.</p>
+      <p class="note">Zona yang disimpan berlaku untuk siklus batch berikutnya.
+        Nilainya ditulis ke <code>configs/zones.yml</code>, terpisah dari
+        <code>cameras.yml</code> supaya komentar dan alasan di sana tidak
+        tertimpa. "Kembalikan bawaan" menghapus timpaan itu.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const LIVE = "https://dki-jkt.balitower.co.id:7028/";
+  let cams = [], cur = null, pts = [], drag = -1;
+
+  const api = async (path, opts) => {
+    const r = await fetch(path, opts);
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(body.detail || `${r.status} ${r.statusText}`);
+    return body;
+  };
+
+  const say = (teks, kelas) => {
+    $("msg").className = "msg " + (kelas || "");
+    $("msg").textContent = teks || "";
+  };
+
+  // Klik dipetakan ke piksel asli 640x360, bukan piksel layar: elemen bisa
+  // berukuran apa saja, sedangkan poligon harus dalam koordinat video.
+  function toNative(ev) {
+    const r = $("ov").getBoundingClientRect();
+    return [
+      Math.round(Math.min(640, Math.max(0, (ev.clientX - r.left) / r.width * 640))),
+      Math.round(Math.min(360, Math.max(0, (ev.clientY - r.top) / r.height * 360))),
+    ];
+  }
+
+  function draw() {
+    const d = pts.map((p) => p.join(",")).join(" ");
+    const poly = pts.length > 1
+      ? `<polygon points="${d}" fill="var(--crit)" fill-opacity=".16"
+           stroke="var(--crit)" stroke-width="2" stroke-dasharray="7 5"/>` : "";
+    const dots = pts.map(([x, y], i) => `
+      <circle data-i="${i}" cx="${x}" cy="${y}" r="7" fill="var(--accent)"
+              stroke="#fff" stroke-width="2" style="cursor:grab"/>
+      <text x="${x + 11}" y="${y - 9}" fill="var(--accent)" font-size="12"
+            font-family="IBM Plex Mono, monospace" font-weight="600">${i + 1}</text>`
+    ).join("");
+    $("ov").innerHTML = poly + dots;
+    $("coords").textContent = pts.length
+      ? pts.map((p) => p.join(",")).join("  ")
+      : "belum ada titik";
+    $("save").disabled = pts.length < 3;
+    $("saveRun").disabled = pts.length < 3;
+  }
+
+  function pilihKamera(key) {
+    cur = cams.find((c) => c.key === key) || cams[0];
+    if (!cur) return;
+    pts = [];
+    const rp = cur.region_polygon || [];
+    for (let i = 0; i + 1 < rp.length; i += 2) pts.push([rp[i], rp[i + 1]]);
+    $("label").value = cur.zone_label || "";
+    $("parking").value = cur.illegal_parking_time ?? "";
+    $("srcBadge").textContent = `zona dari ${cur.zone_source}`;
+    $("srcBadge").className = "src" + (cur.zone_source === "editor" ? " editor" : "");
+    $("updated").textContent = cur.zone_updated_at
+      ? `disimpan ${cur.zone_updated_at.slice(0, 16).replace("T", " ")} UTC` : "";
+    $("reset").disabled = cur.zone_source !== "editor";
+    muatFrame();
+    draw();
+    say("");
+  }
+
+  // Frame live memperlihatkan kondisi sekarang; kalau host CCTV tak terjangkau
+  // (jaringan rapat, misalnya) jatuh ke cuplikan tersimpan supaya editor tetap
+  // bisa dipakai.
+  function muatFrame() {
+    if (!cur) return;
+    const img = $("frame");
+    const cadangan = `/cam/${encodeURIComponent(cur.key)}.jpg`;
+    img.onerror = () => { img.onerror = null; img.src = cadangan; };
+    img.src = `${LIVE}${cur.id || ""}/preview.jpg?t=${Date.now()}`;
+    if (!cur.id) img.src = cadangan;
+  }
+
+  $("ov").addEventListener("pointerdown", (ev) => {
+    const c = ev.target.closest("circle");
+    if (c) {
+      drag = Number(c.dataset.i);
+      $("ov").setPointerCapture(ev.pointerId);
+      return;
+    }
+    pts.push(toNative(ev));
+    draw();
+  });
+  $("ov").addEventListener("pointermove", (ev) => {
+    if (drag < 0) return;
+    pts[drag] = toNative(ev);
+    draw();
+  });
+  $("ov").addEventListener("pointerup", () => { drag = -1; });
+
+  $("undo").addEventListener("click", () => { pts.pop(); draw(); });
+  $("clear").addEventListener("click", () => { pts = []; draw(); });
+  $("reload").addEventListener("click", muatFrame);
+  $("cam").addEventListener("change", (e) => pilihKamera(e.target.value));
+
+  async function simpanZona() {
+    if (!cur || pts.length < 3) return null;
+    const key = cur.key, nama = cur.name, n = pts.length;
+    await api(`/api/cameras/${encodeURIComponent(key)}/zone`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        region_polygon: pts.flat(),
+        zone_label: $("label").value.trim(),
+        illegal_parking_time: $("parking").value ? Number($("parking").value) : null,
+      }),
+    });
+    await muatDaftar(key);
+    return { key, nama, n };
+  }
+
+  function sibuk(on, teks) {
+    for (const id of ["save", "saveRun", "reset", "cam"]) $(id).disabled = on;
+    if (!on) { $("save").disabled = pts.length < 3; $("saveRun").disabled = pts.length < 3; }
+    $("saveRun").textContent = teks || "Simpan & analisis";
+  }
+
+  $("save").addEventListener("click", async () => {
+    sibuk(true);
+    try {
+      const r = await simpanZona();
+      if (r) say(`Zona ${r.nama} tersimpan — ${r.n} titik. Mode Live dan `
+                 + `Cuplikan langsung memakainya; mode Analisis menunggu `
+                 + `analisis berikutnya.`, "ok");
+    } catch (e) { say("Gagal menyimpan: " + e.message, "err"); }
+    finally { sibuk(false); }
+  });
+
+  $("saveRun").addEventListener("click", async () => {
+    sibuk(true, "Menyimpan…");
+    let r;
+    try {
+      r = await simpanZona();
+      if (!r) return;
+    } catch (e) { say("Gagal menyimpan: " + e.message, "err"); sibuk(false); return; }
+
+    sibuk(true, "Menganalisis…");
+    say(`Zona tersimpan. Menganalisis ulang ${r.nama} — sekitar 40 detik.`, "ok");
+    try {
+      await api(`/api/batch/run?key=${encodeURIComponent(r.key)}&background=true`,
+                { method: "POST" });
+    } catch (e) { say("Zona tersimpan, tapi gagal memicu analisis: " + e.message, "err");
+                  sibuk(false); return; }
+
+    // Tunggu stempel waktu kamera ini berubah, bukan menghitung detik:
+    // durasi analisis berbeda-beda per kamera.
+    const mulai = Date.now();
+    const cek = setInterval(async () => {
+      let bat;
+      try { bat = await api("/api/batch"); } catch { return; }
+      const c = (bat.cameras || []).find((x) => x.key === r.key);
+      const selesai = c?.record?.finished_at;
+      if (selesai && (!c.zone_updated_at || selesai > c.zone_updated_at)) {
+        clearInterval(cek);
+        sibuk(false);
+        say(`Selesai. ${r.nama} sudah dianalisis dengan zona baru — buka `
+            + `Ruang Kendali, mode Analisis.`, "ok");
+      } else if (Date.now() - mulai > 300000) {
+        clearInterval(cek);
+        sibuk(false);
+        say("Analisis belum selesai setelah 5 menit. Cek Ruang Kendali.", "err");
+      }
+    }, 5000);
+  });
+
+  $("reset").addEventListener("click", async () => {
+    if (!cur) return;
+    try {
+      await api(`/api/cameras/${encodeURIComponent(cur.key)}/zone`, { method: "DELETE" });
+      await muatDaftar(cur.key);
+      say("Timpaan dihapus — kembali ke nilai di cameras.yml.", "ok");
+    } catch (e) {
+      say("Gagal: " + e.message, "err");
+    }
+  });
+
+  async function muatDaftar(pilih) {
+    cams = await api("/api/cameras");
+    $("cam").innerHTML = cams.map((c) =>
+      `<option value="${c.key}">${c.region} — ${c.name}</option>`).join("");
+    const diminta = new URLSearchParams(location.search).get("camera");
+    const key = pilih || (diminta && cams.some((c) => c.key === diminta) ? diminta : null)
+      || (cams[0] && cams[0].key);
+    $("cam").value = key;
+    pilihKamera(key);
+  }
+
+  // ------------------------------------------------------------ penuntun
+  // Urutannya mengikuti cara kerja: pilih kamera, gambar, beri nama, simpan.
+  // Langkah tentang dua tombol simpan sengaja diberi porsi paling panjang -
+  // di situlah operator paling mungkin salah paham.
+  const TOUR = [
+    { sel: "#cam", judul: "Pilih kameranya dulu",
+      teks: "Zona melekat pada satu kamera. Memilih kamera langsung memuat zona "
+          + "yang sedang berlaku, namanya, dan ambang parkirnya - jadi Anda "
+          + "menyunting yang sudah ada, bukan memulai dari nol." },
+    { sel: ".stage", judul: "Gambar zonanya di sini",
+      teks: "Klik pada gambar untuk menambah titik sudut. Seret titik yang sudah "
+          + "ada untuk menggesernya. Gambarnya diambil langsung dari kamera, jadi "
+          + "Anda melihat kondisi jalan yang sebenarnya saat menentukan area." },
+    { sel: "#hint", judul: "Aturan menggambar",
+      teks: "Baris ini mengingatkan aturan dasarnya: minimal tiga titik. Zona "
+          + "sebaiknya mengikuti bentuk area yang benar-benar diawasi - misalnya "
+          + "hanya jalur sepeda, bukan seluruh lebar jalan - agar kendaraan yang "
+          + "sah melintas tidak ikut tertandai." },
+    { sel: "#btnsGambar", judul: "Memperbaiki gambar",
+      teks: "Undo membatalkan titik terakhir. Kosongkan menghapus semua titik dan "
+          + "memulai dari awal. Muat ulang frame mengambil gambar terbaru dari "
+          + "kamera - berguna bila gambar yang tampil sudah lama atau terhalang "
+          + "kendaraan besar." },
+    { sel: "#coords", judul: "Angka yang akan disimpan",
+      teks: "Koordinat dalam piksel asli video 640x360, bukan piksel layar. "
+          + "Berguna untuk mencatat, atau menyalin zona ke kamera lain yang sudut "
+          + "pandangnya mirip." },
+    { sel: "#label", judul: "Nama zona",
+      teks: "Nama ini muncul di kartu bukti yang dibaca petugas lapangan, jadi "
+          + "tulislah yang bermakna bagi mereka - misalnya Jalur sepeda atau Bahu "
+          + "jalan sisi barat, bukan Zona 1." },
+    { sel: "#parking", judul: "Ambang parkir liar",
+      teks: "Jangan disamaratakan. Jalur sepeda, bahu jalan, dan trotoar cukup 8 "
+          + "detik karena tidak ada alasan sah berhenti di sana. Badan jalan pada "
+          + "simpang perlu 120 detik - harus melebihi satu siklus lampu merah, "
+          + "supaya mobil yang sedang antre tidak ikut ditandai sebagai parkir." },
+    { sel: "#saveRun", judul: "Simpan dan periksa ulang",
+      teks: "Ini pilihan yang dianjurkan. Zona disimpan lalu kamera ini langsung "
+          + "diperiksa ulang sekitar 40 detik, sehingga mode Live, Cuplikan, dan "
+          + "Analisis di Ruang Kendali semuanya memakai zona baru." },
+    { sel: "#save", judul: "Simpan saja - dan akibatnya",
+      teks: "Hanya menyimpan tanpa memeriksa ulang. Poligonnya langsung "
+          + "terlihat di semua mode, TETAPI angka dan daftar temuan di Ruang "
+          + "Kendali masih hasil hitungan dengan zona lama sampai ada "
+          + "pemeriksaan baru. Ruang Kendali memberi peringatan bila keduanya "
+          + "belum sejalan." },
+    { sel: "#reset", judul: "Membatalkan suntingan",
+      teks: "Mengembalikan zona ke nilai bawaan yang ditetapkan tim teknis. "
+          + "Berguna bila hasil suntingan ternyata keliru. Tombol ini mati bila "
+          + "kamera yang dipilih memang belum pernah disunting." },
+    { sel: "#msg", judul: "Tempat pesan muncul",
+      teks: "Hasil penyimpanan, kemajuan pemeriksaan, dan pesan kegagalan muncul "
+          + "di sini. Bila menekan Simpan dan tidak ada pesan apa pun, berarti ada "
+          + "yang tidak beres - laporkan ke tim teknis.",
+      // Area ini tersembunyi saat kosong, jadi tidak ada yang bisa disorot.
+      // Ditampilkan contoh selama langkah ini, lalu dikosongkan lagi.
+      aksi: () => say("Contoh pesan: zona tersimpan, 4 titik.", "ok"),
+      tutup: () => say("") },
+    { sel: "#srcBadge", judul: "Asal nilai yang tampil",
+      teks: "Penanda ini menyebutkan zona yang berlaku berasal dari mana: berkas "
+          + "bawaan tim teknis, atau hasil suntingan lewat halaman ini. Waktu "
+          + "penyimpanan terakhir tertera di kepala panel Pengaturan. Selesai - "
+          + "tekan tombol Panduan kapan saja untuk mengulang." },
+  ];
+
+  let tourI = -1;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function tourTutup() {
+    if (tourI >= 0 && TOUR[tourI] && TOUR[tourI].tutup) {
+      try { TOUR[tourI].tutup(); } catch (_) {}
+    }
+    tourI = -1;
+    document.querySelector(".tour-hole")?.remove();
+    document.querySelector(".tour-card")?.remove();
+    window.removeEventListener("resize", tourGambar);
+  }
+
+  function tourGambar() {
+    if (tourI < 0 || tourI >= TOUR.length) return;
+    const el = document.querySelector(TOUR[tourI].sel);
+    if (!el) { tourLangkah(tourI + 1); return; }
+    const r = el.getBoundingClientRect(), pad = 6;
+
+    let hole = document.querySelector(".tour-hole");
+    if (!hole) {
+      hole = document.createElement("div");
+      hole.className = "tour-hole";
+      document.body.appendChild(hole);
+    }
+    hole.style.top = (r.top - pad) + "px";
+    hole.style.left = (r.left - pad) + "px";
+    hole.style.width = (r.width + pad * 2) + "px";
+    hole.style.height = (r.height + pad * 2) + "px";
+
+    let card = document.querySelector(".tour-card");
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "tour-card";
+      document.body.appendChild(card);
+    }
+    const akhir = tourI === TOUR.length - 1;
+    card.innerHTML =
+      '<div class="no">Langkah ' + (tourI + 1) + ' dari ' + TOUR.length + '</div>' +
+      '<h3>' + esc(TOUR[tourI].judul) + '</h3><p>' + esc(TOUR[tourI].teks) + '</p>' +
+      '<div class="tour-nav">' +
+      '<button data-t="prev"' + (tourI ? '' : ' disabled') + '>Kembali</button>' +
+      '<button data-t="next" class="primary">' + (akhir ? 'Selesai' : 'Lanjut') +
+      '</button><span class="sp"></span>' +
+      '<button data-t="skip">Lewati</button></div>';
+
+    const ch = card.offsetHeight || 180, cw = card.offsetWidth || 350;
+    const bawah = r.bottom + 14 + ch < window.innerHeight;
+    card.style.top = (bawah ? r.bottom + 12 : Math.max(10, r.top - ch - 12)) + "px";
+    card.style.left = Math.min(Math.max(10, r.left), window.innerWidth - cw - 10) + "px";
+  }
+
+  function tourLangkah(i) {
+    // Bersihkan dulu keadaan yang disiapkan langkah sebelumnya - misalnya
+    // kartu bukti yang dibuka agar bisa disorot.
+    if (tourI >= 0 && TOUR[tourI] && TOUR[tourI].tutup) {
+      try { TOUR[tourI].tutup(); } catch (_) {}
+    }
+    if (i >= TOUR.length || i < 0) { tourTutup(); return; }
+    tourI = i;
+    // Sebagian langkah perlu menyetel layar lebih dulu: menjelaskan mode
+    // Analisis sementara layar menampilkan Live hanya membuat bingung.
+    if (TOUR[i].aksi) { try { TOUR[i].aksi(); } catch (_) {} }
+    const el = document.querySelector(TOUR[i].sel);
+    if (!el) { tourLangkah(i + 1); return; }
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    setTimeout(tourGambar, 420);
+  }
+
+  function tourMulai() {
+    window.addEventListener("resize", tourGambar);
+    tourLangkah(0);
+  }
+
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest(".tour-card [data-t]");
+    if (!b) return;
+    if (b.dataset.t === "next") tourLangkah(tourI + 1);
+    else if (b.dataset.t === "prev") tourLangkah(tourI - 1);
+    else tourTutup();
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (tourI < 0) return;
+    if (ev.key === "Escape") tourTutup();
+    if (ev.key === "ArrowRight") tourLangkah(tourI + 1);
+    if (ev.key === "ArrowLeft") tourLangkah(tourI - 1);
+  });
+  $("tourBtn").addEventListener("click", tourMulai);
+
+  muatDaftar().then(() => {
+    try {
+      if (!localStorage.getItem("rkl-zona-seen")) {
+        localStorage.setItem("rkl-zona-seen", "1");
+        setTimeout(tourMulai, 700);
+      }
+    } catch (_) {}
+  }).catch((e) => say("Gagal memuat kamera: " + e.message, "err"));
+})();
+</script>
+</body>
+</html>

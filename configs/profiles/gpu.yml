@@ -1,0 +1,18 @@
+# Production profile — GPU server (T4/A10/RTX class) with TensorRT.
+# This is what the model-zoo timings in the PP-Vehicle README assume.
+name: gpu
+device: gpu
+run_mode: trt_fp16          # paddle | trt_fp32 | trt_fp16 | trt_int8
+enable_mkldnn: false
+cpu_threads: 1
+
+detector: ppyoloe_l
+
+skip_frame_num: -1          # no skipping, full frame rate
+
+visual: true
+
+# TensorRT dynamic shape range
+trt_min_shape: 1
+trt_max_shape: 1280
+trt_opt_shape: 640

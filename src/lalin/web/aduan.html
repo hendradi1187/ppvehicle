@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aduan Masyarakat</title>
+<link rel="icon" href="/aset/dishub-dki.png">
+<link rel="stylesheet" href="/aset/fonts/fonts.css">
+<style>
+  /* Token DISHUB, sama persis dengan Ruang Kendali. */
+  :root {
+    --biru-900:#063B73; --biru-800:#07539A; --biru-700:#0868C7;
+    --biru-600:#0B78E3; --biru-500:#168AF5;
+    --emas:#F2C94C; --ai:#22C7D6; --ai-terang:#35E0EF;
+    --ground:#eef2f4; --panel:#fff; --panel-2:#f5f8fa; --panel-3:#eaf0f5;
+    --line:rgba(6,59,115,.14); --line-soft:rgba(6,59,115,.07);
+    --line-hover:rgba(6,59,115,.26); --line-active:rgba(11,120,227,.55);
+    --ink:#0B1A25; --ink-2:#33495a; --muted:#5d7385; --disabled:#93a7b4;
+    --accent:var(--biru-800); --accent-soft:#e3eefb; --accent-ink:#fff;
+    --crit:#B02318; --crit-soft:#fbe6e4;
+    --warn:#8f5e0b; --warn-soft:#fcf0d5;
+    --ok:#0F7A45; --ok-soft:#dcf1e5;
+    --info:#8a6410; --info-soft:#fcf2d6;
+    --ai-soft:#d8f4f7; --ai-ink:#0a6c76;
+    --emblem-bg:#fff; --emblem-ring:rgba(6,59,115,.16); --emblem-shadow:none;
+    --wordmark-sub:#8a6410;
+    --shadow:0 1px 2px rgba(6,59,115,.07),0 8px 24px rgba(6,59,115,.06);
+    --display:"Barlow Condensed","Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --ground:#07131D; --panel:#0B1A25; --panel-2:#0F2230; --panel-3:#132B3A;
+    --line:rgba(148,180,200,.12); --line-soft:rgba(148,180,200,.07);
+    --line-hover:rgba(148,180,200,.22); --line-active:rgba(11,120,227,.55);
+    --ink:#F1F6FA; --ink-2:#A6BAC8; --muted:#718898; --disabled:#4F6574;
+    --accent:var(--biru-500); --accent-soft:rgba(11,120,227,.16); --accent-ink:#04121f;
+    --crit:#F87A6E; --crit-soft:rgba(217,45,32,.18);
+    --warn:#F5C451; --warn-soft:rgba(245,196,81,.15);
+    --ok:#3FD08C; --ok-soft:rgba(21,153,87,.18);
+    --info:var(--emas); --info-soft:rgba(242,201,76,.15);
+    --ai-soft:rgba(34,199,214,.14); --ai-ink:var(--ai-terang);
+    --emblem-ring:rgba(148,180,200,.28); --emblem-shadow:0 0 0 3px rgba(255,255,255,.06);
+    --wordmark-sub:var(--emas);
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 28px rgba(0,0,0,.35);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#07131D; --panel:#0B1A25; --panel-2:#0F2230; --panel-3:#132B3A;
+    --line:rgba(148,180,200,.12); --line-soft:rgba(148,180,200,.07);
+    --line-hover:rgba(148,180,200,.22); --line-active:rgba(11,120,227,.55);
+    --ink:#F1F6FA; --ink-2:#A6BAC8; --muted:#718898; --disabled:#4F6574;
+    --accent:var(--biru-500); --accent-soft:rgba(11,120,227,.16); --accent-ink:#04121f;
+    --crit:#F87A6E; --crit-soft:rgba(217,45,32,.18);
+    --warn:#F5C451; --warn-soft:rgba(245,196,81,.15);
+    --ok:#3FD08C; --ok-soft:rgba(21,153,87,.18);
+    --info:var(--emas); --info-soft:rgba(242,201,76,.15);
+    --ai-soft:rgba(34,199,214,.14); --ai-ink:var(--ai-terang);
+    --emblem-ring:rgba(148,180,200,.28); --emblem-shadow:0 0 0 3px rgba(255,255,255,.06);
+    --wordmark-sub:var(--emas);
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+       font-family:var(--body);font-size:14px;line-height:1.55}
+  header{position:sticky;top:0;z-index:20;background:var(--panel);
+         border-bottom:1px solid var(--line);display:flex;align-items:center;
+         gap:12px;flex-wrap:wrap;padding:10px 16px}
+  .emblem{width:34px;height:34px;flex:none;border-radius:50%;
+          background:var(--emblem-bg);border:1px solid var(--emblem-ring);
+          box-shadow:var(--emblem-shadow);display:grid;place-items:center}
+  .emblem img{width:26px;height:26px;display:block}
+  .brandlock{display:flex;align-items:center;gap:11px}
+  .wm b{display:block;font-family:var(--display);font-size:19px;font-weight:700;
+        line-height:1;letter-spacing:.02em}
+  .wm span{display:block;font-size:9px;font-weight:700;letter-spacing:.17em;
+           text-transform:uppercase;color:var(--wordmark-sub);margin-top:3px}
+  h1{font-family:var(--display);font-size:22px;font-weight:700;margin:0 0 0 6px}
+  .spacer{flex:1 1 auto}
+  .icon,button.icon{font:inherit;font-size:12.5px;padding:6px 11px;border-radius:7px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);
+        cursor:pointer;text-decoration:none;display:inline-block}
+  .icon:hover{border-color:var(--line-hover);color:var(--ink)}
+  main{max-width:1180px;margin:0 auto;padding:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+         box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+  .head{display:flex;align-items:center;gap:10px;padding:11px 14px;
+        border-bottom:1px solid var(--line)}
+  .head h2{font-family:var(--display);font-size:15px;font-weight:700;margin:0;
+           letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 12px;font-size:10px;letter-spacing:.08em;
+     text-transform:uppercase;color:var(--muted);background:var(--panel-2);
+     border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.n{font-family:var(--mono);white-space:nowrap}
+  /* Id portal panjangnya 50+ karakter; ia harus boleh melipat, kalau tidak
+     selnya melebar dan menimpa kolom sebelahnya. */
+  .sumber{font-family:var(--mono);font-size:10px;line-height:1.45;
+          word-break:break-all;white-space:normal;max-width:210px}
+  .tag{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+       padding:2px 6px;border-radius:4px;border:1px solid var(--line);
+       color:var(--muted);white-space:nowrap}
+  .tag.bawaan{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .tag.ubah{color:var(--info);border-color:var(--info);background:var(--info-soft)}
+  .tag.zona{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+  .tag.nol{color:var(--crit);border-color:var(--crit);background:var(--crit-soft)}
+  .aksi{display:flex;gap:4px;flex-wrap:nowrap}
+  td:last-child{white-space:nowrap;width:1%}
+  .aksi button{font:inherit;font-size:10.5px;padding:3px 7px;border-radius:5px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);
+        cursor:pointer}
+  .aksi button:hover{border-color:var(--line-hover);color:var(--ink)}
+  .aksi button.bahaya:hover{border-color:var(--crit);color:var(--crit)}
+  .primary{background:var(--accent);border-color:var(--accent);
+           color:var(--accent-ink);font-weight:600}
+  .catatan{padding:11px 14px;font-size:12px;color:var(--muted);line-height:1.5}
+  .catatan strong{color:var(--ink-2)}
+  /* ---------------------------------------------------- aduan masyarakat */
+  main{max-width:1360px}
+  .kerja{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:14px;align-items:start}
+  @media (max-width:1100px){ .kerja{grid-template-columns:1fr} }
+  .saring{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+  .tab{font:inherit;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;border:1px solid var(--line);
+       background:var(--panel-2);color:var(--ink-2);cursor:pointer}
+  .tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .tab b{font-family:var(--mono);margin-left:4px}
+  tbody tr.pilih{cursor:pointer}
+  tbody tr.pilih:hover td{background:var(--panel-2)}
+  tbody tr[aria-selected="true"] td{background:var(--accent-soft)}
+  tbody tr[aria-selected="true"] td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  td.w{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--ink-2)}
+  .st{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;
+      border-radius:4px;white-space:nowrap;border:1px solid}
+  .st.baru{color:var(--muted);border-color:var(--line)}
+  .st.ada_kandidat{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+  .st.terbukti{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+  .st.tidak_ditemukan{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .st.tidak_terpantau,.st.di_luar_cakupan{color:var(--crit);border-color:var(--crit);background:var(--crit-soft)}
+  .st.selesai{color:var(--muted);border-color:var(--line);background:var(--panel-2)}
+  .halaman{display:flex;gap:8px;align-items:center;padding:9px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .halaman button{font:inherit;font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);
+       background:var(--panel-2);color:var(--ink-2);cursor:pointer}
+  .halaman button:disabled{opacity:.45;cursor:default}
+  .rinci{position:sticky;top:70px}
+  .fakta{display:grid;grid-template-columns:118px 1fr;gap:5px 12px;padding:12px 14px;font-size:13px}
+  .fakta dt{color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
+  .fakta dd{margin:0}
+  .cakupan{margin:0 14px 12px;padding:9px 11px;border-radius:7px;font-size:12.5px;line-height:1.5;border:1px solid var(--line);background:var(--panel-2)}
+  .cakupan.tidak_terpantau,.cakupan.di_luar_cakupan{border-color:var(--crit);background:var(--crit-soft)}
+  .cakupan.terbukti{border-color:var(--ok);background:var(--ok-soft)}
+  .cakupan small{display:block;color:var(--muted);margin-top:4px;font-family:var(--mono);font-size:10.5px}
+  .kand{border-top:1px solid var(--line-soft);padding:10px 14px;display:grid;grid-template-columns:132px 1fr;gap:10px}
+  .kand img,.kand .nofoto{width:132px;aspect-ratio:16/9;object-fit:cover;border-radius:5px;background:#05101a;display:block}
+  .kand .nofoto{display:grid;place-items:center;color:#8aa0b0;font-size:10px;text-align:center;padding:4px}
+  .kand .jd{font-weight:600;font-size:13px}
+  .kand .mt{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .kand .skor{font-family:var(--mono);font-weight:600;color:var(--ink)}
+  .kand .ak{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+  .kand .ak button,.kand .ak a{font:inherit;font-size:11.5px;padding:3px 9px;border-radius:5px;border:1px solid var(--line);
+       background:var(--panel-2);color:var(--ink-2);cursor:pointer;text-decoration:none}
+  .kand .ak button.ya{background:var(--ok);border-color:var(--ok);color:#fff}
+  .kand.dikonfirmasi{background:var(--ok-soft)}
+  .kand.ditolak{opacity:.55}
+  .riw{padding:10px 14px 14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-2)}
+  .riw li{margin:0 0 4px;list-style:none}
+  .riw ol{margin:6px 0 0;padding:0}
+  .riw .w{font-family:var(--mono);color:var(--muted);margin-right:6px}
+  .aksi2{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 12px;align-items:center}
+  .aksi2 button,.aksi2 select{font:inherit;font-size:12px;padding:5px 10px;border-radius:6px;border:1px solid var(--line);
+       background:var(--panel-2);color:var(--ink-2);cursor:pointer;width:auto}
+  .kamtab td.n{text-align:right;white-space:nowrap}
+  .kamtab th{white-space:nowrap}
+  .kamtab td:first-child{min-width:190px}
+  .gulir{overflow-x:auto}
+  .kecil{font-size:10.5px;color:var(--muted);font-weight:400;display:block}
+  .pres{font-family:var(--mono);font-weight:600}
+  .pres.rendah{color:var(--crit)} .pres.baik{color:var(--ok)} .pres.nol{color:var(--muted);font-weight:400}
+  dialog{border:1px solid var(--line);border-radius:11px;padding:0;background:var(--panel);color:var(--ink);
+         max-width:760px;width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.35)}
+  dialog::backdrop{background:rgba(4,12,18,.62)}
+  .dh{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .dh h3{font-family:var(--display);font-size:18px;margin:0}
+  form{padding:14px 16px 16px}
+  .grid{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  label{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  input,select,textarea{width:100%;padding:7px 9px;font:inherit;font-size:13px;border-radius:6px;border:1px solid var(--line);
+       background:var(--panel-2);color:var(--ink)}
+  textarea{min-height:70px;font-family:var(--mono);font-size:12px}
+  .bantu{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .pdp{margin:0 0 12px;padding:8px 11px;border-radius:7px;font-size:12px;background:var(--info-soft);border:1px solid var(--line);line-height:1.5}
+  .tombol{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  .tombol button{font:inherit;font-size:13px;padding:8px 14px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);cursor:pointer}
+  .primary{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important;font-weight:600}
+  .pesan{font-size:12px} .pesan.gagal{color:var(--crit)} .pesan.ok{color:var(--ok)}
+  .kosongbesar{padding:34px 16px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="brandlock">
+    <span class="emblem"><img src="/aset/dishub-emblem.png" width="26" height="26" alt=""></span>
+    <span class="wm"><b>DISHUB</b><span>DKI Jakarta</span></span>
+  </span>
+  <h1>Aduan Masyarakat</h1>
+  <span class="spacer"></span>
+  <a class="icon" href="/demo">Ruang Kendali</a>
+  <a class="icon" href="/verifikasi">Antrean Verifikasi</a>
+  <a class="icon" href="/kamera">Manajemen Kamera</a>
+  <button class="icon" id="tema" type="button">Mode gelap</button>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="head"><h2>Ukuran per kamera</h2><span class="spacer" style="flex:1"></span>
+      <span class="bantu" style="margin:0">Ketepatan = diputus “benar” ÷ seluruh yang sudah diputus petugas; diberi warna setelah minimal 10 keputusan.</span></div>
+    <div id="kamTabel"><p class="kosongbesar">Memuat…</p></div>
+  </section>
+
+  <div class="kerja">
+    <section class="panel">
+      <div class="saring" id="tabs"></div>
+      <div class="saring" style="border-bottom:1px solid var(--line)">
+        <button class="icon primary" id="baru" type="button">+ Aduan baru</button>
+        <button class="icon" id="impor" type="button">Impor dari CRM (JSON)</button>
+      </div>
+      <div id="daftar"><p class="kosongbesar">Memuat…</p></div>
+      <div class="halaman"><span id="rentang">–</span><span class="spacer" style="flex:1"></span>
+        <button id="sebelum" type="button">‹</button><span id="posisi">–</span><button id="berikut" type="button">›</button></div>
+    </section>
+
+    <section class="panel rinci" id="rinci" aria-live="polite">
+      <div class="head"><h2>Rincian aduan</h2></div>
+      <p class="kosongbesar">Pilih aduan di daftar.</p>
+    </section>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <div class="dh"><h3>Aduan baru</h3><span class="spacer" style="flex:1"></span>
+    <button class="icon" type="button" data-tutup>Tutup</button></div>
+  <form id="form" method="dialog">
+    <p class="pdp"><strong>Jangan masukkan nama, telepon, NIK, atau alamat pelapor.</strong>
+      Data pribadi tetap di sistem asal (CRM/JAKI). Di sini cukup nomor tiketnya.
+      Kiriman yang memuat data pribadi akan ditolak (UU No. 27/2022).</p>
+    <div class="grid">
+      <div><label for="a_sumber">Sumber</label>
+        <select id="a_sumber"><option value="crm">CRM Pemprov</option><option value="jaki">JAKI</option>
+          <option value="telepon">Telepon</option><option value="medsos">Media sosial</option><option value="petugas">Petugas lapangan</option></select></div>
+      <div><label for="a_ref">Nomor tiket sumber</label><input id="a_ref" placeholder="CRM-2026-000123"></div>
+      <div><label for="a_kat">Kategori</label><select id="a_kat"></select></div>
+    </div>
+    <div class="grid" style="margin-top:11px">
+      <div><label for="a_waktu">Waktu kejadian (WIB)</label><input id="a_waktu" type="datetime-local" required></div>
+      <div><label for="a_wil">Wilayah</label>
+        <select id="a_wil"><option value="">—</option><option>Jakarta Pusat</option><option>Jakarta Barat</option>
+          <option>Jakarta Selatan</option><option>Jakarta Timur</option><option>Jakarta Utara</option><option>Kepulauan Seribu</option></select></div>
+      <div><label for="a_kam">Kamera terdekat</label><select id="a_kam"><option value="">Cari otomatis dari lokasi</option></select>
+        <p class="bantu">Isi bila petugas tahu kamera yang meliput; itu pencocokan paling kuat.</p></div>
+    </div>
+    <div style="margin-top:11px"><label for="a_lok">Lokasi sebagaimana dilaporkan</label>
+      <input id="a_lok" required placeholder="Jl. Jati Baru Raya depan pasar"></div>
+    <div class="grid" style="margin-top:11px">
+      <div><label for="a_lat">Lintang (opsional)</label><input id="a_lat" type="number" step="any" placeholder="-6.1862"></div>
+      <div><label for="a_lon">Bujur (opsional)</label><input id="a_lon" type="number" step="any" placeholder="106.8144"></div>
+    </div>
+    <div style="margin-top:11px"><label for="a_desk">Uraian aduan</label><textarea id="a_desk" style="font-family:var(--body)"></textarea></div>
+    <div class="tombol"><button class="primary" id="simpan" type="button">Simpan &amp; cocokkan</button>
+      <button type="button" data-tutup>Batal</button><span class="pesan" id="pesan"></span></div>
+  </form>
+</dialog>
+
+<dialog id="dlgImpor">
+  <div class="dh"><h3>Impor aduan dari CRM</h3><span class="spacer" style="flex:1"></span>
+    <button class="icon" type="button" data-tutup>Tutup</button></div>
+  <form method="dialog">
+    <p class="pdp">Tempelkan larik JSON hasil ekspor CRM. Impor aman diulang: tiket yang sudah ada tidak digandakan.
+      Kolom: <code>sumber, ref_sumber, kategori, lokasi_teks, waktu_kejadian</code> (wajib),
+      <code>wilayah, kamera_dugaan, lat, lon, deskripsi, waktu_lapor</code> (opsional).</p>
+    <textarea id="imporTeks" style="min-height:190px" placeholder='[{"sumber":"crm","ref_sumber":"CRM-2026-000123","kategori":"parkir_liar","lokasi_teks":"Jl. Jati Baru Raya","waktu_kejadian":"2026-09-25T09:15:00+07:00"}]'></textarea>
+    <div class="tombol"><button class="primary" id="imporKirim" type="button">Impor</button>
+      <button type="button" data-tutup>Batal</button><span class="pesan" id="imporPesan"></span></div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  async function api(path, opts) {
+    const res = await fetch(path, opts);
+    if (!res.ok) { let d = {}; try { d = await res.json(); } catch (_) {} throw new Error(d.detail || `${res.status}`); }
+    return res.json();
+  }
+  const WIB = { timeZone: "Asia/Jakarta" };
+  const waktuWIB = (iso) => iso ? new Date(iso).toLocaleString("id-ID", { ...WIB, day: "2-digit", month: "short",
+    hour: "2-digit", minute: "2-digit", hour12: false }) : "—";
+
+  const KAT = { parkir_liar: "Parkir liar", lawan_arah: "Kendaraan lawan arah", langgar_marka: "Pelanggaran marka",
+    jalur_sepeda: "Kendaraan di jalur sepeda", ngetem: "Angkutan umum ngetem", kemacetan: "Kemacetan", lainnya: "Lainnya" };
+  const STATUS = [["", "Semua"], ["ada_kandidat", "Ada kandidat"], ["terbukti", "Terbukti"],
+    ["tidak_ditemukan", "Tidak ditemukan"], ["tidak_terpantau", "Tidak terpantau"],
+    ["di_luar_cakupan", "Di luar cakupan"], ["baru", "Baru"], ["selesai", "Selesai"]];
+  const LABEL_ST = Object.fromEntries(STATUS);
+  let KAMERA = {}, DATA = null, pilih = null, S = { status: "", page: 1 };
+
+  // --------------------------------------------------------- per kamera
+  async function muatKamera() {
+    let d;
+    try { d = await api("/api/aduan/kamera"); } catch (e) { $("kamTabel").innerHTML = `<p class="kosongbesar">Gagal: ${esc(e.message)}</p>`; return; }
+    // Ketepatan baru diberi warna "baik/buruk" setelah sampelnya cukup. Satu
+    // keputusan petugas yang kebetulan "benar" bukan bukti ketepatan 100%.
+    const SAMPEL_MIN = 10;
+    $("kamTabel").innerHTML = `<div class="gulir"><table class="kamtab"><thead><tr><th>Kamera</th>
+      <th>Kejadian</th><th>Benar / bukan / belum</th><th>Ketepatan deteksi</th>
+      <th>Aduan (terbukti)</th><th>Rekaman 24 j / 7 h</th><th>Gagal 7 h</th><th>Terakhir terekam</th></tr></thead><tbody>`
+      + d.map((k) => {
+        const p = k.kejadian.presisi, n = k.kejadian.benar + k.kejadian.bukan;
+        const cukup = n >= SAMPEL_MIN;
+        const kls = p == null || !cukup ? "nol" : p >= 0.8 ? "baik" : p < 0.5 ? "rendah" : "";
+        const teks = p == null ? "belum bisa dihitung"
+          : `${Math.round(p * 100)}%<span class="kecil">n=${n}${cukup ? "" : ", sampel kecil"}</span>`;
+        return `<tr><td><strong>${esc(k.name)}</strong></td>
+          <td class="n">${k.kejadian.total}</td>
+          <td class="n">${k.kejadian.benar} / ${k.kejadian.bukan} / ${k.kejadian.belum}</td>
+          <td class="n"><span class="pres ${kls}">${teks}</span></td>
+          <td class="n">${k.aduan.total || 0} (${k.aduan.terbukti || 0})</td>
+          <td class="n">${k.rekaman.siklus_24j} / ${k.rekaman.siklus_7h}</td>
+          <td class="n">${k.rekaman.gagal_7h}</td><td class="w">${esc(waktuWIB(k.rekaman.terakhir))}</td></tr>`;
+      }).join("") + "</tbody></table></div>";
+  }
+
+  // ------------------------------------------------------------ daftar
+  async function muat(tetap = false) {
+    const q = new URLSearchParams({ page: S.page, per_page: 20 });
+    if (S.status) q.set("status", S.status);
+    try { DATA = await api("/api/aduan?" + q); } catch (e) { $("daftar").innerHTML = `<p class="kosongbesar">Gagal: ${esc(e.message)}</p>`; return; }
+    const j = DATA.jumlah || {}, semua = Object.values(j).reduce((a, b) => a + b, 0);
+    $("tabs").innerHTML = STATUS.map(([k, t]) =>
+      `<button class="tab" type="button" data-s="${k}" aria-pressed="${S.status === k}">${t}<b>${k ? (j[k] || 0) : semua}</b></button>`).join("");
+    if (!DATA.items.length) {
+      $("daftar").innerHTML = `<p class="kosongbesar">${semua ? "Tidak ada aduan dengan status ini." : "Belum ada aduan. Tambahkan lewat “Aduan baru” atau impor dari CRM."}</p>`;
+    } else {
+      $("daftar").innerHTML = `<table><thead><tr><th>Waktu kejadian</th><th>Tiket</th><th>Kategori</th><th>Lokasi</th><th>Status</th></tr></thead><tbody>`
+        + DATA.items.map((a) => `<tr class="pilih" data-id="${a.id}" aria-selected="${a.id === pilih}">
+          <td class="w">${esc(waktuWIB(a.waktu_kejadian))}</td>
+          <td class="w">${esc(a.sumber)}${a.ref_sumber ? " · " + esc(a.ref_sumber) : ""}</td>
+          <td>${esc(a.label_kategori)}</td><td>${esc(a.lokasi_teks)}</td>
+          <td><span class="st ${a.status}">${esc(LABEL_ST[a.status] || a.status)}</span>${a.n_kandidat ? ` <span class="bantu">${a.n_kandidat} kandidat</span>` : ""}</td></tr>`).join("")
+        + "</tbody></table>";
+    }
+    $("rentang").textContent = `${DATA.total} aduan`;
+    $("posisi").textContent = `Hal. ${DATA.page} / ${DATA.pages}`;
+    $("sebelum").disabled = DATA.page <= 1; $("berikut").disabled = DATA.page >= DATA.pages;
+    if (!tetap || !DATA.items.some((a) => a.id === pilih)) pilih = DATA.items[0]?.id ?? null;
+    if (pilih) buka(pilih); else $("rinci").innerHTML = `<div class="head"><h2>Rincian aduan</h2></div><p class="kosongbesar">Pilih aduan di daftar.</p>`;
+  }
+
+  // ----------------------------------------------------------- rincian
+  async function buka(id) {
+    pilih = id;
+    document.querySelectorAll("tr.pilih").forEach((tr) => tr.setAttribute("aria-selected", String(+tr.dataset.id === id)));
+    let a;
+    try { a = await api(`/api/aduan/${id}`); } catch (e) { $("rinci").innerHTML = `<p class="kosongbesar">Gagal: ${esc(e.message)}</p>`; return; }
+    const cak = a.cakupan || {};
+    const kam = (cak.kamera || []).map((k) => `${esc(KAMERA[k.key] || k.key)} (${esc(k.cara)}, ${k.siklus_terekam}× terekam)`).join("; ");
+    const kand = a.kandidat.length ? a.kandidat.map((k) => {
+      const foto = k.ada_bukti ? `<img src="/api/events/${k.event_id}/bukti" alt="Bukti kejadian ${k.event_id}" loading="lazy">`
+                               : `<div class="nofoto">foto bukti tidak ada (kejadian sebelum 24 Sep)</div>`;
+      const ver = k.verified ? (k.verdict === "benar" ? " · diverifikasi benar" : " · diverifikasi bukan") : " · belum diverifikasi";
+      return `<div class="kand ${k.keputusan}">${foto}<div>
+        <div class="jd">#${k.event_id} · ${esc(k.label)}</div>
+        <div class="mt">${esc(KAMERA[k.camera] || k.camera)} · ${esc(waktuWIB(k.detected_at))} WIB · selisih ${k.alasan.selisih_menit} mnt${ver}</div>
+        <div class="mt">Skor <span class="skor">${Math.round(k.skor * 100)}</span>: jenis ${k.alasan.jenis_cocok} + kamera ${k.alasan.kamera}
+          (${esc(k.alasan.cara_kamera)}) + waktu ${k.alasan.waktu}${k.alasan.terverifikasi_benar ? " + verifikasi " + k.alasan.terverifikasi_benar : ""}</div>
+        <div class="ak">${k.keputusan === "dikonfirmasi" ? "<strong style='color:var(--ok)'>Bukti aduan ini</strong>"
+          : `<button class="ya" type="button" data-putus="dikonfirmasi" data-e="${k.event_id}">Konfirmasi sebagai bukti</button>
+             <button type="button" data-putus="ditolak" data-e="${k.event_id}">Tolak</button>`}
+          <a href="/verifikasi?status=&camera=${encodeURIComponent(k.camera)}" target="_blank">Buka di antrean</a></div></div></div>`;
+    }).join("") : "";
+    $("rinci").innerHTML = `<div class="head"><h2>Aduan #${a.id}</h2><span class="spacer" style="flex:1"></span>
+        <span class="st ${a.status}">${esc(LABEL_ST[a.status] || a.status)}</span></div>
+      <dl class="fakta">
+        <dt>Tiket</dt><dd>${esc(a.sumber)}${a.ref_sumber ? " · " + esc(a.ref_sumber) : ""}</dd>
+        <dt>Kategori</dt><dd>${esc(a.label_kategori)}</dd>
+        <dt>Waktu</dt><dd>${esc(waktuWIB(a.waktu_kejadian))} WIB</dd>
+        <dt>Lokasi</dt><dd>${esc(a.lokasi_teks)}${a.wilayah ? " · " + esc(a.wilayah) : ""}</dd>
+        ${a.deskripsi ? `<dt>Uraian</dt><dd>${esc(a.deskripsi)}</dd>` : ""}
+      </dl>
+      <div class="cakupan ${a.status}"><strong>${esc(cak.keterangan || "Belum dicocokkan.")}</strong>
+        ${kam ? `<small>Kamera diperiksa: ${kam}</small>` : ""}
+        ${cak.rentang_utc ? `<small>Rentang: ${esc(waktuWIB(cak.rentang_utc[0]))} – ${esc(waktuWIB(cak.rentang_utc[1]))} WIB (±${cak.jendela_menit} mnt)</small>` : ""}
+        ${a.status === "tidak_terpantau" ? "<small>Ketiadaan kejadian di sini BUKAN bukti pelanggaran tidak terjadi: sistem memantau lewat klip berkala, bukan 24 jam.</small>" : ""}</div>
+      <div class="aksi2"><label style="margin:0">Rentang</label>
+        <select id="jendela"><option value="15">±15 mnt</option><option value="30" selected>±30 mnt</option><option value="60">±60 mnt</option><option value="120">±120 mnt</option></select>
+        <button type="button" id="ulang">Cocokkan ulang</button>
+        ${a.status !== "selesai" ? `<button type="button" id="tutupAduan">Tandai selesai</button>` : ""}</div>
+      ${kand}
+      <div class="riw"><strong>Riwayat</strong><ol>${a.riwayat.map((r) => `<li><span class="w">${esc(waktuWIB(r.waktu))}</span>
+        ${esc(LABEL_ST[r.dari_status] || r.dari_status || "—")} → <strong>${esc(LABEL_ST[r.ke_status] || r.ke_status)}</strong>
+        <span class="bantu" style="display:inline">(${esc(r.oleh)}${r.catatan ? ": " + esc(r.catatan) : ""})</span></li>`).join("")}</ol></div>`;
+  }
+
+  // ------------------------------------------------------------ aksi
+  $("tabs").addEventListener("click", (ev) => { const b = ev.target.closest("[data-s]"); if (b) { S.status = b.dataset.s; S.page = 1; muat(); } });
+  $("daftar").addEventListener("click", (ev) => { const tr = ev.target.closest("tr[data-id]"); if (tr) buka(+tr.dataset.id); });
+  $("sebelum").addEventListener("click", () => { if (S.page > 1) { S.page--; muat(); } });
+  $("berikut").addEventListener("click", () => { if (DATA && S.page < DATA.pages) { S.page++; muat(); } });
+  $("rinci").addEventListener("click", async (ev) => {
+    const b = ev.target.closest("button"); if (!b || !pilih) return;
+    try {
+      if (b.dataset.putus) {
+        const catatan = b.dataset.putus === "ditolak" ? (prompt("Alasan menolak kandidat ini (opsional):") ?? undefined) : undefined;
+        if (catatan === undefined && b.dataset.putus === "ditolak") return;
+        await api(`/api/aduan/${pilih}/putus`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event_id: +b.dataset.e, keputusan: b.dataset.putus, catatan: catatan || null }) });
+      } else if (b.id === "ulang") {
+        await api(`/api/aduan/${pilih}/cocokkan?jendela_menit=${$("jendela").value}`, { method: "POST" });
+      } else if (b.id === "tutupAduan") {
+        const c = prompt("Catatan penutupan (opsional):"); if (c === null) return;
+        await api(`/api/aduan/${pilih}/status`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "selesai", catatan: c || null }) });
+      } else return;
+      await muat(true); muatKamera();
+    } catch (e) { alert("Gagal: " + e.message); }
+  });
+
+  // ----------------------------------------------------------- formulir
+  document.querySelectorAll("[data-tutup]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
+  $("baru").addEventListener("click", () => {
+    $("form").reset(); $("pesan").textContent = "";
+    const t = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 16);   // sekarang, WIB
+    $("a_waktu").value = t; $("dlg").showModal();
+  });
+  $("simpan").addEventListener("click", async () => {
+    const v = (id) => $(id).value.trim();
+    if (!v("a_lok") || !v("a_waktu")) { $("pesan").className = "pesan gagal"; $("pesan").textContent = "Lokasi dan waktu wajib."; return; }
+    const muatan = { sumber: v("a_sumber"), ref_sumber: v("a_ref") || null, kategori: v("a_kat"),
+      lokasi_teks: v("a_lok"), wilayah: v("a_wil") || null, kamera_dugaan: v("a_kam") || null,
+      waktu_kejadian: v("a_waktu") + ":00+07:00", deskripsi: v("a_desk") || null,
+      lat: v("a_lat") ? +v("a_lat") : null, lon: v("a_lon") ? +v("a_lon") : null };
+    $("pesan").className = "pesan"; $("pesan").textContent = "Menyimpan…";
+    try {
+      const r = await api("/api/aduan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(muatan) });
+      $("dlg").close(); pilih = r.id; S.status = ""; S.page = 1; await muat(true); muatKamera();
+    } catch (e) { $("pesan").className = "pesan gagal"; $("pesan").textContent = e.message; }
+  });
+  $("impor").addEventListener("click", () => { $("imporPesan").textContent = ""; $("dlgImpor").showModal(); });
+  $("imporKirim").addEventListener("click", async () => {
+    let data;
+    try { data = JSON.parse($("imporTeks").value); if (!Array.isArray(data)) throw new Error("harus larik [ ... ]"); }
+    catch (e) { $("imporPesan").className = "pesan gagal"; $("imporPesan").textContent = "JSON tidak sah: " + e.message; return; }
+    try {
+      const r = await api("/api/aduan/impor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      $("imporPesan").className = "pesan " + (r.gagal.length ? "gagal" : "ok");
+      $("imporPesan").textContent = `${r.baru} baru, ${r.sudah_ada} sudah ada, ${r.gagal.length} gagal`
+        + (r.gagal.length ? ": " + r.gagal.map((g) => `baris ${g.baris} (${g.alasan})`).join("; ") : "");
+      muat(); muatKamera();
+    } catch (e) { $("imporPesan").className = "pesan gagal"; $("imporPesan").textContent = e.message; }
+  });
+
+  // -------------------------------------------------------------- tema
+  const tema = $("tema");
+  tema.addEventListener("click", () => {
+    const gelap = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", gelap ? "light" : "dark");
+    tema.textContent = gelap ? "Mode gelap" : "Mode terang";
+    try { localStorage.setItem("rkl-theme", gelap ? "light" : "dark"); } catch (_) {}
+  });
+  try { const s = localStorage.getItem("rkl-theme"); if (s) { document.documentElement.setAttribute("data-theme", s); tema.textContent = s === "dark" ? "Mode terang" : "Mode gelap"; } } catch (_) {}
+
+  $("a_kat").innerHTML = Object.entries(KAT).map(([k, t]) => `<option value="${k}">${t}</option>`).join("");
+  (async () => {
+    try {
+      const k = await api("/api/kamera");
+      for (const c of k.cameras) KAMERA[c.key] = c.name;
+      $("a_kam").innerHTML += k.cameras.map((c) => `<option value="${esc(c.key)}">${esc(c.name)}</option>`).join("");
+    } catch (_) {}
+    muatKamera(); muat();
+  })();
+})();
+</script>
+</body>
+</html>

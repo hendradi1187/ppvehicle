@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PP-Vehicle</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --line: #272b34; --fg: #e6e8ee;
+    --muted: #949bab; --accent: #4c8dff; --ok: #3ecf8e; --err: #ff6b6b;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f7f9; --panel: #fff; --line: #e2e5ea; --fg: #1a1d23;
+      --muted: #6b7280; --accent: #2563eb; --ok: #0f9d58; --err: #d93025;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  header {
+    padding: 20px 16px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid;
+         grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line);
+          border-radius: 10px; padding: 16px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+             color: var(--muted); margin: 0 0 12px; }
+  label { display: block; margin: 12px 0 4px; font-size: 12px; color: var(--muted); }
+  input, select, button, textarea {
+    width: 100%; padding: 8px 10px; border-radius: 7px; font: inherit;
+    background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+  }
+  button { background: var(--accent); color: #fff; border: 0; cursor: pointer;
+           font-weight: 600; margin-top: 16px; padding: 10px; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--fg);
+                 border: 1px solid var(--line); font-weight: 500; margin-top: 8px; }
+  .desc { font-size: 12px; color: var(--muted); margin-top: 8px;
+          white-space: pre-wrap; min-height: 2.5em; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 7px;
+        padding: 12px; overflow: auto; max-height: 340px; font-size: 12px;
+        margin: 0; white-space: pre-wrap; word-break: break-word; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px;
+           font-size: 11px; font-weight: 600; border: 1px solid var(--line); }
+  .badge.running { color: var(--accent); border-color: var(--accent); }
+  .badge.done { color: var(--ok); border-color: var(--ok); }
+  .badge.failed { color: var(--err); border-color: var(--err); }
+  ul { padding-left: 18px; margin: 8px 0; }
+  a { color: var(--accent); }
+  video, img.art { width: 100%; border-radius: 7px; border: 1px solid var(--line);
+                   margin-top: 10px; background: #000; }
+  .warn { font-size: 12px; color: var(--muted); border-left: 2px solid var(--accent);
+          padding-left: 10px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PP-Vehicle</h1>
+  <span class="sub" id="env">memuat…</span>
+  <span style="flex:1 1 auto"></span>
+  <a href="/zona" style="font-size:13px;font-weight:600;color:var(--accent);margin-right:14px">Editor Zona</a>
+  <a href="/demo" style="font-size:13px;font-weight:600;color:var(--accent)">Buka Ruang Kendali →</a>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Jalankan</h2>
+
+    <label for="camera">Kamera CCTV</label>
+    <select id="camera"></select>
+    <div class="desc" id="cameraDesc"></div>
+
+    <div class="row">
+      <div>
+        <label for="capture">Durasi rekam (detik)</label>
+        <input type="number" id="capture" min="5" max="120" value="20">
+      </div>
+      <div>
+        <label for="fps">Laju analisis (fps)</label>
+        <input type="number" id="fps" min="1" max="25" value="10">
+      </div>
+    </div>
+    <div class="desc" style="min-height:0">
+      Klip minimal 3x ambang parkir, kalau tidak alarmnya tidak sempat menyala.
+      Laju 5 fps cukup untuk kendaraan diam; penghitungan lintas garis perlu 10
+      fps karena di bawah itu ID track pecah di tengah penyeberangan. 20 fps
+      memberi hasil sama dengan biaya dua kali lipat.
+    </div>
+
+    <label for="scenario">Skenario</label>
+    <select id="scenario"></select>
+    <div class="desc" id="scenarioDesc"></div>
+
+    <label for="profile">Profil perangkat</label>
+    <select id="profile"></select>
+
+    <label for="polygon">Zona poligon (opsional) — <code>x0 y0 x1 y1 …</code> <span style="text-transform:none;letter-spacing:0">searah jarum jam, piksel asli 640×360</span></label>
+    <input type="text" id="polygon" placeholder="0 55 415 40 400 358 0 358">
+
+    <label for="parking">Ambang parkir liar (detik, opsional)</label>
+    <input type="number" id="parking" placeholder="10">
+
+    <label for="fence">Fence line lawan arah (opsional) — <code>x1 y1 x2 y2</code></label>
+    <input type="text" id="fence" placeholder="180 120 460 340">
+
+    <button id="submit">Mulai analisis</button>
+    <button class="ghost" id="refresh">Muat ulang daftar job</button>
+
+    <details style="margin-top:18px">
+      <summary style="cursor:pointer;font-size:12px;color:var(--muted)">
+        Sumber lain (rekaman arsip, uji ulang)</summary>
+      <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 0">
+        Sumber utama sistem ini adalah stream CCTV di atas. Dua kolom di bawah
+        untuk kasus lain: menganalisis rekaman arsip Dishub, atau mengulang
+        klip yang sama berkali-kali saat mengkalibrasi zona — hasil yang bisa
+        dibandingkan butuh masukan yang identik, dan stream langsung selalu
+        berbeda tiap rekam.
+      </p>
+      <label for="file">Unggah video / gambar</label>
+      <input type="file" id="file" accept="video/*,image/*">
+
+      <label for="source">…atau path berkas di server</label>
+      <input type="text" id="source" placeholder="/app/data/samples/klip.mp4">
+    </details>
+
+    <div class="warn" id="modelWarn" hidden></div>
+  </section>
+
+  <section class="card">
+    <h2>Job</h2>
+    <div class="row">
+      <select id="jobs"></select>
+    </div>
+    <p id="jobMeta" class="desc"></p>
+    <pre id="log">Belum ada job.</pre>
+    <div id="artifacts"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let scenarios = [], pollTimer = null;
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+  return res.json();
+}
+
+let cameras = [];
+
+async function boot() {
+  const [doc, scn, prof, bat] = await Promise.all([
+    api('/api/doctor'), api('/api/scenarios'), api('/api/profiles'),
+    api('/api/batch').catch(() => ({ cameras: [] })),
+  ]);
+  cameras = bat.cameras || [];
+  scenarios = scn;
+
+  const missing = doc.models.filter(m => !m.downloaded);
+  $('env').textContent =
+    `paddle ${doc.paddle} · CUDA ${doc.paddle_compiled_with_cuda ? 'ya' : 'tidak'}` +
+    ` · PaddleDetection ${doc.paddledetection.present ? 'OK' : 'BELUM ADA'}` +
+    ` · profil default ${doc.default_profile}`;
+
+  if (!doc.paddledetection.present) {
+    $('modelWarn').hidden = false;
+    $('modelWarn').textContent =
+      'PaddleDetection tidak ada di dalam image. Bangun ulang kontainer: ' +
+      'docker compose -f docker/docker-compose.yml build ppvehicle. ' +
+      '(scripts/setup.ps1 hanya untuk pemasangan langsung di host, bukan Docker.)';
+  } else if (missing.length) {
+    $('modelWarn').hidden = false;
+    $('modelWarn').textContent =
+      `${missing.length} model belum diunduh (${missing.map(m => m.key).join(', ')}). ` +
+      'Akan diunduh otomatis saat pertama dipakai.';
+  }
+
+  $('scenario').innerHTML = scn.map(s =>
+    `<option value="${s.name}">${s.title}</option>`).join('');
+  $('profile').innerHTML = Object.keys(prof.profiles).map(p =>
+    `<option value="${p}" ${p === prof.default ? 'selected' : ''}>${p}</option>`).join('');
+  $('camera').innerHTML =
+    cameras.map(c => `<option value="${c.key}">${c.region} — ${c.name}</option>`).join('')
+    + '<option value="">(tanpa kamera — pakai sumber lain)</option>';
+  showDesc();
+  showCamera();
+  await loadJobs();
+}
+
+// Memilih kamera mengisi zona dan ambangnya dari configs/cameras.yml, supaya
+// jelas nilai apa yang sedang berlaku - dan tetap bisa ditimpa untuk satu run.
+function showCamera() {
+  const c = cameras.find(x => x.key === $('camera').value);
+  if (!c) {
+    $('cameraDesc').textContent =
+      'Tanpa kamera: isi salah satu kolom di "Sumber lain" di bawah.';
+    return;
+  }
+  $('cameraDesc').textContent =
+    `${c.owner} · skenario ${c.scenario}` +
+    (c.zone_label ? ` · zona: ${c.zone_label}` : '') +
+    (c.illegal_parking_time != null ? ` · ambang parkir ${c.illegal_parking_time} dtk` : '');
+  if (c.region_polygon && c.region_polygon.length) {
+    $('polygon').value = c.region_polygon.join(' ');
+  }
+  if (c.illegal_parking_time != null) $('parking').value = c.illegal_parking_time;
+  if (c.analysis_fps) $('fps').value = c.analysis_fps;
+  if (c.clip_seconds) $('capture').value = c.clip_seconds;
+  const sc = scenarios.find(x => x.name === c.scenario);
+  if (sc) { $('scenario').value = c.scenario; showDesc(); }
+}
+
+function showDesc() {
+  const s = scenarios.find(x => x.name === $('scenario').value);
+  $('scenarioDesc').textContent = s
+    ? `${s.description}\nmodul: ${s.modules.join(', ') || 'DET saja'}` : '';
+}
+
+async function submit() {
+  const fd = new FormData();
+  fd.append('scenario', $('scenario').value);
+  fd.append('profile', $('profile').value);
+  const cam = $('camera').value;
+  if (cam) {
+    fd.append('camera', cam);
+    fd.append('capture_seconds', $('capture').value || '20');
+    fd.append('capture_fps', $('fps').value || '10');
+  } else if ($('file').files[0]) {
+    fd.append('file', $('file').files[0]);
+  } else if ($('source').value.trim()) {
+    fd.append('source', $('source').value.trim());
+  } else {
+    return alert('Pilih kamera, atau isi salah satu kolom di "Sumber lain".');
+  }
+  if ($('polygon').value.trim()) fd.append('region_polygon', $('polygon').value.trim());
+  if ($('parking').value) fd.append('illegal_parking_time', $('parking').value);
+  if ($('fence').value.trim()) fd.append('fence_line', $('fence').value.trim());
+
+  $('submit').disabled = true;
+  try {
+    const job = await api('/api/jobs', { method: 'POST', body: fd });
+    await loadJobs();
+    $('jobs').value = job.id;
+    watch(job.id);
+  } catch (e) {
+    alert('Gagal: ' + e.message);
+  } finally {
+    $('submit').disabled = false;
+  }
+}
+
+async function loadJobs() {
+  const jobs = await api('/api/jobs');
+  $('jobs').innerHTML = jobs.length
+    ? jobs.map(j => `<option value="${j.id}">${j.id} — ${j.status}</option>`).join('')
+    : '<option value="">(belum ada)</option>';
+  if (jobs.length) watch($('jobs').value || jobs[0].id);
+}
+
+function watch(id) {
+  if (!id) return;
+  clearInterval(pollTimer);
+  const tick = async () => {
+    let job;
+    try { job = await api('/api/jobs/' + id + '?log_tail=200'); }
+    catch { clearInterval(pollTimer); return; }
+    $('jobMeta').innerHTML =
+      `<span class="badge ${job.status}">${job.status}</span> ` +
+      `${job.scenario} · ${job.profile} · ${job.source_kind} · ${job.source}` +
+      (job.result?.elapsed_sec ? ` · ${job.result.elapsed_sec}s` : '');
+    $('log').textContent = job.log_tail.join('\n') || '(menunggu output…)';
+    $('log').scrollTop = $('log').scrollHeight;
+    if (job.status === 'done' || job.status === 'failed') {
+      clearInterval(pollTimer);
+      await showArtifacts(id);
+    }
+  };
+  tick();
+  pollTimer = setInterval(tick, 2000);
+}
+
+async function showArtifacts(id) {
+  const { artifacts } = await api(`/api/jobs/${id}/artifacts`);
+  if (!artifacts.length) { $('artifacts').innerHTML = ''; return; }
+  $('artifacts').innerHTML = '<h2 style="margin-top:16px">Hasil</h2>' +
+    artifacts.map(name => {
+      const url = `/api/jobs/${id}/artifact?name=${encodeURIComponent(name)}`;
+      if (/\.(mp4|avi|mov|mkv)$/i.test(name))
+        return `<video controls src="${url}"></video>`;
+      if (/\.(jpg|jpeg|png|bmp)$/i.test(name))
+        return `<img class="art" src="${url}" alt="${name}">`;
+      return `<div><a href="${url}" download>${name}</a></div>`;
+    }).join('');
+}
+
+$('scenario').addEventListener('change', showDesc);
+$('camera').addEventListener('change', showCamera);
+$('submit').addEventListener('click', submit);
+$('refresh').addEventListener('click', loadJobs);
+$('jobs').addEventListener('change', (e) => watch(e.target.value));
+boot().catch(e => { $('env').textContent = 'Gagal memuat: ' + e.message; });
+</script>
+</body>
+</html>

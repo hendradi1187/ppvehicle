@@ -1,0 +1,13 @@
+name: break_in
+title: Hitung kendaraan masuk area (zona poligon)
+description: >
+  Menghitung kendaraan yang masuk ke dalam poligon yang kita definisikan.
+  Ganti region_polygon dengan koordinat zona sendiri (searah jarum jam,
+  x0 y0 x1 y1 ...) atau pakai file di configs/zones/.
+modules:
+  MOT: true
+args:
+  do_break_in_counting: true
+  region_type: custom
+  region_polygon: [600, 300, 1300, 300, 1300, 800, 600, 800]
+  draw_center_traj: true

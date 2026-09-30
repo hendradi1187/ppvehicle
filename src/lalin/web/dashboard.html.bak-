@@ -1,0 +1,3852 @@
+<title>Ruang Kendali Lalin</title>
+<link rel="stylesheet" href="/aset/fonts/fonts.css">
+<style>
+  :root {
+    /* ==================================================================
+       DISHUB DKI JAKARTA - ENTERPRISE DESIGN SYSTEM
+       ------------------------------------------------------------------
+       Aturan semantik, dipatuhi di seluruh berkas:
+         Biru   -> DISHUB, aksi utama aplikasi
+         Sian   -> AI / computer vision SAJA, tidak pernah sebagai warna merek
+         Hijau  -> normal, sehat, sudah diverifikasi
+         Amber  -> peringatan, menunggu verifikasi
+         Oranye -> lalu lintas padat
+         Merah  -> insiden, kondisi kritis
+         Emas   -> aksen kelembagaan Jakarta (mis. kewenangan instansi lain)
+       Warna dipakai untuk menyatakan KEADAAN, bukan hiasan.
+       ================================================================== */
+
+    /* --- skala merek: biru DISHUB ------------------------------------ */
+    --biru-900: #063B73;
+    --biru-800: #07539A;
+    --biru-700: #0868C7;
+    --biru-600: #0B78E3;
+    --biru-500: #168AF5;
+
+    /* --- aksen Jakarta ----------------------------------------------- */
+    --emas: #F2C94C;
+    --merah: #D92D20;
+    --hijau: #159957;
+
+    /* --- AI / computer vision ---------------------------------------- */
+    --ai: #22C7D6;
+    --ai-terang: #35E0EF;
+
+    /* --- kepadatan lalu lintas --------------------------------------- */
+    --lalin-lancar: #19C37D;
+    --lalin-sedang: #F5C451;
+    --lalin-padat: #F97316;
+    --lalin-kritis: #EF4444;
+
+    /* --- peran permukaan & teks (mode terang) ------------------------- */
+    --ground: #eef2f4;
+    --panel: #ffffff;
+    --panel-2: #f5f8fa;
+    --panel-3: #eaf0f5;
+    --line: rgba(6, 59, 115, .14);
+    --line-soft: rgba(6, 59, 115, .07);
+    --line-hover: rgba(6, 59, 115, .26);
+    --line-active: rgba(11, 120, 227, .55);
+    --line-ai: rgba(34, 199, 214, .45);
+    --ink: #0B1A25;
+    --ink-2: #33495a;
+    --muted: #5d7385;
+    --disabled: #93a7b4;
+
+    /* --- peran semantik ----------------------------------------------- */
+    --accent: var(--biru-800);          /* aksi utama DISHUB */
+    --accent-soft: #e3eefb;
+    --accent-ink: #ffffff;              /* teks di atas bidang --accent */
+    --crit: #B02318;                    /* insiden */
+    --crit-soft: #fbe6e4;
+    --warn: #8f5e0b;                    /* menunggu verifikasi */
+    --warn-soft: #fcf0d5;
+    --ok: #0F7A45;                      /* sehat / terverifikasi */
+    --ok-soft: #dcf1e5;
+    --info: #8a6410;                    /* kewenangan instansi lain (emas) */
+    --info-soft: #fcf2d6;
+    --ai-soft: #d8f4f7;
+    --ai-ink: #0a6c76;                  /* sian yang aman kontras di latar terang */
+
+    /* Lapisan di atas citra kamera. Tetap gelap pada kedua tema: latarnya
+       adalah video, bukan permukaan halaman - keterbacaannya tidak boleh ikut
+       berbalik saat pengguna memilih mode terang. */
+    /* Plat lambang instansi. Di mode terang tidak diperlukan - rail sudah
+       terang; di mode gelap ia yang menjaga wordmark navy tetap terbaca. */
+    /* Alas lencana lambang. Emblem resmi berwarna navy, jadi ia selalu butuh
+       alas terang - di mode terang pun permukaan panelnya tidak seputih ini. */
+    --emblem-bg: #ffffff;
+    --emblem-ring: rgba(6, 59, 115, .16);
+    --emblem-shadow: none;
+    --wordmark-sub: #8a6410;   /* emas gelap: 5,4:1 di permukaan terang */
+    --video-bg: #040d14;                /* latar panggung citra kamera */
+    --overlay-bg: rgba(7, 19, 29, .78);
+    --overlay-ink: #F1F6FA;
+    --overlay-ink-crit: #FF9D90;
+
+    --shadow: 0 1px 2px rgba(6, 59, 115, .07), 0 8px 24px rgba(6, 59, 115, .06);
+
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  /* Dua selektor gelap, isinya WAJIB sama: yang di dalam media query
+     mengikuti preferensi sistem, yang di bawahnya berlaku saat pengguna
+     menekan tombol Mode gelap. Kalau berbeda, tombolnya akan terasa mengubah
+     palet, bukan hanya terang-gelapnya. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      /* Permukaan ruang kendali. Empat tingkat kedalaman, bukan satu bidang
+         hitam: kedalaman itu yang memisahkan latar, panel, dan panel bersarang. */
+      --ground: #07131D;
+      --panel: #0B1A25;
+      --panel-2: #0F2230;
+      --panel-3: #132B3A;
+      --line: rgba(148, 180, 200, .12);
+      --line-soft: rgba(148, 180, 200, .07);
+      --line-hover: rgba(148, 180, 200, .22);
+      --line-active: rgba(11, 120, 227, .55);
+      --line-ai: rgba(34, 199, 214, .45);
+      --ink: #F1F6FA;
+      --ink-2: #A6BAC8;
+      --muted: #718898;
+      --disabled: #4F6574;
+
+      /* Di latar gelap, nada merek yang lebih terang yang terbaca. */
+      --accent: var(--biru-500);
+      --accent-soft: rgba(11, 120, 227, .16);
+      --accent-ink: #04121f;
+      --crit: #F87A6E;
+      --crit-soft: rgba(217, 45, 32, .18);
+      --warn: #F5C451;
+      --warn-soft: rgba(245, 196, 81, .15);
+      --ok: #3FD08C;
+      --ok-soft: rgba(21, 153, 87, .18);
+      --info: var(--emas);
+      --info-soft: rgba(242, 201, 76, .15);
+      --ai-soft: rgba(34, 199, 214, .14);
+      --ai-ink: var(--ai-terang);
+
+      --emblem-bg: #ffffff;
+      --emblem-ring: rgba(148, 180, 200, .28);
+      --emblem-shadow: 0 0 0 3px rgba(255, 255, 255, .06);
+      --wordmark-sub: var(--emas);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 10px 28px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+      /* Permukaan ruang kendali. Empat tingkat kedalaman, bukan satu bidang
+         hitam: kedalaman itu yang memisahkan latar, panel, dan panel bersarang. */
+      --ground: #07131D;
+      --panel: #0B1A25;
+      --panel-2: #0F2230;
+      --panel-3: #132B3A;
+      --line: rgba(148, 180, 200, .12);
+      --line-soft: rgba(148, 180, 200, .07);
+      --line-hover: rgba(148, 180, 200, .22);
+      --line-active: rgba(11, 120, 227, .55);
+      --line-ai: rgba(34, 199, 214, .45);
+      --ink: #F1F6FA;
+      --ink-2: #A6BAC8;
+      --muted: #718898;
+      --disabled: #4F6574;
+
+      /* Di latar gelap, nada merek yang lebih terang yang terbaca. */
+      --accent: var(--biru-500);
+      --accent-soft: rgba(11, 120, 227, .16);
+      --accent-ink: #04121f;
+      --crit: #F87A6E;
+      --crit-soft: rgba(217, 45, 32, .18);
+      --warn: #F5C451;
+      --warn-soft: rgba(245, 196, 81, .15);
+      --ok: #3FD08C;
+      --ok-soft: rgba(21, 153, 87, .18);
+      --info: var(--emas);
+      --info-soft: rgba(242, 201, 76, .15);
+      --ai-soft: rgba(34, 199, 214, .14);
+      --ai-ink: var(--ai-terang);
+
+      --emblem-bg: #ffffff;
+      --emblem-ring: rgba(148, 180, 200, .28);
+      --emblem-shadow: 0 0 0 3px rgba(255, 255, 255, .06);
+      --wordmark-sub: var(--emas);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 10px 28px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--body); font-size: 14px; line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { margin: 0; font-family: var(--display); font-weight: 600;
+               letter-spacing: .01em; text-wrap: balance; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------------------------------------------------------- header */
+  header {
+    position: sticky; top: 0; z-index: 30;
+    background: var(--panel); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 10px 16px;
+  }
+  .mark {
+    display: flex; align-items: center; gap: 9px; margin-right: 2px;
+  }
+  .mark .glyph {
+    width: 26px; height: 26px; border-radius: 5px; flex: none;
+    background: var(--accent); color: var(--panel);
+    display: grid; place-items: center;
+    font-family: var(--display); font-weight: 700; font-size: 16px;
+  }
+  .mark h1 { font-size: 20px; line-height: 1; text-transform: uppercase;
+             letter-spacing: .04em; }
+  .mark .tag { display: block; font-family: var(--body); font-size: 10px;
+               font-weight: 500; color: var(--muted); letter-spacing: .06em;
+               text-transform: uppercase; margin-top: 2px; }
+  .spacer { flex: 1 1 auto; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 4px 9px; border-radius: 4px; border: 1px solid var(--line);
+    color: var(--ink-2); background: var(--panel-2); white-space: nowrap;
+  }
+  .chip.ai { color: var(--ai-ink); border-color: var(--line-ai); background: var(--ai-soft); }
+  .chip.proto { color: var(--warn); border-color: var(--warn);
+                background: var(--warn-soft); font-weight: 600; }
+  .chip.live { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+  .chip.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+  /* Marks a region whose numbers are still illustrative. Deliberately small
+     and always visible: a viewer must be able to tell real output from mockup
+     without reading the header chip. */
+  .demo-tag {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--warn);
+    border: 1px solid var(--warn); border-radius: 3px; padding: 1px 5px;
+    margin-left: 7px; vertical-align: 2px; white-space: nowrap;
+  }
+  .chip.live::before {
+    content: ""; display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--ok); margin-right: 6px;
+    vertical-align: 1px; animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .chip.live::before { animation: none; } }
+  button.icon {
+    font-family: var(--body); font-size: 12px; font-weight: 500;
+    padding: 5px 11px; border-radius: 5px; cursor: pointer;
+    background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line);
+  }
+  button.icon:hover { color: var(--ink); border-color: var(--line-hover);
+                      background: var(--panel-2); }
+  /* Cincin fokus memakai biru aksi: fokus keyboard adalah keadaan
+     "siap bertindak", bukan keadaan netral. */
+  :focus-visible { outline: 2px solid var(--line-active); outline-offset: 2px; }
+
+  /* ----------------------------------------------------------- shell */
+  .shell {
+    display: grid; gap: 12px; padding: 12px 16px 24px;
+    grid-template-columns: 278px minmax(0, 1fr) 368px;
+    align-items: start; max-width: 1760px; margin: 0 auto;
+  }
+  @media (max-width: 1180px) { .shell { grid-template-columns: 200px minmax(0, 1fr); } }
+  @media (max-width: 820px)  { .shell { grid-template-columns: minmax(0, 1fr); } }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow);
+  }
+  .panel > .head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line-soft);
+  }
+  .panel > .head h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); font-weight: 600;
+  }
+  .count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* ------------------------------------------------------ camera rail */
+  .cams { display: flex; flex-direction: column; flex: 1; min-height: 160px;
+          max-height: none; overflow: auto;
+          margin-top: 10px; border-top: 1px solid var(--line-soft); }
+  .cam {
+    display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start;
+    padding: 9px 12px; border: 0; border-bottom: 1px solid var(--line-soft);
+    background: transparent; color: inherit; text-align: left; cursor: pointer;
+    font: inherit; width: 100%;
+  }
+  .cam:hover { background: var(--panel-2); border-color: var(--line-hover); }
+  .cam[aria-current="true"] { background: var(--accent-soft); }
+  .cam .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px;
+              background: var(--ok); }
+  .cam.alert .dot { background: var(--crit); }
+  .cam .name { display: block; font-weight: 600; font-size: 12.5px; line-height: 1.25;
+               margin-top: 2px; }
+  .cam .meta { display: block; font-family: var(--body); font-size: 11px;
+               color: var(--muted); margin-top: 1px; }
+  .cam .owner { display: inline-block; font-size: 9px; font-weight: 700;
+                letter-spacing: .06em; text-transform: uppercase;
+                color: var(--info); margin-top: 4px; border: 1px solid var(--line);
+                border-radius: 3px; padding: 1px 5px; }
+  .cam .camscore { display: inline-block; margin-left: 5px; }
+  .cam.alert .owner { color: var(--crit); }
+
+  /* Kepala kelompok wilayah di rail kamera. */
+  .wil {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 9px 12px 6px; font-family: var(--display); font-size: 13px;
+    font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-2); background: var(--panel-2);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .wil span { font-family: var(--mono); font-size: 11px; font-weight: 500;
+              color: var(--muted); }
+  .wil.kosong { color: var(--muted); }
+  .wil.kosong span { color: var(--warn); }
+  .wil-note {
+    padding: 5px 12px 9px; font-size: 11px; line-height: 1.35;
+    color: var(--muted); border-bottom: 1px solid var(--line-soft);
+  }
+
+  /* -------------------------------------------------------- live view */
+  .stage { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .viewport {
+    position: relative; background: var(--video-bg); border-radius: 7px 7px 0 0;
+    overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%;
+  }
+  .viewport img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Video live menempati kotak yang sama persis dengan img, sehingga overlay
+     SVG di atasnya tetap sejajar tanpa perhitungan ulang. */
+  .viewport video { position: absolute; inset: 0; width: 100%; height: 100%;
+        object-fit: cover; display: block; background: var(--video-bg); }
+  .viewport video[hidden] { display: none; }
+  /* HUD deteksi di atas video Live. Jumlah per kelas tidak terikat posisi,
+     jadi jujur ditempel di atas gambar yang bergerak; kotak TIDAK ditempel ke
+     video langsung - kotak dari frame beberapa detik lalu akan meleset dari
+     kendaraannya - melainkan digambar di jendela kecil di atas frame asalnya. */
+  .hud { position: absolute; top: 8px; right: 8px; z-index: 3; width: 218px;
+        background: rgba(4, 10, 14, .78); color: var(--overlay-ink);
+        border-radius: 6px; padding: 7px 8px 8px; font-family: var(--mono);
+        font-size: 10.5px; line-height: 1.35; }
+  .hud[hidden] { display: none; }
+  /* Kotak COCO-SSD dari peramban: dihitung pada frame <video> yang sedang
+     tampil, jadi BOLEH ditempel langsung ke video (lihat /aset/bbox.js). */
+  .viewport canvas#bbox { position: absolute; inset: 0; width: 100%; height: 100%;
+        z-index: 2; pointer-events: none; }
+  .viewport canvas#bbox[hidden] { display: none; }
+  .viewport canvas#bbox.sunting { pointer-events: auto; cursor: crosshair; z-index: 4;
+        touch-action: none; }
+  .pbtn.ptext { width: auto; padding: 0 9px; font-size: 11px; font-weight: 600; }
+  .pbtn.ptext[aria-pressed="true"] { background: var(--warn); color: var(--accent-ink); }
+  .ghbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+        padding: 7px 12px; border-bottom: 1px solid var(--line-soft);
+        background: color-mix(in srgb, var(--warn) 14%, transparent); font-size: 11.5px; }
+  .ghbar[hidden] { display: none; }
+  .ghbar .ghinfo { flex: 1 1 320px; line-height: 1.5; }
+  .ghbar .ghstat { display: block; color: var(--muted); }
+  .ghbar .ghangka { display: block; font-weight: 600; }
+  .ghbar .seg[aria-pressed="true"] { background: var(--ai); color: var(--accent-ink); }
+  .ghbar .seg.on { background: var(--warn); color: var(--accent-ink); border-color: var(--warn); }
+  .bbhud .ruas { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .bbhud .warn { color: var(--warn); white-space: normal; }
+  /* Hitungan bbox peramban: di bawah pemutar, bukan di atas video, supaya
+     kotak di video tidak tertutup tabel. */
+  .bbhud { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+        padding: 7px 12px; border-bottom: 1px solid var(--line-soft);
+        font-family: var(--mono); font-size: 10.5px; }
+  .bbhud[hidden] { display: none; }
+  /* LC-009: panel penghitungan (bbox.js) */
+  .bbhud .bb-kepala { flex-basis: 100%; display: flex; align-items: baseline; gap: 10px; }
+  .bbhud .bb-kam { font-family: var(--sans, inherit); font-size: 12px; }
+  .bbhud .bb-warn { flex-basis: 100%; color: var(--warn); font-weight: 600; font-size: 10.5px;
+        font-family: var(--sans, inherit); }
+  .bbhud .bb-kelas { flex-basis: 100%; display: grid; gap: 6px;
+        grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+  .bbhud .bb-k { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 2px 6px;
+        border: 1px solid var(--line-soft); border-radius: 6px; padding: 6px 8px; }
+  .bbhud .bb-k i { width: 9px; height: 9px; border-radius: 2px; }
+  .bbhud .bb-k .nm { font-size: 10.5px; }
+  .bbhud .bb-k b { font-size: 18px; font-variant-numeric: tabular-nums; grid-row: span 2; }
+  .bbhud .bb-k small { grid-column: 2; color: var(--muted); font-size: 9.5px; }
+  .bbhud .bb-k.redup { opacity: .55; }
+  .bbhud .bb-lain { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+  .bbhud .bb-sub { color: var(--muted); font-size: 10px; }
+  .bbhud .bb-garis { margin-left: auto; display: inline-flex; gap: 12px; }
+  .bbhud .bb-detail { flex-basis: 100%; color: var(--muted); font-size: 10px; }
+  .bbhud .bb-detail summary { cursor: pointer; }
+  .bbhud .bb-detail > div { margin-top: 3px; }
+  /* LC-009: Mode POC - sembunyikan yang bukan butir 1-2 surat 1316 */
+  body.mode-poc .rightcol, body.mode-poc #panelAI, body.mode-poc #panelHitung,
+  body.mode-poc .chartcard, body.mode-poc .kpis, body.mode-poc #panelKualitas,
+  body.mode-poc #reanalyse, body.mode-poc #bellBtn, body.mode-poc #railVerif,
+  body.mode-poc a.railitem[href="/aduan"], body.mode-poc #grpLapisan, body.mode-poc #hint,
+  body.mode-poc [data-src]:not([data-src="live"]):not([data-src="rekaman"]) { display: none !important; }
+  body.mode-poc .shell { grid-template-columns: 278px minmax(0, 1fr); }
+  @media (max-width: 1180px) { body.mode-poc .shell { grid-template-columns: 200px minmax(0, 1fr); } }
+  @media (max-width: 820px)  { body.mode-poc .shell { grid-template-columns: minmax(0, 1fr); } }
+  #btnPoc[aria-pressed="true"] { background: var(--ai); color: var(--accent-ink); }
+  /* Mode POC: status pelanggaran di kartu kamera & angka siklus pelanggaran disembunyikan */
+  body.mode-poc #readout, body.mode-poc .cam .camscore { display: none !important; }
+  body.mode-poc .camlive.mati { font-size: 0; color: var(--ok); }
+  body.mode-poc .camlive.mati::after { content: "Live"; font-size: 9.5px; }
+  body.mode-poc .cam.alert .dot { background: currentColor; }
+  body.mode-poc .cam.alert .owner { color: inherit; }
+  /* LC-011: tren per menit + log lintasan */
+  #panelTren[hidden] { display: none; }
+  #panelTren .head { gap: 10px; justify-content: flex-start; }
+  #panelTren .trenbtn { margin-left: auto; display: inline-flex; gap: 6px; }
+  .tren { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+  @media (max-width: 1100px) { .tren { grid-template-columns: minmax(0, 1fr); } }
+  .tren .tr-grafik { padding: 10px 12px 12px; border-right: 1px solid var(--line-soft); min-width: 0; }
+  .tren .tr-ring { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .tren .tr-ring b { color: var(--ink); font-family: var(--mono); font-weight: 600; }
+  .tren .tr-bars { display: flex; align-items: stretch; gap: 3px; height: 132px; border-bottom: 1px solid var(--line); }
+  .tren .tr-kol { flex: 1; max-width: 26px; display: flex; flex-direction: column-reverse; border-radius: 2px 2px 0 0; }
+  .tren .tr-kol:hover { background: var(--panel-2); }
+  .tren .tr-kol i { display: block; flex: none; }
+  .tren .tr-sumbu { display: flex; gap: 3px; margin-top: 3px; font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
+  .tren .tr-sumbu span { flex: 1; max-width: 26px; white-space: nowrap; overflow: visible; }
+  .tren .tr-leg { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-size: 10.5px; color: var(--ink-2); }
+  .tren .tr-leg i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+  .tren .tr-log { padding: 8px 12px 12px; min-width: 0; }
+  .tren table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .tren th { text-align: left; font-weight: 600; color: var(--muted); font-size: 9.5px; letter-spacing: .06em;
+        text-transform: uppercase; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  .tren td { padding: 5px 6px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  .tren td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .tren td.tr-st { white-space: normal; }
+  .tren tr.tr-redup td { color: var(--muted); }
+  .tren .tr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+  .tren .tr-kosong { color: var(--muted); font-size: 11.5px; padding: 18px 0; }
+  .tren .tr-cat { color: var(--muted); font-size: 10px; margin-top: 8px; line-height: 1.4; }
+  /* LC-011: Layar TV - hanya video + rel hitungan, memenuhi layar */
+  #btnTvKeluar { position: fixed; top: 10px; right: 12px; z-index: 50; opacity: .55; }
+  #btnTvKeluar:hover { opacity: 1; }
+  #btnTvKeluar[hidden] { display: none; }
+  body.mode-tv .rail, body.mode-tv header, body.mode-tv .leftcol, body.mode-tv #panelTren { display: none !important; }
+  body.mode-tv .app { grid-template-columns: minmax(0, 1fr); }
+  body.mode-tv .shell { grid-template-columns: minmax(0, 1fr) !important; max-width: none; padding: 10px; }
+  @media (min-width: 1100px) {
+    body.mode-tv.mode-poc .stage > section:first-child {
+      grid-template-columns: min(calc((100vh - 130px) * 16 / 9), calc(100vw - 380px)) 340px;
+      justify-content: center; }
+    body.mode-tv.mode-poc .bbhud .bb-n { font-size: 46px; }
+    body.mode-tv.mode-poc .bbhud .bb-k .nm { font-size: 14px; }
+    body.mode-tv.mode-poc .bbhud .bb-k b { font-size: 24px; }
+    body.mode-tv.mode-poc #bbhud { padding-top: 40px; }
+  }
+  /* LC-013: Mode POC - daftar kamera di bawah panel tren, sebagai kisi kartu */
+  body.mode-poc .leftcol { order: 2; align-self: start; }
+  body.mode-poc .stage { order: 1; }
+  body.mode-poc .leftcol > .panel:first-child { flex: none; }
+  body.mode-poc .camtools { grid-template-columns: minmax(200px, 340px) minmax(0, 1fr);
+        align-items: center; padding-bottom: 10px; }
+  body.mode-poc .cams { max-height: none; overflow: visible; min-height: 0; margin-top: 0; }
+  body.mode-poc .wilgrp { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  body.mode-poc .wilgrp > .wil { grid-column: 1 / -1; }
+  body.mode-poc .wilgrp .cam { border-right: 1px solid var(--line-soft); }
+  body.mode-poc .wilkosong { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  body.mode-poc .wilkosong .wilgrp { display: block; border-right: 1px solid var(--line-soft); }
+  @media (max-width: 700px) { body.mode-poc .camtools { grid-template-columns: minmax(0, 1fr); } }
+  /* LC-010: Mode POC - panel hitungan menjadi rel di kanan video (layar lebar).
+     Tinggi rel = tinggi kolom video (contain: size), isi rel bisa digulir. */
+  /* POC tetap perlu pemilih Live/Rekaman siang. Kontrol lapisan lain disembunyikan. */
+  body.mode-poc .toolbar { display: flex !important; }
+  body.mode-poc .toolbar > :not(#grpSumber) { display: none !important; }
+  @media (min-width: 1100px) {
+    /* LC-013: lebar video dibatasi tinggi layar (video + pemutar terlihat tanpa
+       gulir); sisa lebar untuk rel hitungan, jadi tidak ada ruang kosong. */
+    body.mode-poc .stage > section:first-child { display: grid;
+          grid-template-columns: min(calc((100vh - 230px) * 16 / 9), calc(100% - 300px)) minmax(300px, 1fr); }
+    body.mode-poc .stage > section:first-child:has(#bbhud[hidden]) { grid-template-columns: minmax(0, 1fr); }
+    body.mode-poc .stage > section:first-child > * { grid-column: 1; }
+    body.mode-poc .viewport { border-radius: 0; }
+    body.mode-poc #bbhud { grid-column: 2; grid-row: 1 / span 8; contain: size; overflow-y: auto;
+          align-self: stretch; flex-direction: column;
+          scrollbar-width: thin; scrollbar-color: var(--line) transparent; flex-wrap: nowrap; align-items: stretch;
+          gap: 10px; padding: 12px 14px; border-bottom: 0; border-left: 1px solid var(--line); }
+    body.mode-poc #bbhud > * { flex: none; }
+    body.mode-poc .bbhud .bb-kepala { flex-direction: column; align-items: flex-start; gap: 2px; }
+    body.mode-poc .bbhud .bb-kam { display: none; }
+    body.mode-poc .bbhud .tot { margin-left: 0; font-weight: 400; color: var(--muted); white-space: normal; }
+    body.mode-poc .bbhud .bb-n { display: block; font-family: var(--display); font-size: 34px; line-height: 1.1;
+          color: var(--ink); }
+    body.mode-poc .bbhud .bb-warn { padding: 6px 8px; border-radius: 6px; line-height: 1.4;
+          border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+          background: color-mix(in srgb, var(--warn) 10%, transparent); }
+    body.mode-poc .bbhud .bb-kelas { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    body.mode-poc .bbhud .bb-k { border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0;
+          padding: 6px 2px; grid-template-columns: 10px minmax(0, 1fr) auto 30px; gap: 8px; }
+    body.mode-poc .bbhud .bb-k .nm { font-size: 12px; font-family: var(--body, inherit); }
+    body.mode-poc .bbhud .bb-k small { grid-column: 3; grid-row: 1; }
+    body.mode-poc .bbhud .bb-k b { font-size: 18px; grid-row: 1; grid-column: 4; text-align: right; }
+    body.mode-poc .bbhud .bb-lain { flex-direction: column; align-items: flex-start; gap: 5px; }
+    body.mode-poc .bbhud .bb-garis { margin-left: 0; flex-wrap: wrap; }
+  }
+  /* LC-013: satu kolom di semua lebar (menimpa kolom kiri LC-009) */
+  body.mode-poc .shell { grid-template-columns: minmax(0, 1fr); }
+  .bbhud .jdl { font-weight: 700; letter-spacing: .04em; font-size: 9.5px; color: var(--muted); }
+  .bbhud .k { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .bbhud .k i { width: 8px; height: 8px; border-radius: 2px; }
+  .bbhud .k b { font-variant-numeric: tabular-nums; }
+  .bbhud .k small { color: var(--muted); }
+  .bbhud .tot { margin-left: auto; font-weight: 700; white-space: nowrap; }
+  .bbhud .cat { flex-basis: 100%; color: var(--muted); font-size: 9.5px; }
+  .hud .jdl { font-weight: 700; letter-spacing: .04em; font-size: 9.5px;
+        opacity: .85; margin-bottom: 4px; display: flex; gap: 6px; }
+  .hud .jdl .umur { margin-left: auto; font-weight: 400; }
+  .hud .row { display: flex; justify-content: space-between; gap: 8px; }
+  .hud .row b { font-variant-numeric: tabular-nums; }
+  .hud .row .na { opacity: .5; }
+  .hud .pip { position: relative; margin-top: 6px; border-radius: 4px;
+        overflow: hidden; aspect-ratio: 16 / 9; background: #000; }
+  .hud .pip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hud .pip svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hud .tunggu { opacity: .75; font-size: 10px; }
+  .hud .malam { background: var(--warn); color: var(--accent-ink); font-weight: 700;
+        font-size: 9.5px; padding: 2px 5px; border-radius: 3px; margin: 1px 0 5px; }
+  .viewport svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .stamp {
+    position: absolute; left: 10px; bottom: 10px; z-index: 2;
+    font-family: var(--mono); font-size: 10px; color: var(--overlay-ink);
+    background: rgba(4, 10, 14, .72); padding: 3px 7px; border-radius: 3px;
+    letter-spacing: .02em;
+  }
+  .toolbar {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 9px 12px; border-bottom: 1px solid var(--line-soft);
+  }
+  .toolbar .label { font-size: 11px; font-weight: 600; letter-spacing: .08em;
+                    text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+  .seg {
+    font-family: var(--body); font-size: 12px; font-weight: 500;
+    padding: 4px 10px; border-radius: 99px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-2);
+  }
+  .seg[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: var(--panel);
+  }
+  .seg[disabled] { opacity: .45; cursor: not-allowed; }
+  .grp { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .hint {
+    margin: 0; padding: 0 12px 10px; font-size: 11.5px; line-height: 1.45;
+    color: var(--muted); border-bottom: 1px solid var(--line-soft);
+  }
+  .hint:empty { display: none; }
+  .readout {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 1px; background: var(--line-soft);
+  }
+  .readout .cell { background: var(--panel); padding: 10px 12px; }
+  .readout .k { font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
+                text-transform: uppercase; color: var(--muted); }
+  .readout .v { font-family: var(--mono); font-size: 20px; font-weight: 600;
+                margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .readout .v small { font-size: 11px; font-weight: 400; color: var(--muted); }
+
+  /* Empat toolbox PP-Vehicle, satu baris per toolbox. */
+  .tbx { display: grid; gap: 1px; background: var(--line-soft); }
+  .tbx .row { background: var(--panel); padding: 10px 12px;
+              display: grid; grid-template-columns: 22px 1fr auto; gap: 10px;
+              align-items: baseline; }
+  .tbx .no { font-family: var(--mono); font-size: 11px; font-weight: 600;
+             color: var(--muted); }
+  .tbx .nm { font-size: 13px; font-weight: 600; }
+  .tbx .dt { grid-column: 2 / -1; font-size: 11.5px; color: var(--muted);
+             margin-top: 3px; line-height: 1.45; }
+  .tbx .dt b { color: var(--ink-2); font-weight: 600; }
+  .tbx .st { font-family: var(--mono); font-size: 10px; font-weight: 600;
+             letter-spacing: .06em; text-transform: uppercase;
+             padding: 2px 7px; border-radius: 3px; border: 1px solid; white-space: nowrap; }
+  .st.ok   { color: var(--ok);   border-color: var(--ok);   background: var(--ok-soft); }
+  .st.bad  { color: var(--crit); border-color: var(--crit); background: var(--crit-soft); }
+  .st.idle { color: var(--muted); border-color: var(--line); background: var(--panel-2); }
+
+  /* ------------------------------------------------- source quality */
+  .quality { padding: 12px; display: grid; gap: 10px; }
+  .spec { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+  .grade { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px;
+           align-items: center; }
+  .grade .task { font-size: 12.5px; }
+  .bar { height: 5px; border-radius: 99px; background: var(--line-soft);
+         grid-column: 1 / -1; overflow: hidden; margin-top: -4px; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+  .verdict { font-size: 11px; font-weight: 600; letter-spacing: .04em;
+             text-transform: uppercase; white-space: nowrap; }
+  .ask {
+    font-size: 12px; color: var(--ink-2); border-left: 2px solid var(--accent);
+    padding: 2px 0 2px 10px; line-height: 1.5;
+  }
+
+  /* -------------------------------------------------------- event feed */
+  /* Panel ini kotak masuk ringkas, bukan daftar kerja: jumlah barisnya
+     dibatasi di renderFeed (FEED_MAKS), jadi ia tidak pernah memanjang dan
+     mendorong panel lain ke bawah. Daftar lengkap ada di /verifikasi. */
+  /* flex: none, bukan 1. Dengan flex: 1 panel ditarik setinggi kolom tengah,
+     dan karena barisnya kini dibatasi, tarikan itu hanya menghasilkan celah
+     kosong antara baris terakhir dan tautan antrean. */
+  .feed { display: flex; flex-direction: column; flex: none; min-height: 110px;
+          max-height: none; overflow: hidden; }
+  .feedmore { display: flex; align-items: center; gap: 8px; padding: 9px 13px;
+        border-top: 1px solid var(--line); font-size: 12px; color: var(--muted);
+        text-decoration: none; background: var(--panel-2); }
+  .feedmore b { color: var(--accent); font-weight: 600; margin-left: auto; white-space: nowrap; }
+  .feedmore:hover b { text-decoration: underline; }
+  .feedmore[hidden] { display: none; }
+  .ev {
+    display: grid; grid-template-columns: 3px 1fr; gap: 10px;
+    border: 0; border-bottom: 1px solid var(--line-soft); background: transparent;
+    color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%;
+    padding: 0 12px 0 0;
+  }
+  .ev:hover { background: var(--panel-2); }
+  .ev:hover .stripe { filter: brightness(1.15); }
+  .ev .stripe { background: var(--muted); }
+  .ev.dishub .stripe { background: var(--crit); }
+  .ev.rujuk  .stripe { background: var(--info); }
+  .ev .body { padding: 10px 0; min-width: 0; }
+  .ev .top { display: flex; align-items: baseline; gap: 8px; }
+  .ev .kind { font-weight: 600; font-size: 13px; line-height: 1.25; flex: 1; }
+  .ev .time { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .ev .where { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px;
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+  .pill {
+    font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 3px; border: 1px solid transparent;
+  }
+  .pill.act  { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+  .pill.ref  { color: var(--info); background: var(--info-soft); border-color: var(--info); }
+  /* "Dari pipeline" / "Keyakinan n%" menyatakan asal-usul pembacaan mesin,
+     jadi inilah tempat sian yang sah - bukan sebagai warna merek. */
+  .pill.conf { color: var(--ai-ink); background: var(--ai-soft); border-color: var(--line-ai); }
+  .pill.ver  { color: var(--ok);   background: var(--ok-soft);   border-color: var(--ok); }
+
+  /* --------------------------------------------------------- kpi strip */
+  .kpis {
+    grid-column: 1 / -1; display: grid; gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .kpi { padding: 12px 14px; }
+  .kpi .k { font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
+            text-transform: uppercase; color: var(--muted); }
+  .kpi .v { font-family: var(--mono); font-size: 28px; font-weight: 600;
+            line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .kpi.klik { cursor: pointer; }
+  .kpi.klik:hover, .kpi.klik:focus-visible { border-color: var(--line-active); }
+  .kpi .drill { font-size: 10.5px; color: var(--accent); margin-top: 7px;
+                font-weight: 600; }
+  .kpi .sub b { cursor: pointer; text-decoration: underline;
+                text-decoration-style: dotted; text-underline-offset: 2px;
+                font-weight: 600; color: var(--ink); }
+  .filterchip { font-size: 11px; padding: 2px 8px; border-radius: 99px;
+                border: 1px solid var(--accent); color: var(--accent);
+                background: transparent; cursor: pointer; font-weight: 600; }
+  .split { display: flex; gap: 3px; margin-top: 9px; height: 6px; }
+  .split i { display: block; border-radius: 2px; }
+  .chartcard { padding: 12px 14px; min-width: 0; }
+  .chartcard svg { width: 100%; height: auto; display: block; margin-top: 6px; }
+
+  /* ------------------------------------------------------------ modal */
+  dialog {
+    border: 1px solid var(--line); border-radius: 10px; padding: 0;
+    background: var(--panel); color: var(--ink); max-width: 760px; width: calc(100% - 32px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, .35);
+  }
+  dialog::backdrop { background: rgba(4, 10, 14, .62); }
+  .ev-head { display: flex; align-items: flex-start; gap: 12px;
+             padding: 14px 16px; border-bottom: 1px solid var(--line-soft); }
+  .ev-head h2 { font-size: 21px; }
+  .ev-head .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .ev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+  @media (max-width: 680px) { .ev-grid { grid-template-columns: 1fr; } }
+  .evidence { position: relative; border-radius: 6px; overflow: hidden;
+              background: var(--video-bg); aspect-ratio: 16 / 9; }
+  .evidence img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .evidence svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  dl.facts { margin: 0; display: grid; grid-template-columns: auto 1fr;
+             gap: 7px 14px; align-items: baseline; }
+  dl.facts dt { font-size: 11px; font-weight: 600; letter-spacing: .05em;
+                text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  dl.facts dd { margin: 0; font-size: 13px; }
+  dl.facts dd.mono { font-size: 12px; }
+  .legal { margin-top: 14px; padding: 10px 12px; border-radius: 6px;
+           background: var(--panel-2); border: 1px solid var(--line-soft); }
+  .legal .k { font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
+              text-transform: uppercase; color: var(--muted); }
+  .legal .v { font-size: 12.5px; margin-top: 3px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap;
+             padding: 0 16px 16px; }
+  .actions button {
+    font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px;
+    border-radius: 6px; cursor: pointer; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--ink-2);
+  }
+  .actions button.primary { background: var(--accent); border-color: var(--accent);
+                            color: var(--accent-ink); }
+  .actions button.ghost:hover { border-color: var(--line-hover); color: var(--ink);
+                                background: var(--panel-2); }
+  .note { padding: 0 16px 16px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+  /* Penuntun langkah: satu lubang sorot di atas layar yang diredupkan.
+     Dipakai box-shadow raksasa, bukan empat panel penutup - lebih sederhana
+     dan lubangnya ikut membulat mengikuti elemen. */
+  .tour-hole {
+    position: fixed; z-index: 60; border-radius: 9px; pointer-events: none;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 9999px rgba(4, 10, 14, .74);
+    transition: all .22s ease;
+  }
+  .tour-card {
+    position: fixed; z-index: 61; width: min(350px, calc(100vw - 32px));
+    background: var(--panel); border: 1px solid var(--accent);
+    border-radius: 9px; padding: 14px 16px 12px;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, .4);
+  }
+  .tour-card .no { font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+                   letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  .tour-card h3 { font-size: 19px; margin: 3px 0 6px; }
+  .tour-card p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+  .tour-nav { display: flex; gap: 7px; align-items: center; margin-top: 13px; }
+  .tour-nav .sp { flex: 1 1 auto; }
+  @media (prefers-reduced-motion: reduce) { .tour-hole { transition: none; } }
+
+  .hh { font-size: 17px; margin: 22px 0 8px; color: var(--ink); }
+  .hh:first-child { margin-top: 0; }
+  .pp { font-size: 13px; line-height: 1.6; margin: 8px 0; color: var(--ink-2);
+        max-width: 64ch; }
+  #bantuan dl.facts { grid-template-columns: 148px 1fr; gap: 9px 14px; }
+  #bantuan dl.facts dt { text-transform: none; letter-spacing: 0; font-size: 12.5px;
+                         color: var(--ink); white-space: normal; }
+  #bantuan dl.facts dd { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); }
+
+  /* ===================================================================
+     KERANGKA RUANG KENDALI - rail navigasi, kepala, pemutar, panel AI
+     Ditambahkan di atas sistem token; tidak ada warna keras di sini.
+     =================================================================== */
+  .app { display: grid; grid-template-columns: 186px 1fr; min-height: 100vh; }
+  @media (max-width: 1100px) { .app { grid-template-columns: 1fr; } }
+
+  /* ------------------------------------------------------------- rail */
+  .rail { background: var(--panel); border-right: 1px solid var(--line);
+          display: flex; flex-direction: column; position: sticky; top: 0;
+          height: 100vh; overflow: hidden; }
+  @media (max-width: 1100px) { .rail { position: static; height: auto; } }
+  .railhead { display: flex; align-items: center; padding: 15px 13px 14px;
+              border-bottom: 1px solid var(--line); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+             clip: rect(0 0 0 0); white-space: nowrap; }
+  /* Lambang resmi tidak diwarnai ulang. Ia berdiri di atas plat terang supaya
+     wordmark navy-nya tetap terbaca di permukaan gelap - dan supaya terlihat
+     disengaja, bukan seperti gambar yang gagal menyatu dengan latar. */
+  /* Lencana lambang. Bundar dan seukuran emblem, bukan kotak yang membungkus
+     seluruh logo - itu yang membedakan lockup dari tempelan. */
+  .emblem { width: 34px; height: 34px; flex: none; border-radius: 50%;
+            background: var(--emblem-bg); border: 1px solid var(--emblem-ring);
+            box-shadow: var(--emblem-shadow); display: grid; place-items: center; }
+  .emblem img { width: 26px; height: 26px; display: block; }
+  .emblem.kecil { width: 28px; height: 28px; }
+  .emblem.kecil img { width: 21px; height: 21px; }
+
+  /* Wordmark diset ulang dengan tipografi aplikasi supaya ikut sistem token:
+     tajam di segala resolusi, dan ikut berubah bersama tema. */
+  .brandlock { display: flex; align-items: center; gap: 11px; }
+  .brandlock .wm { min-width: 0; }
+  .brandlock .wm b { display: block; font-family: var(--display); font-size: 19px;
+        font-weight: 700; line-height: 1; letter-spacing: .02em; color: var(--ink); }
+  .brandlock .wm span { display: block; font-size: 9px; font-weight: 700;
+        letter-spacing: .17em; text-transform: uppercase; color: var(--wordmark-sub);
+        margin-top: 3px; }
+  .railnav { padding: 10px 8px; display: flex; flex-direction: column; gap: 2px;
+             overflow-y: auto; }
+  .railitem { display: flex; align-items: center; gap: 10px; width: 100%;
+              padding: 9px 10px; border-radius: 7px; border: 1px solid transparent;
+              background: none; color: var(--ink-2); font: inherit; font-size: 12.5px;
+              font-weight: 500; text-align: left; cursor: pointer; text-decoration: none; }
+  .railitem svg { width: 17px; height: 17px; flex: none; opacity: .85; }
+  .railitem:hover { background: var(--panel-2); color: var(--ink); }
+  .railitem[aria-current="page"] { background: var(--accent-soft); color: var(--accent);
+              border-color: var(--line-active); font-weight: 600; }
+  .railitem[aria-disabled="true"] { color: var(--disabled); cursor: not-allowed; }
+  .railitem[aria-disabled="true"]:hover { background: none; color: var(--disabled); }
+  .railitem .railbadge { margin-left: auto; font-family: var(--mono); font-size: 10px;
+        font-weight: 700; padding: 1px 6px; border-radius: 99px;
+        background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); }
+  .railitem .railbadge[hidden] { display: none; }
+  .railitem .soon { margin-left: auto; font-size: 8.5px; letter-spacing: .09em;
+              text-transform: uppercase; color: var(--disabled);
+              border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; }
+  .railfoot { margin-top: auto; padding: 14px; border-top: 1px solid var(--line);
+              font-family: var(--display); font-size: 15px; font-weight: 600;
+              line-height: 1.15; color: var(--ink-2); }
+  .railfoot em { display: block; font-style: normal; color: var(--muted);
+                 font-family: var(--body); font-size: 10.5px; font-weight: 500;
+                 letter-spacing: .04em; margin-top: 3px; }
+
+  /* ----------------------------------------------------------- header */
+  header .brand { display: flex; align-items: center; gap: 11px; }
+  header .brand .wordmark h1 { font-family: var(--display); font-size: 25px;
+        font-weight: 700; margin: 0; line-height: 1.02; letter-spacing: .005em; }
+  header .brand .wordmark p { margin: 1px 0 0; font-size: 11px; color: var(--muted); }
+  .hdrclock { text-align: right; line-height: 1.2; }
+  .hdrclock small { display: block; font-size: 10.5px; color: var(--muted); }
+  .hdrclock b { font-family: var(--mono); font-size: 16px; font-weight: 600;
+                font-variant-numeric: tabular-nums; }
+  .bell { position: relative; }
+  .bell .badge { position: absolute; top: -5px; right: -5px; min-width: 15px; height: 15px;
+        border-radius: 99px; background: var(--crit); color: var(--accent-ink);
+        font-size: 9.5px; font-weight: 700; display: grid; place-items: center;
+        padding: 0 3px; }
+  .whoami { display: flex; align-items: center; gap: 8px; }
+  .whoami .av { width: 29px; height: 29px; border-radius: 50%; flex: none;
+        background: var(--accent); color: var(--accent-ink); display: grid;
+        place-items: center; font-size: 11px; font-weight: 700; }
+  .whoami b { font-size: 12px; font-weight: 600; display: block; line-height: 1.2; }
+  .whoami span { font-size: 10.5px; color: var(--muted); }
+
+  /* ------------------------------------------------- alat panel kamera */
+  .camtools { padding: 10px 12px 0; display: grid; gap: 8px; }
+  .camsearch { display: flex; gap: 7px; }
+  .camsearch input { flex: 1; min-width: 0; padding: 7px 10px; font: inherit;
+        font-size: 12px; border-radius: 6px; border: 1px solid var(--line);
+        background: var(--panel-2); color: var(--ink); }
+  .camsearch input::placeholder { color: var(--muted); }
+  .regionchips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .rchip { font-size: 11px; padding: 4px 9px; border-radius: 6px; cursor: pointer;
+        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-2);
+        font-family: inherit; font-weight: 500; }
+  .rchip b { font-family: var(--mono); font-weight: 600; opacity: .75; margin-left: 4px; }
+  .rchip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent);
+        color: var(--accent-ink); }
+  .camthumb { width: 64px; height: 38px; flex: none; border-radius: 4px;
+        object-fit: cover; background: var(--video-bg); border: 1px solid var(--line); }
+  .camlive { display: flex; align-items: center; gap: 5px; font-size: 9.5px;
+        font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+        color: var(--ok); }
+  .camlive.mati { color: var(--crit); }
+  .camscore { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+  /* ------------------------------------------------------ kepala video */
+  .vhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        padding: 10px 13px; border-bottom: 1px solid var(--line); }
+  .vhead .vname { font-family: var(--display); font-size: 17px; font-weight: 700; }
+  .vhead .vid { font-family: var(--mono); font-size: 11px; color: var(--muted);
+        padding-left: 10px; border-left: 1px solid var(--line); }
+  .vhead .vwhere { font-size: 11px; color: var(--muted); width: 100%; margin-top: -6px; }
+  .vhead .vtime { font-family: var(--mono); font-size: 12px; color: var(--ink-2);
+        margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  /* ----------------------------------------------------------- pemutar */
+  .player { display: flex; align-items: center; gap: 10px; padding: 8px 13px;
+        border-top: 1px solid var(--line); }
+  .pbtn { width: 27px; height: 27px; border-radius: 5px; border: 1px solid var(--line);
+        background: var(--panel-2); color: var(--ink-2); display: grid;
+        place-items: center; cursor: pointer; flex: none; }
+  .pbtn:hover:not(:disabled) { border-color: var(--line-hover); color: var(--ink); }
+  .pbtn:disabled { opacity: .45; cursor: not-allowed; }
+  .ptrack { flex: 1; height: 4px; border-radius: 99px; background: var(--panel-3);
+        position: relative; overflow: hidden; min-width: 40px; }
+  .ptrack i { position: absolute; inset: 0 auto 0 0; background: var(--accent);
+        border-radius: 99px; }
+  .plabel { font-family: var(--mono); font-size: 10px; font-weight: 700;
+        letter-spacing: .09em; color: var(--ok); }
+
+  /* --------------------------------------------- sakelar lapisan visual */
+  .swrow { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .sw { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+        font-size: 11.5px; color: var(--ink-2); background: none; border: 0;
+        font-family: inherit; padding: 3px 0; }
+  .sw .knob { width: 30px; height: 17px; border-radius: 99px; flex: none;
+        background: var(--panel-3); border: 1px solid var(--line); position: relative;
+        transition: background .14s, border-color .14s; }
+  .sw .knob::after { content: ""; position: absolute; top: 2px; left: 2px;
+        width: 11px; height: 11px; border-radius: 50%; background: var(--muted);
+        transition: transform .14s, background .14s; }
+  .sw[aria-pressed="true"] { color: var(--ink); }
+  .sw[aria-pressed="true"] .knob { background: var(--accent); border-color: var(--accent); }
+  .sw[aria-pressed="true"] .knob::after { transform: translateX(13px);
+        background: var(--accent-ink); }
+  .sw:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* --------------------------------------------------- baris analisis AI */
+  .airow { display: grid; grid-template-columns: 1fr 268px; gap: 12px; }
+  @media (max-width: 1500px) { .airow { grid-template-columns: 1fr; } }
+  .aicards { display: grid; gap: 9px; padding: 11px 13px 13px;
+        grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); }
+  .aicard { border: 1px solid var(--line); border-radius: 8px; padding: 10px 11px;
+        background: var(--panel-2); display: flex; gap: 9px; align-items: flex-start; }
+  .aicard .ico { width: 28px; height: 28px; border-radius: 6px; flex: none;
+        display: grid; place-items: center; background: var(--ai-soft);
+        border: 1px solid var(--line-ai); color: var(--ai-ink); }
+  .aicard.mati .ico { background: var(--crit-soft); border-color: var(--crit);
+        color: var(--crit); }
+  .aicard b { display: block; font-size: 12px; font-weight: 600; line-height: 1.25; }
+  .aicard .st { font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+        text-transform: uppercase; color: var(--ok); margin-top: 2px; }
+  .aicard.mati .st { color: var(--crit); }
+  .aicard .dt { font-size: 10.5px; color: var(--muted); margin-top: 3px;
+        line-height: 1.35; }
+  .lipat { border-top: 1px solid var(--line-soft); }
+  .lipat > summary { cursor: pointer; padding: 9px 13px; font-size: 11.5px;
+        font-weight: 600; color: var(--ink-2); list-style: none;
+        display: flex; align-items: center; gap: 7px; }
+  .lipat > summary::-webkit-details-marker { display: none; }
+  .lipat > summary::before { content: ""; flex: none;
+        border: 4px solid transparent; border-left-color: var(--muted);
+        border-right-width: 0; transition: transform .15s; display: inline-block; }
+  .lipat[open] > summary::before { transform: rotate(90deg); }
+  .lipat > summary:hover { background: var(--panel-2); color: var(--ink); }
+  .kelas { display: grid; gap: 1px; background: var(--line-soft); }
+  /* Flex, bukan grid: dengan grid, simpul teks di antara span berpeluang
+     menambah baris implisit dan tinggi baris jadi dua kali lipat. Flex tidak
+     punya perilaku itu, dan tata letaknya sama saja di sini. */
+  .kelas .baris { background: var(--panel); padding: 6px 13px; display: flex;
+        gap: 10px; align-items: center; line-height: 1.25; }
+  .kelas .nm { flex: 1; min-width: 0; }
+  .kelas .nm { font-size: 12.5px; font-weight: 600; }
+  .kelas .bar, .kelas .jml { flex: none; }
+  .kelas .sub { font-size: 10.5px; color: var(--muted); font-weight: 400;
+        display: block; margin-top: 1px; }
+  .kelas .jml { font-family: var(--mono); font-size: 17px; font-weight: 600;
+        font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+  .kelas .jml.kosong { color: var(--muted); font-size: 13px; }
+  .kelas .bar { width: 96px; height: 5px; border-radius: 3px;
+        background: var(--panel-3); overflow: hidden; }
+  .kelas .bar i { display: block; height: 100%; background: var(--ai);
+        border-radius: 3px; }
+  .kelas .baris.takada { opacity: .72; }
+  .kelas .baris.takada .bar { visibility: hidden; }
+  .diag { padding: 11px 13px 13px; font-family: var(--mono); font-size: 11px; }
+  .diag dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+  .diag dt { color: var(--muted); }
+  .diag dd { margin: 0; color: var(--ink-2); text-align: right; }
+
+  /* ---------------------------------------------------- kolom kanan */
+  .leftcol,
+  .rightcol { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  /* Kolom kiri diregangkan setinggi baris, lalu daftar kamera yang
+     menyerap sisanya - tanpa ini kolom terpendek meninggalkan ruang
+     kosong di bawahnya, dan panel di atasnya terlihat menggantung. */
+  .leftcol, .rightcol { align-self: stretch; }
+  .leftcol > .panel:first-child,
+  .rightcol > .panel:first-child { flex: 1; display: flex;
+        flex-direction: column; min-height: 0; }
+  .inspector { padding: 0 13px 13px; }
+  .inspector .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 7px;
+        margin: 11px 0; }
+  .inspector .shots figure { margin: 0; }
+  .inspector .shots img { width: 100%; aspect-ratio: 16/9; object-fit: cover;
+        border-radius: 5px; border: 1px solid var(--line); background: var(--video-bg);
+        display: block; }
+  .inspector .shots figcaption { font-size: 9.5px; color: var(--muted); margin-top: 3px;
+        text-align: center; }
+  .inspector h3 { font-family: var(--display); font-size: 14px; font-weight: 600;
+        margin: 0 0 7px; }
+  .inspector dl { display: grid; grid-template-columns: 96px 1fr; gap: 6px 10px;
+        margin: 0; font-size: 12px; }
+  .inspector dt { color: var(--muted); }
+  .inspector dd { margin: 0; color: var(--ink); }
+  .obs { margin-top: 12px; border: 1px solid var(--line-ai); border-radius: 8px;
+        background: var(--ai-soft); padding: 10px 11px; display: flex; gap: 9px; }
+  .obs .ico { width: 24px; height: 24px; border-radius: 5px; flex: none;
+        background: var(--ai); color: var(--overlay-ink); display: grid;
+        place-items: center; font-size: 10px; font-weight: 700; }
+  .obs b { display: block; font-size: 12px; margin-bottom: 3px; }
+  .obs p { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--ink-2); }
+  .inspector .actions { display: flex; gap: 7px; margin-top: 12px; }
+
+  /* ----------------------------------------------- ringkasan operasional */
+  .opshead { display: flex; align-items: center; gap: 9px; margin-bottom: 9px;
+        grid-column: 1 / -1; }
+  .opshead h2 { font-family: var(--display); font-size: 15px; font-weight: 700;
+        margin: 0; letter-spacing: .01em; }
+  .opshead .poc { margin-left: auto; font-family: var(--mono); font-size: 9.5px;
+        letter-spacing: .1em; text-transform: uppercase; color: var(--warn);
+        border: 1px solid var(--warn); border-radius: 4px; padding: 2px 7px; }
+  .kpi .ico { width: 34px; height: 34px; border-radius: 7px; flex: none;
+        display: grid; place-items: center; }
+  .kpi .row { display: flex; gap: 11px; align-items: flex-start; }
+  .kpi .trend { font-size: 10.5px; font-weight: 600; margin-top: 3px; }
+  .kpi .trend.naik { color: var(--crit); }
+  .kpi .trend.turun { color: var(--ok); }
+  .kpi .trend.datar { color: var(--muted); }
+</style>
+
+<div class="app">
+
+<!-- ====================================================== rail navigasi -->
+<nav class="rail" aria-label="Navigasi utama">
+  <div class="railhead">
+    <span class="brandlock">
+      <span class="emblem">
+        <img src="aset/dishub-emblem.png" width="26" height="26" alt="">
+      </span>
+      <span class="wm">
+        <b>DISHUB</b>
+        <span>DKI Jakarta</span>
+      </span>
+    </span>
+    <span class="sr-only">Dinas Perhubungan DKI Jakarta</span>
+  </div>
+
+  <div class="railnav">
+    <a class="railitem" href="/" title="Konsol operator — untuk tim teknis">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z"/></svg>
+      Dashboard</a>
+
+    <a class="railitem" href="/demo" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <rect x="2.5" y="6" width="14" height="10" rx="2"/>
+        <path d="M16.5 10.5 21.5 8v9l-5-2.5"/></svg>
+      CCTV Intelligence</a>
+
+    <span class="railitem" aria-disabled="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M5 17V9m7 8V5m7 12v-6"/><path d="M3 21h18"/></svg>
+      Traffic Monitoring <span class="soon">rencana</span></span>
+
+    <a class="railitem" href="/verifikasi" id="railVerif">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M12 3.5 21.5 20H2.5L12 3.5Z"/><path d="M12 10v4M12 17h.01"/></svg>
+      Antrean Verifikasi <span class="railbadge" id="railBadge" hidden>0</span></a>
+
+    <a class="railitem" href="/aduan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M4 5h16v11H9l-5 4V5Z"/></svg>
+      Aduan Masyarakat</a>
+
+    <span class="railitem" aria-disabled="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      Analytics &amp; Reports <span class="soon">rencana</span></span>
+
+    <a class="railitem" href="/kamera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M4 7h16v11H4z"/><path d="M8 7V4h8v3"/><circle cx="12" cy="12.5" r="2.5"/></svg>
+      Manajemen Kamera</a>
+
+    <a class="railitem" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1m0-14.2-2.1 2.1m-10 10L4.9 19.1"/></svg>
+      Pengaturan</a>
+  </div>
+
+  <div class="railfoot">
+    Jakarta<br>Maju Bergerak<br>Bersama
+    <em>Dinas Perhubungan DKI Jakarta</em>
+  </div>
+</nav>
+
+<div class="main">
+
+<!-- ============================================================= kepala -->
+<header>
+  <div class="brand">
+    <span class="emblem kecil" aria-hidden="true">
+      <img src="aset/dishub-emblem.png" width="21" height="21" alt=""></span>
+    <div class="wordmark">
+      <h1>Ruang Kendali Lalin</h1>
+      <p>Traffic Intelligence · CCTV · Jakarta Lebih Tertib</p>
+    </div>
+  </div>
+
+  <span class="chip" id="liveState">Menyambung…</span>
+  <span class="chip">46 kamera publik</span>
+  <span class="chip proto" id="proto">Prototipe · tampilan contoh</span>
+
+  <span class="spacer"></span>
+
+  <div class="hdrclock">
+    <small id="tanggal">—</small>
+    <b id="clock">—</b>
+  </div>
+
+  <button class="icon bell" id="bellBtn" type="button" title="Temuan belum diverifikasi">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+         stroke-width="1.7"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/>
+      <path d="M10 19a2 2 0 0 0 4 0"/></svg>
+    <span class="badge" id="bellCount" hidden>0</span>
+  </button>
+
+  <div class="whoami" title="Purwarupa belum memiliki mekanisme masuk — peran ini tampilan saja">
+    <span class="av" aria-hidden="true">OP</span>
+    <div><b>Operator</b><span>Belum ada akun</span></div>
+  </div>
+
+  <button class="icon" id="helpBtn" type="button">? Bantuan</button>
+  <button class="icon" id="reanalyse" type="button">Analisis kamera ini</button>
+  <button class="icon" id="btnPoc" type="button" title="Fokus POC: hanya penghitungan lalu lintas 7 kelas (butir 1-2 Surat Dishub 1316/KI.03.01). Matikan untuk tampilan lengkap." hidden>Mode POC</button>
+  <button class="icon" id="theme" type="button">Mode gelap</button>
+</header>
+
+<div class="shell">
+
+  <!-- ------------------------------------------------- kolom kiri -->
+  <div class="leftcol">
+  <section class="panel">
+    <div class="head">
+      <h2>Daftar kamera</h2>
+      <span class="count" id="camCount">— / 46</span>
+    </div>
+    <div class="camtools">
+      <div class="camsearch">
+        <input id="camSearch" type="search" placeholder="Cari kamera atau lokasi…"
+               aria-label="Cari kamera">
+      </div>
+      <div class="regionchips" id="regionChips"></div>
+    </div>
+    <div class="cams" id="cams"></div>
+  </section>
+  <section class="panel" id="panelKualitas">
+    <div class="head">
+      <h2>Technical Diagnostics</h2>
+      <span class="count" id="specStream">—</span>
+    </div>
+    <div class="diag"><dl id="diagList"></dl></div>
+    <details class="lipat">
+      <summary>Kelayakan sumber per jenis pembacaan</summary>
+      <div class="quality">
+        <p class="spec" id="spec" hidden>—</p>
+        <div class="grade" id="grades"></div>
+        <p class="ask" id="ask"></p>
+      </div>
+    </details>
+  </section>
+  </div>
+
+  <!-- --------------------------------------------------- panggung -->
+  <div class="stage">
+    <section class="panel" style="overflow:hidden">
+      <div class="vhead">
+        <span class="vname" id="vName">—</span>
+        <span class="vid mono" id="vId">—</span>
+        <span class="chip live" id="vLive" hidden>Live</span>
+        <span class="vtime mono" id="vTime">—</span>
+        <span class="vwhere" id="vWhere">—</span>
+      </div>
+      <div class="viewport">
+        <img id="frame" alt="" >
+        <video id="vid" playsinline muted hidden></video>
+        <canvas id="bbox" hidden aria-hidden="true"></canvas>
+        <div class="hud" id="hud" hidden></div>
+        <svg id="overlay" viewBox="0 0 640 360" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <span class="stamp mono" id="stamp">—</span>
+      </div>
+      <div class="player">
+        <button class="pbtn" id="pPlay" type="button" title="Jeda penyegaran live">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+            <rect x="7" y="5" width="3.6" height="14" rx="1"/>
+            <rect x="13.4" y="5" width="3.6" height="14" rx="1"/></svg></button>
+        <button class="pbtn" id="pNext" type="button" title="Ambil frame berikutnya sekarang">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+            <path d="M6 5l10 7-10 7V5Z"/><rect x="17" y="5" width="2.6" height="14" rx="1"/></svg></button>
+        <span class="plabel" id="pLabel">LIVE</span>
+        <span class="ptrack" aria-hidden="true"><i id="pFill" style="width:0%"></i></span>
+        <button class="pbtn ptext" id="pGaris" type="button" title="Tarik atau geser garis hitung kamera ini">Atur garis</button>
+        <button class="pbtn" id="pShot" type="button" title="Unduh frame ini">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+               stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/>
+            <circle cx="12" cy="13" r="3.2"/></svg></button>
+        <button class="pbtn" id="pFull" type="button" title="Layar penuh">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+               stroke-width="1.8"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      </div>
+      <div class="ghbar" id="ghBar" hidden>
+        <span class="ghinfo">
+          <b>1.</b> Klik garis putih (biru muda putus-putus) sebagai acuan ·
+          <b>2.</b> “Tegak lurus garis putih” · <b>3.</b> seret ujungnya sampai kerb ·
+          tombol panah = geser 1 px (Shift 5 px) · klik dua kali / Delete = hapus.
+          <span id="ghStatus" class="ghstat">Menyiapkan latar bersih & garis putih… (±20 dtk)</span>
+          <span id="ghInfo" class="ghangka mono"></span>
+        </span>
+        <button class="seg" type="button" id="ghTegak" disabled>Tegak lurus garis putih</button>
+        <button class="seg" type="button" id="ghKunci" aria-pressed="false" disabled>Kunci ⟂</button>
+        <button class="seg" type="button" id="ghBatal">Batal</button>
+        <button class="seg on" type="button" id="ghSimpan">Simpan garis</button>
+      </div>
+      <div class="bbhud" id="bbhud" hidden></div>
+      <div class="toolbar">
+        <span class="grp" id="grpSumber">
+          <span class="label">Tampilan</span>
+          <button class="seg" type="button" data-src="live" aria-pressed="true">Live</button>
+          <button class="seg" type="button" data-src="rekaman" aria-pressed="false">Rekaman siang</button>
+          <button class="seg" type="button" data-src="analisis" aria-pressed="false">Analisis</button>
+          <button class="seg" type="button" data-src="pantau" aria-pressed="false">Pantau</button>
+          <button class="seg" type="button" data-src="cuplikan" aria-pressed="false">Cuplikan</button>
+        </span>
+        <span class="grp swrow" id="grpLapisan">
+          <span class="label" style="margin-left:6px">Lapisan visual</span>
+          <button class="sw" type="button" data-layer="zone" aria-pressed="true">
+            <span class="knob" aria-hidden="true"></span>Zona</button>
+          <button class="sw" type="button" data-layer="box" aria-pressed="true">
+            <span class="knob" aria-hidden="true"></span>Objek</button>
+          <button class="sw" type="button" data-layer="track" aria-pressed="false">
+            <span class="knob" aria-hidden="true"></span>Lintasan</button>
+          <button class="sw" type="button" data-layer="blur" aria-pressed="false">
+            <span class="knob" aria-hidden="true"></span>Samarkan pelat</button>
+        </span>
+      </div>
+      <p class="hint" id="hint"></p>
+      <div class="readout" id="readout"></div>
+    </section>
+
+    <section class="panel" id="panelTren" hidden>
+      <div class="head">
+        <h2>Tren &amp; log lintasan</h2>
+        <span class="count" id="trenInfo">—</span>
+        <span class="trenbtn">
+          <button class="seg" type="button" id="btnCsv" title="Semua lintasan sejak Live dibuka, dari data yang sama dengan panel">Unduh CSV</button>
+          <button class="seg" type="button" id="btnTv" title="Video + hitungan saja, layar penuh (Esc untuk keluar)">Layar TV</button>
+        </span>
+      </div>
+      <div class="tren" id="bbtren"></div>
+    </section>
+    <button class="seg" type="button" id="btnTvKeluar" hidden>Keluar layar TV</button>
+
+    <section class="panel" id="panelAI">
+      <div class="head">
+        <h2>AI Analysis (PP-Vehicle)</h2>
+        <span class="count" id="tbxZone">—</span>
+      </div>
+      <div class="aicards" id="aiCards"></div>
+      <details class="lipat">
+        <summary>Rincian per modul — angka mentah dan catatannya</summary>
+        <div class="tbx" id="toolbox"></div>
+      </details>
+    </section>
+    <section class="panel" id="panelHitung">
+      <div class="head">
+        <h2>Komposisi lalu lintas</h2>
+        <span class="count" id="hitungWaktu">belum diukur</span>
+        <span class="spacer" style="flex:1"></span>
+        <button class="icon" id="ukurHitung" type="button">Ukur sekarang</button>
+      </div>
+      <div class="kelas" id="kelasList"></div>
+      <p class="hint" id="hitungHint"></p>
+    </section>
+
+    <section class="panel chartcard">
+      <div class="k" id="chartLabel" style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)">
+        Kejadian per jam
+      </div>
+      <svg id="chart" viewBox="0 0 320 84" role="img"
+           aria-label="Kejadian per jam"></svg>
+    </section>
+  </div>
+
+  <!-- --------------------------------------------------- kolom kanan -->
+  <div class="rightcol">
+    <section class="panel">
+      <div class="head">
+        <h2>Kejadian terdeteksi</h2>
+        <button class="filterchip" id="filterChip" type="button" hidden></button>
+        <span class="count"><span id="evCount">0</span> belum diverifikasi</span>
+      </div>
+      <div class="feed" id="feed"></div>
+      <a class="feedmore" id="feedMore" href="/verifikasi?today=1" hidden></a>
+    </section>
+
+    <section class="panel" id="inspectorPanel" hidden>
+      <div class="head">
+        <h2>Detail kejadian</h2>
+        <button class="filterchip" id="inspClose" type="button">Tutup ×</button>
+      </div>
+      <div class="inspector" id="inspector"></div>
+    </section>
+  </div>
+
+  <!-- ---------------------------------------------------- kpi strip -->
+  <div class="kpis">
+    <div class="opshead">
+      <h2>Ringkasan operasional</h2>
+      <span style="font-size:11px;color:var(--muted)">hari berjalan · WIB</span>
+      <span class="poc">POC · sebagian data simulasi</span>
+    </div>
+    <section class="panel kpi klik" id="kpi0" role="button" tabindex="0"></section>
+    <section class="panel kpi klik" id="kpi1" role="button" tabindex="0"></section>
+    <section class="panel kpi klik" id="kpi2" role="button" tabindex="0"></section>
+    <section class="panel kpi klik" id="kpi3" role="button" tabindex="0"></section>
+  </div>
+</div>
+</div>
+</div>
+
+<dialog id="rincian"><dialog id="rincian">
+  <div class="ev-head">
+    <div style="flex:1;min-width:0">
+      <h2>Kendaraan terpantau</h2>
+      <div class="sub">Rincian per kamera · hari berjalan (WIB)</div>
+    </div>
+    <button class="icon" type="button" id="rClose">Tutup</button>
+  </div>
+  <div style="padding:14px 16px">
+    <p style="margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.5">
+      Dijumlah dari seluruh siklus hari ini (WIB). Angka pada kolom
+      <strong>Track</strong> menjumlah hasil tiap siklus, jadi kendaraan yang
+      sama pada dua siklus terhitung dua kali.
+    </p>
+    <div id="rBody"></div>
+  </div>
+</dialog>
+
+<dialog id="bantuan">
+  <div class="ev-head">
+    <div style="flex:1;min-width:0">
+      <h2>Panduan Operator</h2>
+      <div class="sub">Ruang Kendali Lalin · analitik CCTV lalu lintas</div>
+    </div>
+    <button class="icon" type="button" id="tourBtn"
+            style="background:var(--accent);border-color:var(--accent);color:var(--panel)">Jalankan penuntun</button>
+    <button class="icon" type="button" id="helpClose">Tutup</button>
+  </div>
+
+  <div style="padding:16px;max-height:66vh;overflow:auto">
+
+    <h3 class="hh">1 · Tiga sumber gambar</h3>
+    <dl class="facts">
+      <dt>Live</dt><dd>Frame kamera sungguhan, disegarkan tiap 3 detik.
+        Kotak deteksi tidak ditampilkan — yang terlihat hanya kondisi jalan
+        saat ini.</dd>
+      <dt>Analisis</dt><dd>Hasil kerja sistem: frame dengan kotak kendaraan,
+        zona, dan jejak lintasan yang digambar mesin. <strong>Inilah yang
+        Anda periksa saat bertugas.</strong> Waktunya tertera di bawah gambar.</dd>
+      <dt>Cuplikan</dt><dd>Gambar tersimpan. Dipakai bila jaringan ke server
+        CCTV terputus, agar layar tidak kosong.</dd>
+    </dl>
+    <p class="pp">Mode Analisis tidak otomatis mengikuti waktu sekarang. Tekan
+      <strong>Analisis kamera ini</strong> untuk memeriksa ulang kamera yang
+      sedang dibuka — sekitar 40–60 detik.</p>
+
+    <h3 class="hh">2 · Empat kemampuan yang dibaca sistem</h3>
+    <dl class="facts">
+      <dt>Pelat nomor</dt><dd>Membaca nomor kendaraan.
+        <strong style="color:var(--crit)">Belum dapat diandalkan</strong> pada
+        CCTV publik: resolusinya 640×360, pelat hanya selebar 8–15 piksel.
+        Jangan dipakai sebagai dasar tindakan.</dd>
+      <dt>Atribut kendaraan</dt><dd>Warna dan jenis bodi (sedan, truk, bus).
+        Berguna untuk mencari kembali kendaraan pada rekaman.</dd>
+      <dt>Hitung kendaraan</dt><dd>Jumlah kendaraan yang masuk zona yang Anda
+        tentukan.</dd>
+      <dt>Parkir liar</dt><dd>Kendaraan yang diam di zona melebihi ambang
+        waktu. Ambangnya berbeda per lokasi — lihat butir 4.</dd>
+    </dl>
+
+    <h3 class="hh">3 · Batas kewenangan</h3>
+    <p class="pp">Setiap kejadian diberi label kewenangan, dan itu bukan
+      hiasan:</p>
+    <dl class="facts">
+      <dt><span class="pill act">Ranah Dishub</span></dt>
+      <dd>Parkir liar, angkutan umum ngetem, angkutan barang di jam larangan.
+        Penindakannya administratif — derek, cabut pentil, teguran.</dd>
+      <dt><span class="pill ref">Rujuk Ditlantas</span></dt>
+      <dd>Pelanggaran bergerak seperti okupansi lajur TransJakarta. Tilang
+        adalah kewenangan Kepolisian; sistem hanya meneruskan berkasnya.</dd>
+    </dl>
+
+    <h3 class="hh">4 · Zona dan ambang waktu</h3>
+    <p class="pp">Zona diatur lewat <strong>Editor Zona</strong> di kanan atas:
+      klik titik di atas gambar, seret untuk menggeser, lalu
+      <strong>Simpan &amp; analisis</strong>.</p>
+    <p class="pp">Ambang parkir tidak boleh seragam. Di simpang padat kendaraan
+      berhenti lama <em>karena lampu merah</em> — ambang 8 detik di sana akan
+      menandai setiap mobil yang antre. Patokan yang dipakai sekarang:
+      <strong>jalur sepeda dan bahu jalan 8 detik</strong> (tidak ada alasan
+      sah berhenti), <strong>badan jalan simpang 120 detik</strong> (di atas
+      satu siklus lampu merah).</p>
+
+    <h3 class="hh">5 · Yang sistem ini tidak lakukan</h3>
+    <p class="pp"><strong>Sistem tidak menetapkan pelanggaran.</strong> Setiap
+      baris di daftar Kejadian adalah <em>usulan mesin</em> yang harus
+      diverifikasi petugas sebelum ditindak. Mesin bisa keliru: pernah terjadi
+      drum kabel oranye di trotoar terbaca sebagai kendaraan.</p>
+    <p class="pp">Sistem juga tidak memantau terus-menerus. Ia memeriksa klip
+      pendek secara berkala, jadi pelanggaran di antara dua pemeriksaan akan
+      terlewat. Pemantauan penuh memerlukan server GPU.</p>
+
+    <h3 class="hh">6 · Alur kerja harian</h3>
+    <p class="pp">Buka Ruang Kendali → pilih kamera dari daftar wilayah →
+      mode <strong>Analisis</strong> untuk melihat bacaan terakhir → periksa
+      daftar <strong>Kejadian</strong> di kanan → klik satu kejadian untuk
+      melihat kartu bukti beserta dasar hukumnya → putuskan: tindak, rujuk,
+      atau tandai bukan pelanggaran.</p>
+  </div>
+
+  <p class="note">Ada yang janggal di layar? Catat nama kamera dan jamnya,
+    lalu sampaikan ke tim teknis. Kekeliruan mesin adalah data yang berguna,
+    bukan sesuatu yang perlu disembunyikan.</p>
+</dialog>
+
+
+<script src="/aset/hls.light.min.js"></script>
+<script src="/aset/bbox.js?v=demo-bbox-poc-metrics-5"></script>
+<script>
+(() => {
+  "use strict";
+
+  // ---------------------------------------------------------------- data
+  // Camera ids, names and stream specs are the real ones published on
+  // jakcctv.jakarta.go.id (Flussonic, 640x360 @ 20fps). Boxes, zones and
+  // events below are illustrative placeholders for the layout - they are
+  // replaced by real PP-Vehicle output once the pipeline is wired in.
+  // Lima kamera terpilih dari 46 kamera publik, dikelompokkan per wilayah DKI.
+  // Pemilihannya berbasis ukuran objek, bukan selera: scripts/survey_cameras.py
+  // menjalankan detector pada satu snapshot tiap kamera dan memberi skor =
+  // jumlah kendaraan x luas bbox median. Skor itu dicantumkan di bawah supaya
+  // pilihan ini bisa ditelusuri, bukan diperdebatkan.
+  //
+  // Jakarta Selatan kosong dan Utara/Timur tidak ada sama sekali di portal
+  // publik. Itu ditampilkan apa adanya di rail kamera - celah cakupan justru
+  // bahan permintaan ke Dishub, bukan sesuatu yang perlu ditutupi.
+  const CAMS_BAWAAN = [
+    {
+      key: "gerbangpemuda",
+      id: "502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03_CCTV-02",
+      name: "Jl. Gerbang Pemuda C03", area: "Senayan",
+      region: "Jakarta Pusat", owner: "Polda",
+      img: "cam/gerbangpemuda.jpg", scenario: "Hitung kendaraan",
+      skor: 54.94, zone: null, boxes: []
+    },
+    {
+      key: "thamrin",
+      id: "502491_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C07_CCTV-02",
+      name: "Simpang Jl. MH. Thamrin C07", area: "Menteng",
+      region: "Jakarta Pusat", owner: "Satpol PP",
+      img: "cam/thamrin.jpg", scenario: "Hitung kendaraan",
+      skor: 14.25, zone: null, boxes: []
+    },
+    {
+      key: "jatibaru",
+      id: "503675_JKP_BAKESBANGPOL_JL.-JATI-BARU-RAYA-C02_CCTV-01",
+      name: "Jl. Jati Baru Raya C02", area: "Tanah Abang",
+      region: "Jakarta Pusat", owner: "Bakesbangpol",
+      img: "cam/jatibaru.jpg", scenario: "Parkir liar", alert: true,
+      skor: 13.39, boxes: []
+    },
+    {
+      key: "sparman02",
+      id: "502540_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C02_CCTV-02",
+      name: "Simpang Jl. S. Parman C02", area: "Grogol",
+      region: "Jakarta Barat", owner: "Satpol PP",
+      img: "cam/sparman02.jpg", scenario: "Hitung kendaraan",
+      skor: 30.51, zone: null, boxes: []
+    },
+    {
+      key: "sparman07",
+      id: "502535_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C07_CCTV-02",
+      name: "Simpang Jl. S. Parman C07", area: "Grogol",
+      region: "Jakarta Barat", owner: "Satpol PP",
+      img: "cam/sparman07.jpg", scenario: "Hitung kendaraan",
+      skor: 13.46, zone: null, boxes: []
+    }
+  ];
+
+  // Daftar yang sebenarnya dipakai. Diisi dari /api/batch begitu backend
+  // menjawab; cadangan di atas hanya berlaku saat tidak ada backend sama
+  // sekali - misalnya ketika halaman ini dibuka sebagai artifact.
+  let CAMS = CAMS_BAWAAN;
+
+  // Membangun ulang daftar kamera dari jawaban backend. Cuplikan tersimpan dan
+  // skor survei diambil dari entri bawaan yang kuncinya cocok; kamera yang
+  // ditambahkan lewat Manajemen Kamera tidak punya keduanya, dan itu ditandai
+  // apa adanya - skor "-" berarti belum disurvei, bukan skor nol.
+  function bangunCams() {
+    const dariApi = (batch && batch.cameras) || [];
+    if (!dariApi.length) return;                 // backend kosong: pertahankan cadangan
+    const bawaan = Object.fromEntries(CAMS_BAWAAN.map((c) => [c.key, c]));
+    const kunciAktif = CAMS[active] ? CAMS[active].key : null;
+
+    CAMS = dariApi.map((c) => {
+      const b = bawaan[c.key] || {};
+      return {
+        key: c.key,
+        id: c.id || b.id || "",
+        name: c.name || b.name || c.key,
+        area: c.area || b.area || "",
+        region: c.region || b.region || "",
+        owner: c.owner || b.owner || "",
+        scenario: c.scenario || b.scenario || "",
+        img: b.img || "",                        // cuplikan hanya ada untuk bawaan
+        skor: b.skor ?? null,
+        boxes: b.boxes || [],
+        zone: b.zone || null,
+        // Kamera RTSP langsung tidak punya HLS portal yang bisa diputar
+        // peramban; Live-nya memakai snapshot yang diambil server.
+        rtsp: String(c.stream || "").toLowerCase().startsWith("rtsp"),
+        // LC-016: alamat HLS dari server (kamera bisa di server portal lain)
+        hls: /\.m3u8(\?|$)/i.test(String(c.stream || "")) ? c.stream : "",
+        portalLain: !!c.stream && !String(c.stream).startsWith(LIVE_BASE)
+                    && !String(c.stream).toLowerCase().startsWith("rtsp"),
+        tampilan_hitung: c.tampilan_hitung || [],
+      };
+    });
+
+    // Pertahankan kamera yang sedang dibuka; kalau ia baru saja dihapus lewat
+    // Manajemen Kamera, mundur ke kamera pertama daripada menampilkan layar
+    // kosong tanpa penjelasan.
+    const idx = CAMS.findIndex((c) => c.key === kunciAktif);
+    active = idx >= 0 ? idx : 0;
+  }
+
+  // Seluruh wilayah DKI, untuk menghitung mana yang belum terwakili. Daftar ini
+  // tetap karena wilayah DKI memang tetap - yang dinamis adalah kamera di
+  // dalamnya.
+  const WILAYAH_DKI = ["Jakarta Pusat", "Jakarta Barat", "Jakarta Selatan",
+                       "Jakarta Timur", "Jakarta Utara", "Kepulauan Seribu"];
+
+  // Wilayah tanpa kamera publik. Ditampilkan sebagai baris kosong di rail,
+  // bukan disembunyikan.
+  const WILAYAH_KOSONG = [
+    { region: "Jakarta Selatan", note: "2 kamera publik, keduanya menghadap plaza" },
+    { region: "Jakarta Utara", note: "tidak ada kamera di portal publik" },
+    { region: "Jakarta Timur", note: "tidak ada kamera di portal publik" }
+  ];
+
+  // Tidak ada lagi kejadian contoh. Sebelumnya array ini berisi pelanggaran
+  // karangan yang, setelah daftar kamera diganti, tertempel pada kamera NYATA
+  // lengkap dengan jam yang spesifik - "Parkir di badan jalan, Jl. Gerbang
+  // Pemuda C03, 12:15:04" untuk kejadian yang tidak pernah terjadi. Chip
+  // "contoh" di header tidak cukup menebus itu. Feed sekarang hanya
+  // menampilkan kejadian dari pipeline, dan kosong bila memang belum ada.
+  const EVENTS = [];
+
+  const GRADES = [
+    { task: "Deteksi & hitung kendaraan", pct: 92, verdict: "Memadai",      tone: "ok" },
+    { task: "Klasifikasi jenis kendaraan", pct: 68, verdict: "Cukup",        tone: "warn" },
+    { task: "Deteksi diam / masuk zona",   pct: 88, verdict: "Memadai",      tone: "ok" },
+    { task: "Baca pelat nomor",            pct: 14, verdict: "Tidak memadai", tone: "crit" }
+  ];
+
+  const HOURLY = [
+    [6, 4], [7, 12], [8, 18], [9, 11], [10, 8], [11, 9], [12, 14],
+    [13, 7], [14, 6], [15, 10], [16, 19], [17, 24], [18, 16]
+  ];
+
+  // ------------------------------------------------------------- helpers
+  const $ = (id) => document.getElementById(id);
+  const layers = { zone: true, box: true, track: false, blur: false };
+  let active = 0;
+
+  // ------------------------------------------------------------ live feed
+  // Flussonic publishes a still per camera at <id>/preview.jpg. Polling it is
+  // enough for an operator console and avoids shipping an HLS player.
+  // It only works where the page may load that host: served from this app it
+  // does, but a published artifact's CSP blocks it, so every failure falls
+  // back to the snapshot bundled in cam/. That fallback is the whole reason
+  // the bundled stills exist - a demo must not depend on the venue's wifi.
+  const LIVE_BASE = "https://dki-jkt.balitower.co.id:7028/";
+  const HLS_URL = (id) => `${LIVE_BASE}${encodeURIComponent(id)}/index.m3u8`;
+  const LIVE_EVERY_MS = 3000;
+  // "live" = still from the camera, "analisis" = the pipeline's own annotated
+  // frame from the last batch cycle, "cuplikan" = the snapshot bundled with
+  // the page (works with no network at all).
+  let srcMode = "live";
+  const POC_KEYS = new Set(["gerbangpemuda", "benhil2"]);
+  let liveWorking = null;   // null = belum diketahui
+  let liveTimer = null;
+  let liveFails = 0;
+  let batch = null;         // payload terakhir dari /api/batch
+  let stats = null;         // payload terakhir dari /api/stats
+  let REPLAYS = {};         // klip siang POC yang tersedia di backend
+
+  // Real figures only once at least one batch cycle has been recorded today;
+  // before that the tiles keep their illustrative values, clearly tagged.
+  const statsReal = () => !!(stats && stats.has_data);
+
+  const camBatch = (cam) => (batch?.cameras || []).find((c) => c.key === cam.key);
+
+  // Zona SELALU dibaca dari API, tidak pernah ditanam di berkas ini. Kalau
+  // ditanam, menyimpan lewat editor /zona tidak akan mengubah apa pun di sini
+  // - dan itu justru cacat yang paling membingungkan: backend berubah, layar
+  // tidak.
+  // Zona dianggap basi bila disimpan SETELAH analisis terakhir: frame yang
+  // tampil masih membawa zona lama yang digambar pipeline saat siklus itu.
+  function zonaBasi(cam) {
+    const b = camBatch(cam);
+    return !!(b?.zone_updated_at && b?.record?.finished_at
+              && b.zone_updated_at > b.record.finished_at);
+  }
+
+  // Digambar dengan gaya berbeda dari zona biasa - garis tebal berkedip -
+  // supaya tidak tertukar dengan zona lama yang terbakar di dalam gambar.
+  function overlayZonaBaru(cam) {
+    const z = zoneOf(cam);
+    if (!z) return "";
+    return `<polygon points="${z.pts}" fill="var(--ok)" fill-opacity=".12"
+              stroke="var(--ok)" stroke-width="3" stroke-dasharray="10 6"/>
+            <rect x="0" y="0" width="330" height="17" fill="var(--ok)"/>
+            <text x="5" y="13" fill="var(--accent-ink)" font-size="11" font-weight="700"
+              font-family="IBM Plex Mono, monospace">ZONA BARU - BELUM DIANALISIS</text>`;
+  }
+
+  function zoneOf(cam) {
+    const b = camBatch(cam);
+    const rp = b?.region_polygon || [];
+    if (rp.length < 6) return null;
+    const pts = [];
+    for (let i = 0; i + 1 < rp.length; i += 2) pts.push(`${rp[i]},${rp[i + 1]}`);
+    return { pts: pts.join(" "), label: b.zone_label || "Zona" };
+  }
+  const hasAnalysis = (cam) => {
+    const b = camBatch(cam);
+    return !!(b && b.has_frame && b.record && b.record.ok);
+  };
+
+  // "Live" only counts once a frame has actually arrived. Until then, and
+  // after a failure, the page behaves exactly as it does in snapshot mode.
+  const liveActive = () => srcMode === "live" && liveWorking === true;
+
+  // What is still illustrative right now. The header chip must describe the
+  // actual mix on screen, not just the viewport mode: even with a real analysed
+  // frame, the daily recap below is still a mockup.
+  function demoParts() {
+    const parts = [];
+    // Gambar kamera tidak pernah karangan lagi: mode live menarik frame
+    // sungguhan, mode cuplikan memakai snapshot asli, mode analisis memakai
+    // keluaran pipeline. Angka kamera pun kini kosong bila belum dianalisis,
+    // bukan diisi contoh. Yang tersisa hanya dua hal di bawah.
+    // Daftar kejadian tidak lagi punya versi contoh, jadi tidak ada yang
+    // perlu disebut di sini soal itu.
+    if (!statsReal()) parts.push("rekap harian");
+    return parts;
+  }
+
+  function updateProtoChip() {
+    const parts = demoParts();
+    const el = $("proto");
+    if (parts.length) {
+      el.className = "chip proto";
+      el.textContent = "Contoh: " + parts.join(" · ");
+      el.title = "Bagian yang disebut di sini masih tampilan contoh, bukan "
+               + "keluaran model. Penanda kuning menandai tiap bagiannya.";
+    } else {
+      el.className = "chip live";
+      el.textContent = "Seluruhnya keluaran pipeline";
+      el.title = "Tidak ada data contoh yang sedang tampil.";
+    }
+  }
+
+  function setLiveChip() {
+    const el = $("liveState");
+    if (srcMode === "analisis") {
+      el.className = "chip live"; el.textContent = "Hasil analisis pipeline"; return;
+    }
+    if (srcMode === "rekaman") {
+      const item = REPLAYS[CAMS[active]?.key];
+      el.className = "chip live";
+      el.textContent = item?.analysed_available
+        ? "Replay siang · hasil tracking" : "Replay rekaman siang";
+      return;
+    }
+    if (srcMode === "cuplikan") {
+      el.className = "chip"; el.textContent = "Cuplikan tersimpan"; return;
+    }
+    if (srcMode === "pantau") {
+      el.className = WATCH && WATCH.running ? "chip ai" : "chip warn";
+      el.textContent = WATCH && WATCH.running
+        ? `Pantau · putaran ${WATCH.rounds} · ±${WATCH.last_round_sec ?? 13} dtk`
+        : "Menyiapkan siklus pantau…";
+      return;
+    }
+    if (liveWorking === true) {
+      el.className = "chip live";
+      el.textContent = videoJalan
+        ? "Live · video 20 fps"
+        : `Live · segar tiap ${LIVE_EVERY_MS / 1000} dtk`;
+    } else if (liveWorking === false) {
+      el.className = "chip warn";
+      el.textContent = "Live tak terjangkau · pakai cuplikan";
+    } else {
+      el.className = "chip";
+      el.textContent = "Menyambung…";
+    }
+  }
+
+  // Hand-placed boxes describe the bundled snapshot, not whatever the camera
+  // is looking at right now. Showing them over a live frame would be a lie,
+  // so live mode hides them. The zone polygon stays: the camera is fixed, so
+  // the polygon is just as true on a live frame as on the snapshot.
+  function applyLiveConstraints() {
+    // Kotak nyata hanya ada pada mode Analisis; pada Cuplikan yang tampil
+    // adalah kotak ilustrasi. Mode Live tidak punya keduanya.
+    const boxBtn = document.querySelector('[data-layer="box"]');
+    const adaKotak = srcMode === "cuplikan"
+                  || (srcMode === "pantau" && !!(WATCH && WATCH.record))
+                  || (srcMode === "analisis" && hasAnalysis(CAMS[active])
+                      && (camBatch(CAMS[active])?.record?.results?.boxes || []).length > 0);
+    boxBtn.disabled = !adaKotak;
+    boxBtn.setAttribute("aria-pressed", String(adaKotak && layers.box));
+    const cam = CAMS[active];
+    let hint = "";
+    if (srcMode === "live") {
+      hint = "Frame kamera sungguhan, disegarkan tiap 3 detik. Kotak deteksi "
+           + "disembunyikan karena overlay contoh tidak cocok dengan frame nyata. "
+           + "Poligon zona tetap berlaku (kamera statis).";
+    } else if (srcMode === "rekaman") {
+      hint = REPLAYS[cam.key]?.available
+        ? "Rekaman siang asli untuk pengujian berulang. Video menampilkan hasil baseline tracking bila tersedia; klip ini tidak mengubah source Live dan belum menjadi data training tervalidasi sebelum anotasinya direview."
+        : "Kamera ini belum mempunyai rekaman siang POC. Pilih Benhil CCTV-2 atau Gerbang Pemuda.";
+    } else if (srcMode === "pantau") {
+      hint = WATCH && WATCH.running
+        ? `Siklus pendek berulang: klip ${WATCH.seconds} detik @${WATCH.fps} fps, `
+          + "tracking saja — tanpa atribut, pelat, dan segmentasi lajur. Kotak "
+          + `diperbarui tiap ±${WATCH.last_round_sec ?? 13} detik, jadi ia `
+          + "tertinggal satu putaran dari kenyataan; ini bukan aliran langsung. "
+          + "Hanya satu kamera dapat dipantau pada satu waktu."
+        : "Menyiapkan siklus pantau… putaran pertama butuh ±15 detik karena "
+          + "model dimuat ulang tiap putaran.";
+    } else if (srcMode === "analisis") {
+      const b = camBatch(cam);
+      const zonaBaru = b?.zone_updated_at && b?.record?.finished_at
+        && b.zone_updated_at > b.record.finished_at;
+      hint = hasAnalysis(cam)
+        ? (zonaBaru
+            ? "⚠ Zona diubah SETELAH analisis terakhir. Poligon di layar sudah "
+              + "yang baru, tetapi angka dan temuan di bawah masih dihitung "
+              + "dengan zona lama. Klik “Analisis ulang” agar keduanya sejalan."
+            : "Kotak, jejak, dan zona digambar dari keluaran PP-Vehicle — "
+              + "kendaraan biasa berkotak tipis, yang melanggar bergaris merah "
+              + "tebal beserta lama diamnya. Pakai tombol Tampilkan untuk "
+              + "menyalakan atau mematikan tiap lapisan.")
+        : "Kamera ini belum punya hasil analisis. Jalankan siklus batch "
+          + "(tombol Analisis ulang) lalu tunggu — satu kamera makan ±1 menit di CPU.";
+    } else {
+      hint = "Cuplikan tersimpan dengan overlay ilustrasi — untuk demo tanpa "
+           + "jaringan. Kotak di sini bukan keluaran model.";
+    }
+    $("hint").textContent = hint;
+  }
+
+  // --------------------------------------------------------- video live
+  // Mode live sebelumnya menarik preview.jpg tiap 3 detik. Itu bukan video -
+  // operator melihat salindia, dan gerakan kendaraan hilang di antara dua
+  // frame. Flussonic yang sama sudah menyajikan HLS pada <id>/index.m3u8, dan
+  // host itu mengirim `access-control-allow-origin: *`, jadi browser boleh
+  // memutarnya langsung tanpa proxy - artinya tidak ada tambahan beban di
+  // server bersama ini.
+  //
+  // hls.js dilayani dari /aset, bukan CDN: berkas ini harus tetap terbuka di
+  // ruang rapat yang memblokir CDN. Safari memutar HLS sendiri, jadi di sana
+  // pustaka tidak dipakai sama sekali.
+  let hls = null;
+  // PTS awal aliran menurut hls.js (detik). media time + ini = PTS MPEG-TS
+  // asli, yang juga dicap server pada tiap hasil deteksi (bbox.js).
+  let initPtsDetik = null;
+  let videoKey = null;      // kamera yang sedang dimuat ke <video>
+  let videoJalan = false;   // sudah benar-benar ada gambar bergerak
+
+  function stopVideo() {
+    window.BBox?.henti();
+    initPtsDetik = null;
+    if (hls) { try { hls.destroy(); } catch {} hls = null; }
+    const v = $("vid");
+    try { v.pause(); v.removeAttribute("src"); v.load(); } catch {}
+    v.loop = false;
+    v.hidden = true;
+    v.style.opacity = "";
+    $("frame").style.visibility = "";
+    videoKey = null;
+    videoJalan = false;
+  }
+
+  function mulaiVideo(cam) {
+    const v = $("vid");
+    // Idempoten, dan ini penting: renderStage() memanggil startLive() setiap
+    // kali panggung digambar ulang - termasuk pada penyegaran batch berkala.
+    // Syarat lama (`&& videoJalan`) membuat setiap gambar ulang menghancurkan
+    // pemutar yang MASIH memuat buffer pertamanya, sehingga siaran tidak pernah
+    // sampai ke frame pertama. Selama kameranya sama dan pemutarnya masih ada,
+    // jangan diganggu.
+    if (videoKey === cam.key && (videoJalan || hls || v.src)) return true;
+    stopVideo();
+    // RTSP tidak bisa diputar peramban tanpa gateway (WebRTC/HLS). Kamera
+    // semacam itu tetap tampil lewat snapshot berkala dari server.
+    if (!cam.id || cam.rtsp) return false;
+    videoKey = cam.key;
+    const url = cam.hls || HLS_URL(cam.id);
+    // Video harus SUDAH terpasang di tata letak sebelum play(): elemen dengan
+    // display:none tidak dijamin memulai pemutaran, dan itulah yang membuat
+    // percobaan pertama diam di readyState 0. Ia dibiarkan transparan sampai
+    // gambar benar-benar berjalan, sehingga tidak ada kedipan hitam.
+    v.hidden = false;
+    v.style.opacity = "0";
+
+    const berhasil = () => {
+      if (videoKey !== cam.key || srcMode !== "live") return;
+      videoJalan = true;
+      liveWorking = true;
+      liveFails = 0;
+      v.hidden = false;
+      v.style.opacity = "1";
+      // img dibiarkan terpasang di bawahnya sebagai latar saat buffer kosong,
+      // hanya disembunyikan supaya tidak terlihat menimpa video.
+      $("frame").style.visibility = "hidden";
+      clearInterval(liveTimer);        // tidak perlu polling still lagi
+      setLiveChip();
+      applyLiveConstraints();
+      $("overlay").innerHTML = overlaySvg(cam);
+      updateProtoChip();
+      // Kotak langsung di atas video, dihitung di peramban pada frame ini.
+      window.BBox?.mulai(v, $("bbox"), $("bbhud"), cam.name, cam.tampilan_hitung,
+                         { key: cam.key, offsetPts: () => initPtsDetik,
+                           tren: $("bbtren"), trenPanel: $("panelTren") });
+    };
+    const gagal = () => {
+      if (videoKey !== cam.key) return;
+      stopVideo();
+      startLiveStill();               // kembali ke perilaku lama, bukan layar kosong
+      // Siaran yang gagal sekali (jaringan sesaat, tab di latar) dicoba lagi,
+      // supaya layar demo tidak tertinggal di salindia tanpa kotak deteksi.
+      setTimeout(() => {
+        if (srcMode === "live" && !videoJalan && CAMS[active]?.key === cam.key
+            && document.visibilityState === "visible") { stopVideo(); startLive(); }
+      }, 30000);
+    };
+
+    v.addEventListener("playing", berhasil, { once: true });
+    // Tanpa batas waktu, siaran yang menggantung meninggalkan panggung kosong
+    // tanpa pesan apa pun - lebih buruk daripada salindia.
+    setTimeout(() => {
+      if (videoKey === cam.key && !videoJalan) gagal();
+    }, 10000);
+
+    // hls.js DULU, native belakangan. Terbalik sebelumnya, dan itu bug:
+    // Chromium menjawab "maybe" untuk canPlayType("application/vnd.apple.mpegurl")
+    // padahal ia tidak bisa memutar HLS bersegmen TS sendiri. Akibatnya jalur
+    // native selalu dipilih, play() menggantung tanpa galat, dan siaran jatuh ke
+    // salindia lewat batas waktu. Hanya Safari - yang memang memutar HLS asli -
+    // yang boleh memakai jalur itu, dan di sana Hls.isSupported() bernilai false.
+    if (!window.Hls || !window.Hls.isSupported()) {
+      if (!v.canPlayType("application/vnd.apple.mpegurl")) { gagal(); return false; }
+      v.src = url;
+      v.addEventListener("error", gagal, { once: true });
+      v.play().catch(gagal);
+      return true;
+    }
+
+    hls = new window.Hls({
+      lowLatencyMode: false,
+      // Buffer diukur, bukan ditebak: dengan maxBufferLength 6 siaran ini
+      // melaporkan bufferStalledError berulang - segmennya terlalu panjang
+      // untuk jendela sesempit itu. 20 detik menghapus stall tanpa membuat
+      // keterlambatan terasa di konsol pantau.
+      maxBufferLength: 20,
+      backBufferLength: 15,
+      liveSyncDurationCount: 4,
+      // Saat pemutar tertinggal dari siaran langsung, hls.js secara bawaan
+      // MELOMPAT ke tepi - dan lompatan itu terlihat sebagai gambar yang
+      // patah. Dengan ambang ini ia menyusul dengan mempercepat pemutaran
+      // sedikit (maksimum 1,2x), yang tidak kentara di mata.
+      maxLiveSyncPlaybackRate: 1.2,
+      manifestLoadingMaxRetry: 2,
+      fragLoadingMaxRetry: 3,
+    });
+    hls.on(window.Hls.Events.INIT_PTS_FOUND, (_e, d) => {
+      if (d && d.initPTS != null && d.timescale) initPtsDetik = d.initPTS / d.timescale;
+    });
+    hls.on(window.Hls.Events.ERROR, (_e, data) => {
+      if (!data || !data.fatal) return;      // galat non-fatal dipulihkan sendiri
+      if (data.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
+        try { hls.startLoad(); return; } catch {}
+      } else if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
+        try { hls.recoverMediaError(); return; } catch {}
+      }
+      gagal();
+    });
+    hls.loadSource(url);
+    hls.attachMedia(v);
+    hls.on(window.Hls.Events.MANIFEST_PARSED, () => v.play().catch(() => {}));
+    return true;
+  }
+
+  function mulaiReplay(cam) {
+    const item = REPLAYS[cam.key];
+    if (!item?.available) { stopVideo(); return false; }
+    const v = $("vid");
+    if (videoKey === `replay:${cam.key}` && v.src) return true;
+    stopVideo();
+    videoKey = `replay:${cam.key}`;
+    v.hidden = false;
+    v.style.opacity = "1";
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.src = item.analysed_available ? item.analysis_url : item.url;
+    renderReplayHud(cam, item.metrics);
+    v.addEventListener("playing", () => {
+      if (srcMode !== "rekaman" || CAMS[active]?.key !== cam.key) return;
+      videoJalan = true;
+      $("frame").style.visibility = "hidden";
+      setLiveChip();
+      applyLiveConstraints();
+    }, { once: true });
+    v.addEventListener("error", () => {
+      if (srcMode === "rekaman") {
+        stopVideo();
+        $("hint").textContent = "Rekaman siang gagal dimuat; source Live tidak terpengaruh.";
+      }
+    }, { once: true });
+    v.play().catch(() => {});
+    return true;
+  }
+
+  function renderReplayHud(cam, metrics) {
+    const el = $("bbhud");
+    if (!metrics || !Object.keys(metrics).length) { el.hidden = true; return; }
+    const warna = { motorcycle: "#ff4d4f", car: "#36cfc9", bus: "#faad14",
+                    truck: "#b37feb", person: "#fadb14", bicycle: "#73d13d" };
+    const traffic = metrics.traffic || {};
+    const counting = metrics.counting || {};
+    const classes = (metrics.classes || []).map((x) => `
+      <div class="bb-k${x.visible_median ? "" : " redup"}">
+        <i style="background:${warna[x.detector_label] || "#94a3b8"}"></i>
+        <span class="nm">${esc(x.name)}</span>
+        <b>${esc(x.visible_median)}</b>
+        <small>median tampak · maks ${esc(x.visible_max)}</small>
+      </div>`).join("");
+    el.innerHTML = `
+      <div class="bb-kepala"><b class="bb-n">${esc(traffic.visible_median ?? "—")}</b>
+        <span class="bb-kam">kendaraan tampak · ${esc(cam.name)}</span>
+        <span class="tot">${esc(traffic.state || "UNKNOWN")}</span></div>
+      <div class="bb-warn">Baseline rekaman · ${esc(metrics.status)} · ${esc(traffic.reason || "")}</div>
+      <div class="bb-kelas">${classes}</div>
+      <div class="bb-lain">
+        <span class="bb-sub">Track unik pipeline <b>${esc(counting.unique_tracks ?? "—")}</b></span>
+        <span class="bb-sub">Occupancy <b>${traffic.occupancy_ratio == null ? "—" : (traffic.occupancy_ratio * 100).toFixed(1) + "%"}</b></span>
+        <span class="bb-sub">Speed relatif <b>${esc(traffic.median_speed_px_s ?? "—")} px/s</b></span>
+        <span class="bb-sub">Berhenti <b>${traffic.stopped_ratio == null ? "—" : (traffic.stopped_ratio * 100).toFixed(0) + "%"}</b></span>
+        <span class="bb-sub">Quality <b>${traffic.quality_score == null ? "—" : (traffic.quality_score * 100).toFixed(0) + "%"}</b></span>
+      </div>
+      <div class="bb-detail">${esc(metrics.analyzed_frames)} frame @ ${esc(metrics.sampling_fps)} FPS analisis · infer p95 ${esc(metrics.inference_ms?.p95 ?? "—")} ms · crossing garis belum diklaim</div>`;
+    el.hidden = false;
+  }
+
+  function pullLive() {
+    if (srcMode !== "live") return;
+    const cam = CAMS[active];
+    const probe = new Image();
+    probe.onload = () => {
+      if (srcMode !== "live" || CAMS[active] !== cam) return;   // pengguna sudah pindah
+      const first = liveWorking !== true;
+      $("frame").src = probe.src;
+      liveWorking = true;
+      liveFails = 0;
+      setLiveChip();
+      if (first) { applyLiveConstraints(); $("overlay").innerHTML = overlaySvg(cam); }
+      updateProtoChip();
+      const jam = new Date().toLocaleTimeString("id-ID", { hour12: false });
+      // LC-016: resolusi dari video yang benar-benar diputar (kamera HD bukan 640x360)
+      const vv = $("vid"), res = vv && vv.videoWidth ? `${vv.videoWidth}×${vv.videoHeight}` : "640×360";
+      $("stamp").textContent = `${cam.id.slice(0, 6)} · ${cam.name} · ${res} · ${jam}`;
+    };
+    probe.onerror = () => {
+      if (srcMode !== "live") return;
+      liveWorking = false;
+      setLiveChip();
+      applyLiveConstraints();
+      $("overlay").innerHTML = overlaySvg(CAMS[active]);
+      updateProtoChip();
+      // A blocked host (a published artifact's CSP does exactly this) will
+      // never recover, so stop hammering it after a couple of tries.
+      if (++liveFails >= 2) clearInterval(liveTimer);
+    };
+    probe.src = cam.rtsp || cam.portalLain
+      ? `/api/kamera/snapshot?key=${encodeURIComponent(cam.key)}&t=${Date.now()}`
+      : `${LIVE_BASE}${cam.id}/preview.jpg?t=${Date.now()}`;
+  }
+
+  function startLiveStill() {
+    clearInterval(liveTimer);
+    if (srcMode !== "live") return;
+    pullLive();
+    liveTimer = setInterval(pullLive, CAMS[active]?.rtsp ? 12000 : LIVE_EVERY_MS);
+  }
+
+  function startLive() {
+    clearInterval(liveTimer);
+    if (srcMode === "rekaman") { mulaiReplay(CAMS[active]); return; }
+    if (srcMode !== "live") { stopVideo(); return; }
+    // Still ditarik sekali lebih dulu supaya panggung terisi seketika sementara
+    // manifest HLS masih dimuat; begitu video berjalan polling dihentikan.
+    pullLive();
+    // Snapshot RTSP diambil server lewat ffmpeg (5-15 dtk per frame); ditarik
+    // tiap 3 dtk permintaannya akan menumpuk di server bersama.
+    liveTimer = setInterval(pullLive, CAMS[active]?.rtsp ? 12000 : LIVE_EVERY_MS);
+    mulaiVideo(CAMS[active]);
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  async function api(path, opts) {
+    const res = await fetch(path, opts);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  }
+
+  // --------------------------------------------------------- rendering
+  function overlaySvg(cam, only, forceBoxes) {
+    // Illustrative boxes only make sense over the snapshot they were drawn for.
+    const showBoxes = forceBoxes || (layers.box && srcMode === "cuplikan");
+    const parts = [];
+    const zona = zoneOf(cam);
+    if (layers.zone && zona) {
+      parts.push(
+        `<polygon points="${zona.pts}" fill="var(--crit)" fill-opacity=".14"` +
+        ` stroke="var(--crit)" stroke-width="2" stroke-dasharray="7 5"/>`,
+        `<text x="${zona.pts.split(" ")[0].split(",")[0]}" y="14"` +
+        ` fill="var(--crit)" font-family="IBM Plex Mono, monospace" font-size="11"` +
+        ` font-weight="600">${esc(zona.label.toUpperCase())}</text>`
+      );
+    }
+    if (showBoxes) {
+      for (const b of cam.boxes) {
+        if (only != null && b.id !== only) continue;
+        const stroke = b.bad ? "var(--crit)" : "var(--ai)";
+        const label = `#${b.id} ${b.cls} ${Math.round(b.conf * 100)}%`;
+        const w = label.length * 5.6 + 10;
+        parts.push(
+          `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="none"` +
+          ` stroke="${stroke}" stroke-width="2" rx="2"/>`,
+          `<rect x="${b.x}" y="${Math.max(0, b.y - 15)}" width="${w}" height="15"` +
+          ` fill="${stroke}" rx="2"/>`,
+          `<text x="${b.x + 5}" y="${Math.max(0, b.y - 15) + 11}" fill="var(--accent-ink)"` +
+          ` font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600">` +
+          `${esc(label)}</text>`
+        );
+        if (layers.track && !b.bad) {
+          parts.push(
+            `<path d="M${b.x + b.w / 2},${b.y + b.h} q -30,-40 -64,-58" fill="none"` +
+            ` stroke="var(--ai)" stroke-width="2" stroke-opacity=".55"` +
+            ` stroke-dasharray="4 4"/>`
+          );
+        }
+        if (layers.blur) {
+          parts.push(
+            `<rect x="${b.x + b.w * .34}" y="${b.y + b.h * .74}"` +
+            ` width="${b.w * .32}" height="${Math.max(5, b.h * .12)}"` +
+            ` fill="var(--ink-2)" fill-opacity=".92" rx="1"/>`
+          );
+        }
+      }
+    }
+    return parts.join("");
+  }
+
+  // Lapisan untuk mode Analisis, digambar dari angka di results.json.
+  //
+  // Sebelumnya mode ini menampilkan frame terakhir video beranotasi pipeline.
+  // PaddleDetection menggambar warna, jenis, skor, dan penghitung ke setiap
+  // kendaraan dengan ukuran huruf tetap; pada 640x360 dengan 30-an kendaraan
+  // hasilnya saling menimpa sampai tidak terbaca. Angkanya sama, yang berubah
+  // hanya berapa banyak yang ditulis ke layar:
+  //   - kendaraan biasa  -> kotak tipis, tanpa teks
+  //   - yang melanggar   -> kotak tebal merah + satu label berisi lama diamnya
+  // Ringkasan jumlah ditaruh sekali di pojok, bukan diulang per kendaraan.
+  function overlayAnalisis(cam, recLain) {
+    const rec = recLain || camBatch(cam)?.record;
+    const r = rec?.results || {};
+    const boxes = r.boxes || [];
+    const parts = [];
+
+    const zona = zoneOf(cam);
+    if (layers.zone && zona) {
+      parts.push(
+        `<polygon points="${zona.pts}" fill="var(--crit)" fill-opacity=".12"` +
+        ` stroke="var(--crit)" stroke-width="2" stroke-dasharray="7 5"/>`);
+    }
+
+    // Garis marka acuan. Digambar utuh (bukan putus-putus) supaya berbeda dari
+    // zona, dan diberi label asal-usulnya: petugas harus bisa melihat bahwa
+    // garis ini ditetapkan manusia, bukan ditebak model - sebab penilaian
+    // pelanggaran berdiri di atas garis itu.
+    for (const lajur of r.lanes || []) {
+      for (const g of lajur) {
+        parts.push(
+          `<line x1="${g[0]}" y1="${g[1]}" x2="${g[2]}" y2="${g[3]}"` +
+          ` stroke="var(--warn)" stroke-width="2.5" stroke-opacity=".9"/>`);
+      }
+    }
+    // Garis pemisah arus untuk deteksi lawan arah. Upstream menebaknya dari
+    // arah arus bila tidak diberikan; digambar putus-putus supaya tidak
+    // tertukar dengan marka.
+    const fl = r.fence_line || [];
+    if (fl.length >= 4) {
+      parts.push(
+        `<line x1="${fl[0]}" y1="${fl[1]}" x2="${fl[2]}" y2="${fl[3]}"` +
+        ` stroke="var(--ai)" stroke-width="2" stroke-dasharray="8 5"/>`);
+    }
+    if ((r.lanes || []).length) {
+      const asal = r.lanes_manual ? "MARKA ACUAN (ditetapkan operator)"
+                                  : "MARKA HASIL SEGMENTASI MODEL";
+      // Ditempel di KANAN BAWAH: kiri bawah sudah ditempati cap waktu panggung,
+      // dan menumpuknya membuat keduanya tak terbaca.
+      const lebar = r.lanes_manual ? 236 : 232;
+      parts.push(
+        `<rect x="${640 - lebar}" y="341" width="${lebar}" height="17"`
+        + ` fill="var(--warn)"/>`
+        + `<text x="${640 - lebar + 5}" y="353.5" fill="var(--accent-ink)"`
+        + ` font-size="10" font-weight="700"`
+        + ` font-family="IBM Plex Mono, monospace">${asal}</text>`);
+    }
+
+    // track_id -> lama diam, supaya label pelanggar menyebut angka yang sama
+    // dengan yang tampil di daftar Kejadian.
+    const lama = {};
+    const jenis = {};
+    for (const e of r.events || []) {
+      lama[e.track_id] = e.duration_sec;
+      jenis[e.track_id] = e.kind;
+    }
+
+    if (layers.track) {
+      for (const t of r.trails || []) {
+        if ((t.pts || []).length < 4) continue;
+        const d = t.pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join("");
+        const bad = t.id in lama;
+        parts.push(
+          `<path d="${d}" fill="none" stroke="${bad ? "var(--crit)" : "var(--ai)"}"` +
+          ` stroke-width="${bad ? 2 : 1.2}" stroke-opacity="${bad ? ".85" : ".4"}"` +
+          ` stroke-linejoin="round"/>`);
+      }
+    }
+
+    if (layers.box) {
+      for (const b of boxes) {
+        if (b.bad || b.id in lama) continue;
+        parts.push(
+          `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"` +
+          ` fill="none" stroke="var(--ai)" stroke-width="1.8"` +
+          ` stroke-opacity=".9" rx="2"/>`);
+      }
+      if (layers.blur) {
+        for (const b of boxes) {
+          parts.push(
+            `<rect x="${b.x + b.w * .3}" y="${b.y + b.h * .72}"` +
+            ` width="${b.w * .4}" height="${Math.max(4, b.h * .14)}"` +
+            ` fill="var(--ink-2)" fill-opacity=".92" rx="1"/>`);
+        }
+      }
+      // Pelanggar digambar paling akhir supaya tidak tertutup kotak tetangganya.
+      for (const b of boxes) {
+        if (!(b.bad || b.id in lama)) continue;
+        const teks = lama[b.id] != null
+          ? (jenis[b.id] === "langgar_marka"
+               ? `#${b.id} · langgar marka ${lama[b.id]} dtk`
+               : jenis[b.id] === "lawan_arah"
+                 ? `#${b.id} · lawan arah`
+                 : `#${b.id} · diam ${lama[b.id]} dtk`)
+          : `#${b.id} · pelanggaran`;
+        const w = teks.length * 5.6 + 12;
+        const ly = b.y > 18 ? b.y - 16 : b.y + b.h + 2;
+        // Label digeser ke kiri bila melewati tepi kanan frame. Tanpa ini teks
+        // pelanggaran terpotong persis pada kendaraan di lajur terluar - yaitu
+        // kendaraan yang paling mungkin melanggar marka, jadi justru kasus yang
+        // paling perlu terbaca.
+        const lx = Math.max(0, Math.min(b.x, 640 - w));
+        parts.push(
+          `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"` +
+          ` fill="var(--crit)" fill-opacity=".1" stroke="var(--crit)"` +
+          ` stroke-width="2.5" rx="2"/>`,
+          `<rect x="${lx}" y="${ly}" width="${w}" height="15" fill="var(--crit)" rx="2"/>`,
+          `<text x="${lx + 6}" y="${ly + 11}" fill="var(--overlay-ink)" font-weight="700"` +
+          ` font-family="IBM Plex Mono, monospace" font-size="10">${esc(teks)}</text>`);
+      }
+    }
+
+    // Satu ringkasan di pojok menggantikan deretan penghitung yang dulu
+    // ditumpuk pipeline di sepanjang sisi atas gambar.
+    const nPelanggar = (r.events || []).length;
+    const ring = `${r.unique_tracks ?? boxes.length} kendaraan terlacak`
+               + ` · ${boxes.length} di frame ini · ${nPelanggar} pelanggaran`;
+    parts.unshift(
+      `<rect x="0" y="0" width="${ring.length * 5.4 + 14}" height="17"` +
+      ` fill="var(--overlay-bg)"/>`,
+      `<text x="6" y="12.5" fill="var(--overlay-ink)" font-family="IBM Plex Mono, monospace"` +
+      ` font-size="10" font-weight="600">${esc(ring)}</text>`);
+
+    if (zona && layers.zone) {
+      // Menempel pada titik tertinggi poligon, bukan pada sudut gambar: label
+      // ikut berpindah kalau operator menggeser zona, dan tidak menabrak
+      // keterangan frame di kiri bawah.
+      const tp = zona.pts.split(" ").map((p) => p.split(",").map(Number))
+                     .reduce((a, p) => (p[1] < a[1] ? p : a));
+      const teks = `ZONA: ${zona.label.toUpperCase()}`;
+      const lw = teks.length * 5.4 + 12;
+      const lx = Math.min(Math.max(0, tp[0] - lw / 2), 640 - lw);
+      const ly = tp[1] > 36 ? tp[1] - 20 : tp[1] + 4;
+      parts.push(
+        `<rect x="${lx}" y="${ly}" width="${lw}" height="16"` +
+        ` fill="var(--overlay-bg)" rx="2"/>`,
+        `<text x="${lx + 6}" y="${ly + 11.5}" fill="var(--overlay-ink-crit)" font-weight="700"` +
+        ` font-family="IBM Plex Mono, monospace" font-size="10">${esc(teks)}</text>`);
+    }
+    return parts.join("");
+  }
+
+  let camQuery = "";        // teks pencarian
+  let camRegion = null;      // null = semua wilayah
+
+  // Thumbnail diambil dari preview portal CCTV; kalau tak terjangkau, jatuh ke
+  // cuplikan tersimpan. Ini gambar yang sama dengan yang dipakai editor zona.
+  const cuplikan = (c) => (modePoc && REPLAYS[c.key]?.poster_url
+      ? REPLAYS[c.key].poster_url : c.img)
+    || (c.portalLain ? `/api/kamera/snapshot?key=${encodeURIComponent(c.key)}` : "")
+    || (c.id ? `${LIVE_BASE}${encodeURIComponent(c.id)}/preview.jpg` : "");
+
+  function pasangGambar(el, src) {
+    if (src) el.src = src;
+    else el.removeAttribute("src");
+  }
+
+  function camThumb(c) {
+    if (modePoc && REPLAYS[c.key]?.poster_url) return REPLAYS[c.key].poster_url;
+    // LC-016: server portal lain tidak punya preview.jpg - ambil lewat server (cache 60 dtk)
+    if (c.portalLain) return `/api/kamera/snapshot?key=${encodeURIComponent(c.key)}`;
+    return `${LIVE_BASE}${encodeURIComponent(c.id || "")}/preview.jpg`;
+  }
+
+  function renderChips() {
+    const dasar = modePoc ? CAMS.filter((c) => POC_KEYS.has(c.key)) : CAMS;
+    const wilayah = [...new Set(dasar.map((c) => c.region))];
+    const tombol = (label, nilai, n) =>
+      `<button class="rchip" type="button" data-region="${nilai ?? ""}"` +
+      ` aria-pressed="${(camRegion ?? "") === (nilai ?? "")}">${esc(label)}` +
+      `<b>${n}</b></button>`;
+    $("regionChips").innerHTML =
+      tombol("Semua", null, dasar.length)
+      + wilayah.map((w) => tombol(w.replace("Jakarta ", "Jkt "), w,
+          dasar.filter((c) => c.region === w).length)).join("");
+  }
+
+  function renderCams() {
+    renderChips();
+    const q = camQuery.trim().toLowerCase();
+    const lolos = (c) =>
+      (!modePoc || POC_KEYS.has(c.key))
+      && (!camRegion || c.region === camRegion)
+      && (!q || `${c.name} ${c.area} ${c.owner} ${c.region}`.toLowerCase().includes(q));
+
+    // Urutan wilayah mengikuti daftar DKI, lalu wilayah lain yang muncul di
+    // data ditambahkan di belakang - sehingga kamera dengan wilayah yang
+    // diketik bebas di Manajemen Kamera tetap tergambar, bukan hilang diam-diam.
+    const adaDiData = [...new Set(CAMS.map((c) => c.region).filter(Boolean))];
+    const urut = [...WILAYAH_DKI.filter((w) => adaDiData.includes(w)),
+                  ...adaDiData.filter((w) => !WILAYAH_DKI.includes(w))];
+    let html = "";
+    let tampil = 0;
+    for (const wil of urut) {
+      const anggota = CAMS.map((c, i) => ({ c, i }))
+        .filter((x) => x.c.region === wil && lolos(x.c));
+      anggota.forEach(({ c }) => {
+        c.alert = EVDB.some((e) => e.camera === c.key && !e.verified);
+      });
+      if (!anggota.length) continue;
+      tampil += anggota.length;
+      html += `<div class="wilgrp"><div class="wil">${esc(wil)}<span>${anggota.length}</span></div>`;
+      html += anggota.map(({ c, i }) => `
+        <button class="cam${c.alert ? " alert" : ""}" type="button"
+                aria-current="${i === active}" data-i="${i}">
+          <img class="camthumb" src="${camThumb(c)}" alt=""
+               onerror="this.onerror=null;${c.img ? `this.src='${c.img}'` : "this.style.visibility='hidden'"}">
+          <span>
+            <span class="camlive${c.alert ? " mati" : ""}">
+              <span class="dot" style="width:6px;height:6px;margin:0;background:currentColor"></span>
+              ${c.alert ? "Perlu tindakan" : "Live"}</span>
+            <span class="name">${esc(c.name)}</span>
+            <span class="meta">${esc(c.area)}</span>
+            <span class="owner">${esc(c.owner)}</span>
+            <span class="camscore">${c.skor == null ? "belum disurvei" : "skor " + c.skor}</span>
+          </span>
+        </button>`).join("") + "</div>";
+    }
+    if (!tampil) {
+      html = '<p style="padding:14px 12px;margin:0;font-size:12px;color:var(--muted)">'
+           + 'Tidak ada kamera yang cocok dengan pencarian.</p>';
+    }
+    // Wilayah tanpa kamera ditampilkan, tidak disembunyikan: celah cakupan
+    // adalah informasi, dan menyembunyikannya membuat portal publik terlihat
+    // lebih lengkap daripada kenyataannya.
+    const kosong = modePoc ? [] : WILAYAH_DKI
+      .filter((w) => !CAMS.some((c) => c.region === w))
+      .map((w) => (WILAYAH_KOSONG.find((x) => x.region === w)
+                   || { region: w, note: "belum ada kamera terdaftar" }));
+    if (!camQuery.trim() && !camRegion && kosong.length) html += '<div class="wilkosong">' + kosong.map((w) => `
+      <div class="wilgrp kosong"><div class="wil kosong">${esc(w.region)}<span>0</span></div>
+      <div class="wil-note">${esc(w.note)}</div></div>`).join("") + "</div>";
+    $("cams").innerHTML = html;
+    $("camCount").textContent = modePoc ? `${tampil} / 2` : `${CAMS.length} / 46`;
+  }
+
+  $("camSearch").addEventListener("input", (ev) => {
+    camQuery = ev.target.value;
+    renderCams();
+  });
+  $("regionChips").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-region]");
+    if (!b) return;
+    camRegion = b.dataset.region || null;
+    renderCams();
+  });
+
+  // Dipanggil tiap detak: memperbarui angka putaran tanpa memuat ulang gambar,
+  // supaya jeda antar putaran tidak terasa seperti aplikasi membeku.
+  function renderWatchMeta() {
+    if (srcMode !== "pantau") return;
+    const c = CAMS[active];
+    const w = WATCH && WATCH.record && WATCH.record.key === c.key
+      ? WATCH.record : null;
+    if (!w) return;
+    $("vTime").textContent = `${tanggalJamWIB(w.at)} · putaran ${WATCH.rounds}`;
+    applyLiveConstraints();
+  }
+
+  function renderStage() {
+    const c = CAMS[active];
+    const b = camBatch(c);
+    const replayBtn = document.querySelector('[data-src="rekaman"]');
+    if (replayBtn) {
+      replayBtn.disabled = !REPLAYS[c.key]?.available;
+      replayBtn.title = replayBtn.disabled
+        ? "Rekaman siang belum tersedia untuk kamera ini"
+        : "Putar rekaman siang tanpa mengganti source Live";
+    }
+
+    if (srcMode === "pantau") {
+      const w = WATCH && WATCH.record && WATCH.record.key === c.key
+        ? WATCH.record : null;
+      $("frame").src = w
+        ? `/api/watch/frame/${encodeURIComponent(c.key)}?r=${WATCH.rounds}`
+        : cuplikan(c);
+      $("overlay").innerHTML = w ? overlayAnalisis(c, w) : "";
+      $("stamp").textContent = w
+        ? `${c.name} · pantau ${jamWIB(w.at)} WIB · putaran ${WATCH.rounds}`
+        : `${c.name} · menyiapkan putaran pertama…`;
+    } else if (srcMode === "analisis" && hasAnalysis(c)) {
+      // Frame-nya bersih; kotak, jejak, dan zona digambar di sini dari angka
+      // yang ditangkap pipeline, supaya kepadatan labelnya terkendali.
+      //
+      // Siklus yang berjalan sebelum penangkapan koordinat ditambahkan tidak
+      // punya daftar kotak. Untuk rekaman itu gambar beranotasi pipeline tetap
+      // dipakai - padat, tetapi jujur - daripada menampilkan frame bersih yang
+      // seolah-olah tidak ada kendaraan terdeteksi sama sekali.
+      const adaKoordinat = (camBatch(c)?.record?.results?.boxes || []).length > 0;
+      $("frame").src = `/api/batch/frame/${encodeURIComponent(c.key)}`
+        + `?${adaKoordinat ? "" : "annotated=1&"}t=${Date.now()}`;
+      $("overlay").innerHTML = (adaKoordinat ? overlayAnalisis(c) : "")
+        + (zonaBasi(c) ? overlayZonaBaru(c) : "");
+      $("stamp").textContent =
+        `${c.name} · analisis ${jamWIB(b.record.finished_at)} WIB · `
+        + `${b.record.results?.frames ?? "?"} frame`;
+    } else {
+      // Paint the bundled snapshot first so the panel is never blank, then let
+      // the live poll swap it in if the host is reachable.
+      pasangGambar($("frame"), cuplikan(c));
+      $("overlay").innerHTML = overlaySvg(c);
+      $("stamp").textContent = `${c.id.slice(0, 6)} · ${c.name} · 640×360 20fps`;
+    }
+    $("frame").alt = `Kamera ${c.name}`;
+
+    const r = b && b.record && b.record.ok ? b.record : null;
+    const w = srcMode === "pantau" && WATCH && WATCH.record
+      && WATCH.record.key === c.key ? WATCH.record : null;
+    const cells = w
+      // Angka pantau berbeda artinya dari angka analisis: ia menggambarkan
+      // SATU putaran 6 detik, bukan rekap siklus. Labelnya harus ikut berbeda,
+      // kalau tidak dua hal yang tidak sebanding terbaca sebagai satu hal.
+      ? [["Track putaran ini", String(w.results?.unique_tracks ?? 0)],
+         ["Kendaraan di frame", String((w.results?.boxes || []).length)],
+         ["Putaran", String(WATCH.rounds)],
+         ["Jeda putaran", `${WATCH.last_round_sec ?? "—"} dtk`]]
+      : (srcMode === "analisis" && r)
+      ? [["Track unik", String(r.results?.unique_tracks ?? 0)],
+         ["Frame dianalisis", String(r.results?.frames ?? 0)],
+         ["Kejadian", String((r.results?.events || []).length)],
+         ["Waktu proses", `${r.elapsed_sec ?? "?"} dtk`]]
+      // Tidak ada angka cadangan yang dikarang. Sebelum dianalisis, sel
+      // ditampilkan kosong - itu jujur, dan "belum ada data" adalah keadaan
+      // yang sah untuk ditunjukkan.
+      : [["Track unik", "—"], ["Frame dianalisis", "—"],
+         ["Kejadian", "—"], ["Waktu proses", "—"]];
+    $("readout").innerHTML = cells.map(([k, v]) =>
+      `<div class="cell"><div class="k">${esc(k)}</div>` +
+      `<div class="v">${esc(v)}</div></div>`
+    ).join("");
+    updateProtoChip();
+    renderVideoHead(c, b);
+    renderDiagnostics(c);
+    // Dibandingkan dengan data-i, BUKAN urutan di layar. Kartu dikelompokkan
+    // per wilayah, jadi kamera yang ditambahkan belakangan (CCTV-01, Jakarta
+    // Pusat) duduk di tengah daftar sementara indeks datanya di akhir. Memakai
+    // urutan layar membuat sorotan jatuh ke kartu lain dari yang tampil.
+    document.querySelectorAll(".cam").forEach((el) =>
+      el.setAttribute("aria-current", String(Number(el.dataset.i) === active)));
+    applyLiveConstraints();
+    startLive();
+    renderToolbox();
+  }
+
+  // Kepala panel video: identitas kamera, keadaan siaran, dan waktu frame yang
+  // sedang ditampilkan. Nomor CCTV diambil dari id portal - itu penanda yang
+  // dipakai operator kamera, bukan nomor buatan kita.
+  function renderVideoHead(c, b) {
+    $("vName").textContent = c.name;
+    const cctv = (c.id.match(/CCTV-(\d+)/) || [])[0] || "CCTV";
+    $("vId").textContent = cctv;
+    $("vWhere").textContent = `${c.area} · ${c.region} · ${c.owner}`;
+    const hidup = liveActive();
+    $("vLive").hidden = !(srcMode === "live" && hidup);
+    if (srcMode === "pantau") {
+      const w = WATCH && WATCH.record && WATCH.record.key === c.key
+        ? WATCH.record : null;
+      $("vTime").textContent = w
+        ? `${tanggalJamWIB(w.at)} · putaran ${WATCH.rounds}`
+        : "menyiapkan putaran pertama…";
+    } else if (srcMode === "rekaman") {
+      $("vTime").textContent = "rekaman siang tersimpan";
+    } else if (srcMode === "analisis" && b?.record?.finished_at) {
+      $("vTime").textContent = tanggalJamWIB(b.record.finished_at);
+    } else if (srcMode === "live" && hidup) {
+      $("vTime").textContent = new Date().toLocaleString("id-ID",
+        { ...WIB, day: "2-digit", month: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+        + " WIB";
+    } else {
+      $("vTime").textContent = "cuplikan tersimpan";
+    }
+    $("pLabel").textContent = srcMode === "live" ? "LIVE"
+      : srcMode === "rekaman" ? "REPLAY SIANG"
+      : srcMode === "pantau" ? "PANTAU"
+      : srcMode === "analisis" ? "ANALISIS" : "CUPLIKAN";
+    $("pLabel").style.color = srcMode === "live" && hidup ? "var(--ok)"
+      : srcMode === "pantau" ? "var(--ai-ink)" : "var(--muted)";
+    // Pemutar hanya bermakna pada mode Live: dua mode lain adalah gambar diam.
+    $("pPlay").disabled = !["live", "rekaman"].includes(srcMode);
+    $("pNext").disabled = srcMode !== "live";
+  }
+
+  // Spesifikasi siaran. Angkanya dibaca dari media_info.json portal saat survei
+  // dan disimpan di configs; ditampilkan apa adanya supaya tim teknis bisa
+  // menilai sendiri apa yang mungkin dan tidak mungkin dari sumber ini.
+  const DIAG = [
+    ["Codec", "H.264 (Main)"],
+    ["Resolusi", "640 × 360"],
+    ["FPS sumber", "20"],
+    ["Bitrate", "534 kbps"],
+    ["Transport", "HLS fmp4 · Flussonic"],
+    ["Model", "PP-Vehicle"],
+    ["Framework", "PaddleDetection 2.9"],
+  ];
+
+  function renderDiagnostics(c) {
+    $("specStream").textContent = c.scenario;
+    $("diagList").innerHTML = DIAG.concat([["Skenario", c.scenario]])
+      .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  }
+
+  function renderGrades() {
+    $("grades").innerHTML = GRADES.map((g) => `
+      <span class="task">${esc(g.task)}</span>
+      <span class="verdict" style="color:var(--${g.tone})">${esc(g.verdict)}</span>
+      <span class="bar"><i style="width:${g.pct}%;background:var(--${g.tone})"></i></span>
+    `).join("");
+    $("ask").innerHTML =
+      "Pada feed publik 640×360, pelat nomor hanya selebar 8–15 piksel — di bawah " +
+      "ambang baca OCR (±100 piksel). <strong>Identifikasi pelat memerlukan akses " +
+      "feed sumber Dishub (≥1080p)</strong>; seluruh fungsi lain sudah berjalan " +
+      "pada feed publik.";
+  }
+
+  // Stempel waktu di kartu bukti harus benar dan harus WIB. Server menyimpan
+  // UTC; menampilkan jam UTC dengan label "WIB" membuat bukti meleset 7 jam -
+  // pada berkas yang mungkin dipakai untuk penindakan, itu fatal.
+  const WIB = { timeZone: "Asia/Jakarta" };
+  const jamWIB = (iso) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return isNaN(d) ? "—" : d.toLocaleTimeString("id-ID", { ...WIB, hour12: false });
+  };
+  const tanggalJamWIB = (iso) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return isNaN(d) ? "—" : d.toLocaleString("id-ID", {
+      ...WIB, day: "numeric", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    }) + " WIB";
+  };
+
+  const PARKIR_LEGAL =
+    "Perda DKI Jakarta No. 5 Tahun 2012 tentang Perparkiran — penertiban dan "
+    + "penderekan kendaraan yang parkir di badan jalan.";
+
+  // Sumbernya basis data, bukan results.json pemeriksaan terakhir. Temuan
+  // harus tetap ada setelah kameranya diperiksa ulang - kalau tidak, kartu KPI
+  // dan daftar ini akan berselisih, dan petugas kehilangan temuan yang belum
+  // sempat ditindak hanya karena siklus berikutnya berjalan.
+  function dbEvents() {
+    return EVDB.map((r) => ({
+      real: true,
+      id: r.id,
+      cycleId: r.cycle_id,
+      t: jamWIB(r.detected_at),
+      iso: r.detected_at,
+      cam: CAMS.findIndex((c) => c.key === r.camera),
+      camKey: r.camera,
+      kind: r.label || "Pelanggaran",
+      wewenang: r.authority === "dishub" ? "dishub" : "rujuk",
+      conf: null,
+      verified: !!r.verified,
+      verdict: r.verdict,
+      kendaraan: `Objek terlacak #${r.track_id}`,
+      durasi: `${r.duration_sec} dtk diam (ambang ${r.threshold_sec} dtk)`,
+      plat: null,
+      legal: PARKIR_LEGAL,
+    }));
+  }
+
+  // Kamera bisa saja sudah dicabut dari daftar sejak temuannya tercatat.
+  // Menjatuhkan temuannya akan menyembunyikan pekerjaan yang belum selesai,
+  // jadi tampilkan apa adanya dengan keterangan.
+  function camOf(e) {
+    return CAMS[e.cam] || {
+      key: e.camKey, id: e.camKey, name: e.camKey,
+      area: "kamera tidak lagi terdaftar", owner: "\u2014",
+      img: "", boxes: [], region: "",
+    };
+  }
+
+  const TAG_DEMO = '<span class="demo-tag">contoh</span>';
+  const TAG_DEMO_TEKS = '<span class="demo-tag">templat, bukan model bahasa</span>';
+  let FEED = EVENTS;
+  let EVDB = [];            // /api/events - seluruh temuan hari ini
+  let ANTRE = null;         // /api/events/list - jumlah resmi dari server
+  const FEED_MAKS = 6;      // baris di panel ringkas; sisanya di /verifikasi
+  let WATCH = null;         // /api/watch - keadaan + hasil putaran terakhir
+  let watchTimer = null;
+
+  // Mode pantau menjalankan siklus pendek berulang di server. Ia harus
+  // dihentikan begitu tidak ditonton - ini server bersama, dan siklus yang
+  // terlupa membakar CPU tanpa batas. Server juga berhenti sendiri setelah
+  // 90 detik tanpa polling, sebagai jaring pengaman kalau tab ditutup paksa.
+  // Deteksi berjalan di belakang pada Live DAN Pantau. Sebelumnya hanya Pantau,
+  // sehingga operator yang membuka Live - tampilan bawaan - tidak melihat satu
+  // pun kotak deteksi sampai ia menekan tombol lain.
+  // Live kini memakai deteksi langsung (bbox.js + /api/langsung) yang sinkron
+  // dengan video; pantau hanya untuk tampilan Pantau. Keduanya tidak boleh
+  // berjalan bersamaan - CPU yang sama di server bersama.
+  const pakaiDeteksi = (m) => m === "pantau";
+
+  const WARNA_KELAS = {
+    motorcycle: "#ff4d4f", car: "#36cfc9", bus: "#faad14", truck: "#b37feb",
+    person: "#fadb14", bicycle: "#73d13d",
+  };
+
+  function renderHud() {
+    const el = $("hud");
+    const c = CAMS[active];
+    // HUD pantau tidak dipakai lagi di Live: kotak dan hitungan kini langsung
+    // di atas video dan di baris bawah pemutar (bbox.js).
+    el.hidden = true;
+    return;
+    el.hidden = false;
+    const w = WATCH && WATCH.record && WATCH.record.key === c.key ? WATCH.record : null;
+    const r = w?.results || {};
+    const baris = r.per_class || [];
+    if (!w || !baris.length) {
+      el.innerHTML = `<div class="jdl">DETEKSI OTOMATIS</div>`
+        + `<div class="tunggu">Menyiapkan putaran pertama… ±15 detik.</div>`;
+      return;
+    }
+    const umur = Math.max(0, Math.round((Date.now() - Date.parse(w.at)) / 1000));
+    const rows = baris.map((b) => b.tersedia
+      ? `<div class="row"><span>${esc(b.nama)}</span><b>${b.per_frame ?? "—"}</b></div>`
+      : `<div class="row na"><span>${esc(b.nama)}</span><span>n/a</span></div>`).join("");
+    const kotak = (r.boxes || [])
+      .filter((k) => !(k.kelas === "person" && k.pengendara))
+      .map((k) => `<rect x="${k.x}" y="${k.y}" width="${k.w}" height="${k.h}"`
+        + ` fill="none" stroke="${WARNA_KELAS[k.kelas] || "#fff"}" stroke-width="2.2"/>`)
+      .join("");
+    // Malam ditandai di tempat angka dibaca, bukan di catatan kaki: pada malam
+    // hari sepeda motor yang tercoreng blur tidak terdeteksi sama sekali, jadi
+    // angka ini tidak boleh dibaca sebagai hitungan.
+    const malam = r.malam
+      ? `<div class="malam">MALAM · akurasi rendah — sebagian terlewat blur</div>` : "";
+    el.innerHTML = `<div class="jdl"><span>DETEKSI · PER FRAME</span>`
+      + `<span class="umur">${umur} dtk lalu</span></div>${malam}${rows}`
+      + `<div class="pip"><img alt="" src="/api/watch/frame/${encodeURIComponent(c.key)}`
+      + `?r=${WATCH.rounds}"><svg viewBox="0 0 640 360" preserveAspectRatio="none">`
+      + `${kotak}</svg></div>`;
+  }
+
+  // Penanda permintaan. Server menahan /api/watch/start sampai putaran kamera
+  // sebelumnya selesai (bisa belasan detik), jadi operator yang berpindah
+  // kamera dengan cepat akan menerima jawaban untuk kamera LAMA setelah kamera
+  // baru dipilih. Tanpa penanda ini jawaban telat itu menimpa keadaan terkini.
+  let watchMinta = 0;
+
+  async function watchMulai(cam) {
+    const nomor = ++watchMinta;
+    let jawab = null;
+    try {
+      jawab = await api(`/api/watch/start?key=${encodeURIComponent(cam.key)}`,
+                        { method: "POST" });
+    } catch { jawab = null; }
+    if (nomor !== watchMinta || CAMS[active]?.key !== cam.key) return;   // basi
+    WATCH = jawab;
+    clearInterval(watchTimer);
+    watchTimer = setInterval(watchDetak, 4000);
+    renderStage();
+  }
+
+  async function watchDetak() {
+    if (!pakaiDeteksi(srcMode)) { watchHenti(); return; }
+    try {
+      const baru = await api("/api/watch");
+      const majuSatuPutaran = baru.rounds !== (WATCH && WATCH.rounds);
+      WATCH = baru;
+      setLiveChip();
+      // Di Live, video tidak boleh diganggu: cukup HUD yang digambar ulang.
+      if (srcMode === "live") renderHud();
+      else if (majuSatuPutaran) renderStage();
+      else renderWatchMeta();
+    } catch { /* jaringan sesaat; biarkan tampilan terakhir */ }
+  }
+
+  function watchHenti(kirimStop = true) {
+    clearInterval(watchTimer);
+    watchTimer = null;
+    if (kirimStop && WATCH && WATCH.running) {
+      api("/api/watch/stop", { method: "POST" }).catch(() => {});
+    }
+    WATCH = null;
+  }
+
+  // Menutup tab tidak selalu sempat mengirim stop biasa; sendBeacon lebih
+  // tahan untuk itu.
+  window.addEventListener("pagehide", () => {
+    if (watchTimer) navigator.sendBeacon?.("/api/watch/stop");
+  });
+  let rincianPernahDibuka = false;
+  let feedFilter = null;    // null | "dishub" | "rujuk" | "belum" | "sudah"
+
+  const FILTER_LABEL = {
+    dishub: "Ranah Dishub", rujuk: "Rujuk Ditlantas",
+    belum: "Belum diverifikasi", sudah: "Sudah diverifikasi",
+  };
+
+  // Menekan saringan yang sedang aktif akan mematikannya - chip di kepala
+  // panel memakai jalur yang sama, jadi hanya ada satu cara membersihkannya.
+  function setFilter(f) {
+    feedFilter = feedFilter === f ? null : f;
+    renderFeed();
+    document.querySelector("#feed").closest(".panel")
+      .scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function renderFeedMore(nTersaring, semua) {
+    const el = $("feedMore");
+    const belum = ANTRE?.jumlah?.belum ?? semua.filter((e) => !e.verified).length;
+    const badge = $("railBadge");
+    badge.hidden = !belum;
+    badge.textContent = belum > 99 ? "99+" : String(belum);
+    if (!semua.length) { el.hidden = true; return; }
+    el.hidden = false;
+    // Saringan panel dibawa ke halaman antrean, supaya petugas mendarat pada
+    // himpunan yang sama dengan yang sedang ia lihat.
+    const q = new URLSearchParams({ today: "1" });
+    if (feedFilter === "sudah") q.set("status", "sudah");
+    else if (feedFilter === "dishub" || feedFilter === "rujuk") q.set("authority", feedFilter);
+    el.href = "/verifikasi?" + q;
+    el.innerHTML = `<span>${Math.min(FEED_MAKS, nTersaring)} dari ${nTersaring} ditampilkan`
+      + ` · ${belum} menunggu hari ini</span><b>Buka antrean verifikasi →</b>`;
+  }
+
+  function renderFeed() {
+    const semua = dbEvents();
+    const tersaring = semua.filter((e) =>
+      feedFilter === null ? true
+      : feedFilter === "belum" ? !e.verified
+      : feedFilter === "sudah" ? e.verified
+      : e.wewenang === feedFilter);
+    // Yang menunggu keputusan didahulukan: di kotak masuk sekecil ini, baris
+    // yang sudah diputus hanya memakan tempat. Urutan waktu tetap terjaga di
+    // dalam masing-masing kelompok.
+    const urut = [...tersaring.filter((e) => !e.verified),
+                  ...tersaring.filter((e) => e.verified)];
+    FEED = semua.length ? urut.slice(0, FEED_MAKS) : EVENTS;
+    renderFeedMore(tersaring.length, semua);
+
+    const chip = $("filterChip");
+    chip.hidden = !feedFilter;
+    if (feedFilter) chip.textContent = FILTER_LABEL[feedFilter] + " \u00d7";
+
+    const head = document.querySelector("#feed").previousElementSibling;
+    head.querySelector("h2").textContent = "Kejadian";
+    if (!FEED.length) {
+      $("feed").innerHTML =
+        '<p style="padding:16px 12px;margin:0;font-size:12.5px;color:var(--muted);' +
+        'line-height:1.5">' + (semua.length
+          ? "Tidak ada temuan yang cocok dengan saringan “"
+            + esc(FILTER_LABEL[feedFilter]) + "”. Tekan chip di atas untuk "
+            + "menampilkan seluruhnya."
+          : "Belum ada pelanggaran terdeteksi hari ini. Baris di sini hanya "
+            + "terisi oleh keluaran pipeline — tidak ada contoh yang "
+            + "ditampilkan.") + '</p>';
+      $("evCount").textContent = String(ANTRE?.jumlah?.belum ?? semua.filter((e) => !e.verified).length);
+      updateProtoChip();
+      return;
+    }
+    $("feed").innerHTML = FEED.map((e, i) => {
+      const cam = camOf(e);
+      return `
+        <button class="ev ${e.wewenang}" type="button" data-e="${i}">
+          <span class="stripe" aria-hidden="true"></span>
+          <span class="body">
+            <span class="top">
+              <span class="kind">${esc(e.kind)}</span>
+              <span class="time">${esc(e.t)}</span>
+            </span>
+            <span class="where">${esc(cam.name)} · ${esc(cam.area)}</span>
+            <span class="pills">
+              <span class="pill ${e.wewenang === "dishub" ? "act" : "ref"}">
+                ${e.wewenang === "dishub" ? "Ranah Dishub" : "Rujuk Ditlantas"}</span>
+              ${e.conf != null
+                ? `<span class="pill conf">Keyakinan ${Math.round(e.conf * 100)}%</span>`
+                : '<span class="pill conf">Dari pipeline</span>'}
+              ${e.verified ? '<span class="pill ver">Terverifikasi</span>' : ""}
+            </span>
+          </span>
+        </button>`;
+    }).join("");
+    $("evCount").textContent = String(ANTRE?.jumlah?.belum ?? semua.filter((e) => !e.verified).length);
+    updateProtoChip();
+
+    // Temuan pertama dibuka sendiri, seperti ruang kendali sungguhan: panel
+    // rincian tidak pernah berdiri kosong, dan petugas langsung melihat apa
+    // yang menunggu ditangani. Hanya sekali - setelah itu pilihan petugas yang
+    // menentukan, termasuk kalau ia menutup panelnya.
+    if (!rincianPernahDibuka && FEED.length) {
+      rincianPernahDibuka = true;
+      openEvent(0, false);
+    }
+  }
+
+  const IKON_KPI = {
+    kendaraan: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-5a2 2 0 0 1 2-1.4h10A2 2 0 0 1 19 8l2 5v5h-3v-2H6v2H3v-5Z"/><circle cx="7" cy="15" r="1"/><circle cx="17" cy="15" r="1"/></svg>',
+    kejadian: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 16H3L12 4Z"/><path d="M12 10v4M12 17h.01"/></svg>',
+    verifikasi: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg>',
+    aduan: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H9l-5 4V5Z"/></svg>',
+  };
+
+  function kartuKpi(el, o) {
+    el.innerHTML =
+      `<div class="row">` +
+      `<span class="ico" style="background:${o.softTone};color:${o.tone}"` +
+      ` aria-hidden="true">${IKON_KPI[o.ikon]}</span>` +
+      `<span style="min-width:0">` +
+      `<div class="k">${o.judul}${o.tag || ""}</div>` +
+      `<div class="v">${o.nilai}</div>` +
+      `<div class="sub">${o.sub}</div>` +
+      (o.tren ? `<div class="trend ${o.tren[0]}">${o.tren[1]}</div>` : "") +
+      `</span></div>` +
+      (o.split || "") +
+      (o.drill ? `<div class="drill">${o.drill}</div>` : "");
+  }
+
+  function renderKpi() {
+    const real = statsReal();
+    const tag = real ? "" : " " + TAG_DEMO;
+    const d = real ? stats : {
+      events_today: 148, by_authority: { dishub: 112, rujuk: 36 },
+      verified: 86, unverified: 62, vehicles_tracked: 24318, cycles_today: 0,
+    };
+    const nf = (n) => n.toLocaleString("id-ID");
+    const dis = d.by_authority.dishub, ruj = d.by_authority.rujuk;
+    const pct = d.events_today
+      ? Math.round((d.verified / d.events_today) * 100) : 0;
+
+    kartuKpi($("kpi0"), {
+      ikon: "kendaraan", tone: "var(--accent)", softTone: "var(--accent-soft)",
+      judul: "Total kendaraan", tag,
+      nilai: nf(d.vehicles_tracked),
+      sub: real ? `${nf(d.cycles_today)} siklus analisis hari ini (WIB)`
+                : "4 kamera aktif \u00b7 sejak 06.00",
+      // Tidak ada angka kemarin untuk dibandingkan: basis data baru berjalan
+      // hari ini. Menampilkan panah tren akan mengarang perbandingan.
+      tren: ["datar", "\u2014 belum ada pembanding hari sebelumnya"],
+      drill: "Klik untuk rincian per kamera \u2192",
+    });
+
+    kartuKpi($("kpi1"), {
+      ikon: "kejadian", tone: "var(--crit)", softTone: "var(--crit-soft)",
+      judul: "Kejadian terdeteksi", tag,
+      nilai: nf(d.events_today),
+      sub: `<b data-drill="dishub">${nf(dis)} ranah Dishub</b> · `
+         + `<b data-drill="rujuk">${nf(ruj)} dirujuk</b>`,
+      split: `<div class="split" aria-hidden="true">` +
+        `<i style="flex:${dis || 0};background:var(--accent)"></i>` +
+        `<i style="flex:${ruj || 0};background:var(--info)"></i>` +
+        `<i style="flex:${(dis + ruj) ? 0 : 1};background:var(--line)"></i></div>`,
+      drill: "Klik untuk melihat daftarnya \u2192",
+    });
+
+    kartuKpi($("kpi2"), {
+      ikon: "verifikasi", tone: "var(--ok)", softTone: "var(--ok-soft)",
+      judul: "Terverifikasi petugas", tag,
+      nilai: `${nf(d.verified)} <small>/ ${nf(d.events_today)}</small>`,
+      sub: `${nf(d.unverified)} menunggu antrean verifikasi`,
+      tren: [d.unverified ? "naik" : "turun", `${pct}% tingkat verifikasi`],
+      split: `<div class="split" aria-hidden="true">` +
+        `<i style="flex:${d.verified || 0};background:var(--ok)"></i>` +
+        `<i style="flex:${d.unverified || 0};background:var(--line)"></i>` +
+        `<i style="flex:${d.events_today ? 0 : 1};background:var(--line)"></i></div>`,
+      drill: "Klik untuk melihat antrean \u2192",
+    });
+
+    // Belum ada kanal aduan masyarakat sama sekali - tidak ada tabel, tidak ada
+    // sumber. Kartunya ditampilkan sebagai rencana produk, tanpa angka palsu.
+    kartuKpi($("kpi3"), {
+      ikon: "aduan", tone: "var(--muted)", softTone: "var(--panel-3)",
+      judul: "Aduan masyarakat",
+      tag: ' <span class="demo-tag">belum tersedia</span>',
+      nilai: "\u2014",
+      sub: "Perlu integrasi kanal aduan Dishub",
+      tren: ["datar", "di luar lingkup purwarupa"],
+    });
+
+    $("chartLabel").innerHTML = "Kejadian per jam" + tag;
+
+    // Lonceng di kepala memakai angka yang sama dengan antrean verifikasi.
+    const bel = $("bellCount");
+    bel.textContent = String(d.unverified);
+    bel.hidden = !d.unverified;
+  }
+
+  // Pelat Indonesia: 1-2 huruf wilayah, 1-4 angka, 0-3 huruf akhir.
+  // Dipakai untuk memisahkan pembacaan yang masuk akal dari sampah OCR -
+  // supaya klaim "tidak terbaca" bisa diuji, bukan sekadar pendapat.
+  const PLAT_ID = /^[A-Z]{1,2}\s?\d{1,4}\s?[A-Z]{0,3}$/;
+
+  function renderToolbox() {
+    const cam = CAMS[active];
+    const b = camBatch(cam);
+    const r = (b && b.record && b.record.ok) ? (b.record.results || {}) : null;
+    $("tbxZone").textContent = b && b.zone_label
+      ? `zona: ${b.zone_label}` : "—";
+
+    const baris = [];
+
+    // 1. Pelat nomor
+    const plat = (r?.plates || []);
+    const sah = plat.filter((x) => PLAT_ID.test(x.text.toUpperCase()));
+    baris.push({
+      no: "1", nama: "Pengenalan pelat nomor",
+      st: !r ? ["idle", "belum"] : sah.length ? ["ok", "terbaca"] : ["bad", "tidak memadai"],
+      detail: !r
+        ? "Belum dianalisis."
+        : plat.length === 0
+          ? "Modul berjalan, <b>nol pembacaan</b>. Pada sumber 640×360 pelat "
+            + "hanya selebar 8–15 piksel, di bawah ambang OCR."
+          : `Modul menghasilkan <b>${plat.length} pembacaan</b>, `
+            + `<b>${sah.length} yang berpola pelat Indonesia</b>: `
+            + plat.map((x) => `<code>${esc(x.text)}</code>`).join(" ")
+            + ". Sisanya sampah OCR akibat resolusi sumber."
+    });
+
+    // 2. Atribut kendaraan
+    const attr = (r?.attributes || []);
+    const warna = attr.filter((a) => a.label.startsWith("Color"));
+    const tipe = attr.filter((a) => a.label.startsWith("Type"));
+    const ringkas = (arr) => arr.slice(0, 4)
+      .map((a) => `<b>${esc(a.label.split(": ").pop())}</b> ${a.n}`).join(" · ");
+    baris.push({
+      no: "2", nama: "Atribut kendaraan",
+      st: !r ? ["idle", "belum"] : attr.length ? ["ok", "aktif"] : ["bad", "nihil"],
+      detail: !r ? "Belum dianalisis."
+        : attr.length
+          ? `${r.attr_samples} sampel. Warna: ${ringkas(warna) || "—"}. `
+            + `Tipe: ${ringkas(tipe) || "—"}.`
+          : "Modul aktif tetapi tidak menghasilkan label."
+    });
+
+    // 3. Hitung kendaraan
+    const mode = r?.count_mode;
+    baris.push({
+      no: "3", nama: "Hitung kendaraan",
+      st: !r ? ["idle", "belum"] : mode ? ["ok", "aktif"] : ["bad", "mati"],
+      detail: !r ? "Belum dianalisis."
+        : mode === "zona"
+          ? `<b>${r.entrance_in}</b> kendaraan masuk zona. Mode zona dipakai `
+            + "karena parkir liar menuntut region_type custom - hitung "
+            + "garis-lintas (masuk/keluar) tidak bisa aktif bersamaan."
+          : mode === "garis"
+            ? `<b>${r.entrance_in}</b> masuk, <b>${r.entrance_out}</b> keluar `
+              + "melintasi garis."
+            : "Mode hitung tidak aktif pada skenario ini."
+    });
+
+    // 4. Parkir liar
+    const ev = (r?.events || []);
+    baris.push({
+      no: "4", nama: "Deteksi parkir liar",
+      st: !r ? ["idle", "belum"] : ev.length ? ["bad", `${ev.length} kejadian`] : ["ok", "nihil"],
+      detail: !r ? "Belum dianalisis."
+        : ev.length
+          ? ev.map((e) => `Objek #${e.track_id} diam <b>${e.duration_sec} dtk</b>`).join(" · ")
+          : `Tidak ada kendaraan diam melewati ambang <b>`
+            + `${b?.illegal_parking_time ?? "?"} dtk</b> di zona ini.`
+    });
+
+    // Kartu ringkas di atas baris rinci. Sumber angkanya sama persis dengan
+    // baris di bawahnya - kartu ini hanya memadatkan, tidak menambah klaim.
+    const ikon = {"objek": "<svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><path d=\"M10 6.5h4M6.5 10v4\"/></svg>", "jenis": "<svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M3 13l2-5a2 2 0 0 1 2-1.4h10A2 2 0 0 1 19 8l2 5v5h-3v-2H6v2H3v-5Z\"/><circle cx=\"7\" cy=\"15\" r=\"1\"/><circle cx=\"17\" cy=\"15\" r=\"1\"/></svg>", "hitung": "<svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M5 19V9m7 10V5m7 14v-6\"/></svg>", "insiden": "<svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M12 4l9 16H3L12 4Z\"/><path d=\"M12 10v4M12 17h.01\"/></svg>", "pelat": "<svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><rect x=\"2.5\" y=\"6.5\" width=\"19\" height=\"11\" rx=\"2\"/><path d=\"M7 11v2M11 11v2M15 11v2\"/></svg>"};
+    const kartu = [
+      { k: "objek", nama: "Object Detection",
+        aktif: !!r, st: r ? "Aktif" : "Belum dianalisis",
+        dt: r ? `${r.unique_tracks ?? 0} objek terlacak` : "\u2014" },
+      { k: "jenis", nama: "Vehicle Classification",
+        aktif: !!(r && attr.length), st: r ? (attr.length ? "Aktif" : "Nihil") : "Belum dianalisis",
+        dt: r && attr.length ? `${r.attr_samples} sampel klasifikasi` : "\u2014" },
+      { k: "hitung", nama: "Traffic Counting",
+        aktif: !!(r && mode), st: r ? (mode ? "Aktif" : "Mati") : "Belum dianalisis",
+        dt: r && mode === "zona" ? `${r.entrance_in} masuk zona`
+          : r && mode === "garis" ? `${r.entrance_in} masuk \u00b7 ${r.entrance_out} keluar`
+          : "\u2014" },
+      { k: "insiden", nama: "Incident Detection",
+        aktif: !!r, st: r ? (ev.length ? `${ev.length} kejadian` : "Nihil") : "Belum dianalisis",
+        // BUKAN "24/7": sistem memeriksa klip berkala. Menulis 24/7 di sini
+        // akan mengulang overclaim yang sudah kita hapus dari dokumen.
+        dt: "klip berkala, bukan pantauan menerus" },
+      { k: "pelat", nama: "Plate Recognition",
+        aktif: false, st: "Tidak memadai",
+        dt: "640\u00d7360 \u2014 pelat 8\u201315 px, di bawah ambang OCR" },
+    ];
+    $("aiCards").innerHTML = kartu.map((x) => `
+      <div class="aicard${x.aktif ? "" : " mati"}">
+        <span class="ico" aria-hidden="true">${ikon[x.k]}</span>
+        <span>
+          <b>${esc(x.nama)}</b>
+          <span class="st">${esc(x.st)}</span>
+          <span class="dt">${esc(x.dt)}</span>
+        </span>
+      </div>`).join("");
+
+    $("toolbox").innerHTML = baris.map((x) => `
+      <div class="row">
+        <span class="no">${x.no}</span>
+        <span class="nm">${esc(x.nama)}</span>
+        <span class="st ${x.st[0]}">${esc(x.st[1])}</span>
+        <span class="dt">${x.detail}</span>
+      </div>`).join("");
+  }
+
+  // Hasil penghitungan tujuh kelas untuk kamera yang sedang dibuka. Mesinnya
+  // BERBEDA dari analisis PP-Vehicle - detektor COCO enam kelas - jadi angkanya
+  // tidak sebanding dengan angka toolbox dan ditaruh di panelnya sendiri.
+  let HITUNG = null;
+
+  async function muatHitung(key) {
+    if (!key) { HITUNG = null; return; }
+    try {
+      const r = await api(`/api/hitung/${encodeURIComponent(key)}`);
+      HITUNG = r.ada && r.record?.key === key ? r.record : null;
+    } catch { HITUNG = null; }
+  }
+
+  function renderHitung() {
+    const c = CAMS[active];
+    const rec = HITUNG && HITUNG.key === c.key ? HITUNG : null;
+    const res = rec?.results || {};
+    const baris = res.per_class || [];
+
+    // Umur pengukuran harus terbaca, bukan hanya jamnya. Panel ini pernah
+    // menampilkan "Sepeda motor 0" dari pengukuran delapan jam sebelumnya di
+    // sebelah siaran langsung yang penuh sepeda motor - tanpa satu pun tanda
+    // bahwa angkanya bukan angka sekarang. Ambangnya diikat ke selang siklus
+    // otomatis: lewat dua kali selang berarti satu siklus terlewat.
+    const umurMenit = rec?.at
+      ? Math.max(0, (Date.now() - Date.parse(rec.at)) / 60000) : null;
+    const selangMenit = (batch?.interval_sec || 900) / 60;
+    const basi = umurMenit != null && umurMenit > selangMenit * 2;
+    const el = $("hitungWaktu");
+    el.textContent = rec
+      ? (rec.ok
+          ? (basi
+              ? `diukur ${jamWIB(rec.at)} WIB · ${Math.round(umurMenit)} menit lalu — BASI`
+              : `diukur ${jamWIB(rec.at)} WIB`)
+          : "pengukuran terakhir gagal")
+      : "belum diukur";
+    el.style.color = basi ? "var(--warn)" : "";
+    el.style.fontWeight = basi ? "700" : "";
+
+    if (!baris.length) {
+      $("kelasList").innerHTML =
+        '<div class="baris"><span class="nm" style="font-weight:400;color:var(--muted)">'
+        + (rec && !rec.ok
+            ? `Pengukuran gagal: ${esc((rec.error || "").slice(0, 120))}`
+            : "Kamera ini belum terukur pada siklus berjalan. Pengukuran "
+              + "dilakukan otomatis tiap siklus analisis; tombol Ukur sekarang "
+              + "hanya untuk mendahuluinya, dan akan ditolak bila siklus "
+              + "otomatis sedang berjalan.")
+        + "</span></div>";
+    } else {
+      // Angka utama = median objek per frame. Rekaman lama (sebelum metrik ini
+      // ada) hanya punya jumlah ID unik, yang terbukti menggelembung; untuk
+      // rekaman seperti itu angkanya ditampilkan sebagai tanda pisah, bukan
+      // disodorkan seolah jumlah kendaraan.
+      const metrikBaru = baris.some((b) => b.tersedia && b.per_frame != null);
+      const nilai = (b) => (b.per_frame != null ? b.per_frame : null);
+      const maks = Math.max(1, ...baris.filter((b) => b.tersedia)
+                                        .map((b) => b.per_frame_maks || nilai(b) || 0));
+      $("kelasList").innerHTML = baris.map((b) => {
+        if (!b.tersedia) {
+          return `<div class="baris takada">
+            <span class="nm">${esc(b.nama)}
+              <span class="sub">tidak ada padanan pada model</span></span>
+            <span class="bar"></span>
+            <span class="jml kosong">n/a</span></div>`;
+        }
+        const n = nilai(b);
+        const bagian = [];
+        if (b.per_frame_maks != null) bagian.push(`maks ${b.per_frame_maks} dalam satu frame`);
+        if (b.pengendara_dikecualikan) bagian.push(`${b.pengendara_dikecualikan} pengendara tidak dihitung`);
+        if (b.masuk) bagian.push(`${b.masuk} masuk zona`);
+        const sub = bagian.join(" · ");
+        const lebar = n == null ? 0 : Math.round((b.per_frame_maks || n) / maks * 100);
+        return `<div class="baris">
+          <span class="nm">${esc(b.nama)}${sub ? `<span class="sub">${esc(sub)}</span>` : ""}</span>
+          <span class="bar"><i style="width:${lebar}%"></i></span>
+          <span class="jml${n == null ? " kosong" : ""}">${n == null ? "—" : n}</span></div>`;
+      }).join("");
+    }
+
+    $("hitungHint").textContent = baris.length
+      ? (baris.some((b) => b.tersedia && b.per_frame != null)
+          ? (res.malam
+              ? "PENGUKURAN MALAM — akurasi rendah. Kendaraan tercoreng blur "
+                + "pencahayaan panjang sehingga sebagian terlewat, terutama sepeda "
+                + "motor, dan "
+                + `ambang dinaikkan ke ${res.ambang_efektif} untuk membuang deteksi `
+                + "palsu. Jangan kutip angka ini sebagai hitungan. "
+              : "")
+            + `Klip ${rec.seconds} dtk @${rec.fps} fps · ${res.frames} frame. Angka = `
+            + "objek yang terlihat pada satu frame khas (median); bilah = puncaknya. "
+            + "Ini kepadatan, bukan arus per jam."
+          : "Rekaman ini dibuat dengan metrik lama (jumlah ID unik) yang terbukti "
+            + "menggelembung, jadi angkanya tidak ditampilkan. Siklus otomatis "
+            + "berikutnya akan menggantinya.")
+      : "Tujuh kelas sesuai lingkup POC.";
+  }
+
+  function renderChart() {
+    const series = statsReal()
+      ? stats.hourly.map((h) => [h.hour, h.count])
+      : HOURLY;
+    const max = Math.max(1, ...series.map((h) => h[1]));
+    const W = 320, H = 84, base = 66, bw = W / series.length;
+    const bars = series.map(([hr, v], i) => {
+      const h = (v / max) * 52;
+      const x = i * bw + 2, y = base - h;
+      const peak = v === max && v > 0;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 4).toFixed(1)}"` +
+        ` height="${h.toFixed(1)}" rx="1.5"` +
+        ` fill="${peak ? "var(--crit)" : "var(--accent)"}"` +
+        ` fill-opacity="${peak ? "1" : ".55"}"/>` +
+        (peak ? `<text x="${(x + (bw - 4) / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}"` +
+          ` text-anchor="middle" fill="var(--crit)" font-family="IBM Plex Mono, monospace"` +
+          ` font-size="10" font-weight="600">${v}</text>` : "") +
+        (hr % 3 === 0 ? `<text x="${(x + (bw - 4) / 2).toFixed(1)}" y="80"` +
+          ` text-anchor="middle" fill="var(--muted)"` +
+          ` font-family="IBM Plex Mono, monospace" font-size="9">${hr}</text>` : "");
+    }).join("");
+    // An all-zero chart with a bare axis reads as broken rather than as "no
+    // violations yet", so say so in words.
+    const empty = series.every(([, v]) => v === 0);
+    const note = empty
+      ? `<text x="${W / 2}" y="40" text-anchor="middle" fill="var(--muted)"` +
+        ` font-family="IBM Plex Sans, sans-serif" font-size="11">` +
+        `${statsReal() ? "Belum ada kejadian hari ini" : "Tidak ada data"}</text>`
+      : "";
+    $("chart").innerHTML =
+      `<line x1="0" y1="${base + .5}" x2="${W}" y2="${base + .5}"` +
+      ` stroke="var(--line)" stroke-width="1"/>${bars}${note}`;
+  }
+
+  // ------------------------------------------------------------- modal
+  let eventAktif = null;
+
+  function openEvent(i, gulirKeRincian = true) {
+    const e = FEED[i], cam = camOf(e);
+    eventAktif = e;
+
+    // Gambar yang tersimpan adalah frame pemeriksaan TERAKHIR kamera itu.
+    // Untuk temuan dari siklus sebelumnya, gambar ini bukan momen kejadiannya.
+    const rec = camBatch(cam)?.record;
+    const sesuaiSiklus = (e.cycleId != null && rec?.cycle_id != null)
+      ? rec.cycle_id === e.cycleId
+      : rec?.finished_at === e.iso;
+    const punyaFrame = e.real && CAMS[e.cam] != null && hasAnalysis(cam);
+    const gbr = punyaFrame
+      ? `/api/batch/frame/${encodeURIComponent(cam.key)}`
+      : cuplikan(cam);
+
+    const fakta = [
+      ["Jenis kejadian", esc(e.kind)],
+      ["Lokasi", `${esc(cam.name)} \u00b7 ${esc(cam.area)}`],
+      ["Waktu", e.iso ? esc(tanggalJamWIB(e.iso)) : esc(e.t) + " WIB"],
+      ["Kamera", `<span class="mono">${esc(cam.id)}</span>`],
+      ["Operator", esc(cam.owner)],
+      ["Zona", `<span class="pill act">${esc(camBatch(cam)?.zone_label || "\u2014")}</span>`],
+      ["Kendaraan", esc(e.kendaraan)],
+      ["Durasi", esc(e.durasi)],
+      ["Sumber", '<span class="pill conf">AI Detection \u00b7 PP-Vehicle</span>'],
+      ["Pelat nomor",
+        '<span style="color:var(--crit)">Tidak terbaca \u2014 resolusi sumber 360p</span>'],
+      ["Kepercayaan AI",
+        '<span style="color:var(--muted)">\u2014 aturan durasi zona, bukan skor</span>'],
+      ["Kewenangan", e.wewenang === "dishub"
+        ? '<strong style="color:var(--accent)">Dishub DKI Jakarta</strong>'
+        : '<strong style="color:var(--info)">Ditlantas Polda Metro Jaya</strong>'],
+      ["Status", e.verified
+        ? '<strong style="color:var(--ok)">Terverifikasi</strong>'
+          + (e.verdict ? ` \u2014 ${esc(e.verdict === "bukan"
+              ? "bukan pelanggaran" : "benar")}` : "")
+        : '<span style="color:var(--warn)">Menunggu verifikasi</span>'],
+      ["Tindak lanjut", e.verified && e.verdict === "benar"
+        ? "Perintah tindakan diterbitkan" : "\u2014"],
+    ];
+
+    // Kalimat ini disusun dari angka, bukan dari model bahasa. Ditandai supaya
+    // tidak terbaca sebagai kemampuan yang belum kita punya.
+    const narasi = `Objek terlacak #${esc(String(e.kendaraan).replace(/\D/g, ""))} `
+      + `terdeteksi diam di zona ${esc(camBatch(cam)?.zone_label || "pengawasan")} `
+      + `selama ${esc(e.durasi)}. Tidak ada pergerakan berarti selama rentang itu, `
+      + `sehingga ambang zona terlampaui.`;
+
+    const tindakan = e.wewenang === "dishub"
+      ? [["Terbitkan perintah derek", "benar"], ["Kirim petugas", "benar"],
+         ["Bukan pelanggaran", "bukan"]]
+      : [["Teruskan ke Ditlantas", "benar"], ["Bukan pelanggaran", "bukan"]];
+
+    $("inspector").innerHTML =
+      `<div class="shots">
+         <figure><img src="${gbr}" alt="Bukti kejadian di ${esc(cam.name)}">
+           <figcaption>${punyaFrame
+             ? (sesuaiSiklus ? "Frame siklus kejadian"
+                             : "Frame pemeriksaan terbaru \u2014 bukan momen kejadian")
+             : "Cuplikan tersimpan"}</figcaption></figure>
+         <figure><img src="${cuplikan(cam)}" alt="Konteks lokasi ${esc(cam.name)}">
+           <figcaption>Konteks lokasi</figcaption></figure>
+       </div>
+       <h3>Detail kejadian</h3>
+       <dl>${fakta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("")}</dl>
+       <div class="obs">
+         <span class="ico" aria-hidden="true">AI</span>
+         <span>
+           <b>Ringkasan otomatis ${TAG_DEMO_TEKS}</b>
+           <p>${narasi}</p>
+           <p style="margin-top:6px;color:var(--muted);font-size:10.5px">
+             Kalimat ini disusun dari angka hasil pipeline memakai templat tetap.
+             Sistem belum memakai model bahasa, jadi ini bukan pengamatan bebas.</p>
+         </span>
+       </div>
+       <p style="font-size:11px;color:var(--muted);line-height:1.45;margin:11px 0 0">
+         Setiap kejadian adalah <strong>usulan sistem</strong>, bukan penetapan
+         pelanggaran. Penindakan baru berjalan setelah diverifikasi petugas.
+       </p>
+       <div class="actions" id="dActions">${e.verified
+         ? '<button type="button" class="ghost" data-verdict="">Tutup</button>'
+         : tindakan.map(([t, v], j) =>
+             `<button type="button" class="${j === 0 ? "primary" : "ghost"}"`
+             + ` data-verdict="${v}">${esc(t)}</button>`).join("")}</div>`;
+
+    $("inspectorPanel").hidden = false;
+    if (gulirKeRincian) {
+      $("inspectorPanel").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  // ------------------------------------------------------------- wiring
+  $("cams").addEventListener("click", (ev) => {
+    const el = ev.target.closest(".cam");
+    if (!el) return;
+    active = Number(el.dataset.i);
+    // LC-013: di Mode POC daftar kamera ada di bawah; bawa operator ke videonya.
+    if (document.body.classList.contains("mode-poc")) window.scrollTo(0, 0);
+    tutupSuntingGaris(true);           // suntingan kamera lama tidak dibawa
+    stopVideo();                       // aliran kamera lama harus dilepas dulu
+    if (pakaiDeteksi(srcMode)) watchMulai(CAMS[active]);
+    renderStage();
+    if (["live", "rekaman"].includes(srcMode)) startLive();
+    renderHud();
+    HITUNG = null; renderHitung();
+    muatHitung(CAMS[active].key).then(renderHitung);
+  });
+
+  $("feed").addEventListener("click", (ev) => {
+    const el = ev.target.closest(".ev");
+    if (el) openEvent(Number(el.dataset.e));
+  });
+
+  document.querySelector(".toolbar").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-layer]");
+    if (!b || b.disabled) return;
+    const key = b.dataset.layer;
+    layers[key] = !layers[key];
+    b.setAttribute("aria-pressed", String(layers[key]));
+    renderStage();
+  });
+
+  function syncSumber() {
+    document.querySelectorAll("[data-src]").forEach((el) =>
+      el.setAttribute("aria-pressed", String(el.dataset.src === srcMode)));
+  }
+
+  document.querySelector(".toolbar").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-src]");
+    if (!b) return;
+    const sebelum = srcMode;
+    srcMode = b.dataset.src;
+    tutupSuntingGaris(true);
+    document.querySelectorAll("[data-src]").forEach((el) =>
+      el.setAttribute("aria-pressed", String(el.dataset.src === srcMode)));
+    clearInterval(liveTimer);
+    stopVideo();
+    liveWorking = null;
+    liveFails = 0;
+    setLiveChip();
+    if (srcMode === "live") startLive();
+    if (pakaiDeteksi(sebelum) && !pakaiDeteksi(srcMode)) watchHenti();
+    if (pakaiDeteksi(srcMode)) watchMulai(CAMS[active]);
+    renderHud();
+    renderStage();
+    renderFeed();
+  });
+
+  // ---------------------------------------------------------- penuntun
+  // Urutannya mengikuti alur kerja nyata: pilih kamera dulu, baru lihat
+  // gambarnya, baru baca hasilnya. Bukan urutan tata letak di layar.
+  const TOUR = [
+    { sel: "#proto", judul: "Penanda kejujuran",
+      teks: "Mulailah dari sini setiap kali membuka. Hijau berarti seluruh angka "
+          + "di layar berasal dari pembacaan mesin. Bila kuning, ia menyebutkan "
+          + "bagian mana yang masih berupa contoh - jangan pakai bagian itu untuk "
+          + "mengambil keputusan." },
+    { sel: ".cams", judul: "Pilih kameranya",
+      teks: "Kamera dikelompokkan per wilayah DKI. Titik merah menandai kamera "
+          + "yang punya temuan perlu ditindak. Angka skor di bawah nama menunjukkan "
+          + "seberapa besar kendaraan tampak - makin tinggi, makin andal bacaannya. "
+          + "Wilayah bernilai nol berarti memang tidak ada kamera publik di sana." },
+    { sel: ".viewport", judul: "Panggung gambar",
+      teks: "Isi panel ini mengikuti sumber yang dipilih di bawahnya. Semua "
+          + "penilaian Anda bertumpu pada gambar ini, jadi pastikan Anda tahu "
+          + "gambar apa yang sedang dilihat - itu gunanya keterangan di langkah "
+          + "berikutnya." },
+    { sel: ".stamp", judul: "Keterangan pada gambar",
+      teks: "Pojok kiri bawah selalu menyebutkan nomor kamera, namanya, dan waktu. "
+          + "Pada mode Analisis, waktu ini adalah waktu PEMERIKSAAN, bukan waktu "
+          + "sekarang. Biasakan membacanya sebelum menyimpulkan apa pun." },
+    { sel: "#grpSumber", judul: "Empat sumber gambar",
+      teks: "Live menampilkan kondisi jalan sekarang, disegarkan tiap 3 detik, "
+          + "tanpa kotak deteksi. Analisis menampilkan hasil pemeriksaan "
+          + "terakhir - mode yang Anda pakai saat bertugas. Pantau menjalankan "
+          + "siklus pendek berulang pada satu kamera sehingga kotaknya "
+          + "diperbarui tiap belasan detik; ia tracking saja, tanpa atribut dan "
+          + "pelat, dan tetap tertinggal satu putaran dari kenyataan. Cuplikan "
+          + "adalah gambar tersimpan, untuk keadaan jaringan ke server CCTV "
+          + "terputus." },
+    { sel: "#grpLapisan", judul: "Empat lapisan tampilan",
+      teks: "Zona menampilkan area yang diawasi. Objek menampilkan kotak "
+          + "kendaraan - tipis untuk kendaraan biasa, merah tebal untuk yang "
+          + "melanggar. Lintasan menampilkan jejak gerak beberapa detik "
+          + "terakhir. Samarkan pelat menutup bagian pelat demi perlindungan "
+          + "data pribadi. Keempatnya bisa dimatikan bila gambar terasa "
+          + "terlalu ramai." },
+    { sel: "#hint", judul: "Baris keterangan",
+      teks: "Baris ini berubah mengikuti mode yang dipilih dan menjelaskan apa "
+          + "yang sedang Anda lihat. Ia juga memperingatkan bila zona baru saja "
+          + "diubah tetapi belum dipakai pemeriksaan." },
+    { sel: "#reanalyse", judul: "Memeriksa ulang",
+      teks: "Mode Analisis menampilkan pemeriksaan terakhir, bukan detik ini. "
+          + "Tombol ini memeriksa ulang kamera yang sedang dibuka - sekitar 40 "
+          + "sampai 60 detik. Layar akan berpindah sendiri ke mode Analisis "
+          + "setelah selesai.",
+      aksi: () => { srcMode = "analisis"; syncSumber(); renderStage(); } },
+    { sel: "#readout", judul: "Empat angka ringkas",
+      teks: "Track unik adalah jumlah objek berbeda yang terlacak. Frame "
+          + "dianalisis menunjukkan berapa gambar diperiksa. Kejadian adalah "
+          + "jumlah pelanggaran yang ditemukan. Waktu proses adalah lama "
+          + "pemeriksaan. Tanda strip berarti kamera itu belum pernah diperiksa." },
+    { sel: "#aiCards", judul: "Lima kemampuan mesin",
+      teks: "Tiap kartu menampilkan statusnya sendiri. Perhatikan kartu "
+          + "Plate Recognition - pada CCTV publik ia selalu bertanda tidak "
+          + "memadai, dan keluarannya tidak boleh dipakai. Kartu Incident "
+          + "Detection menyebut 'klip berkala': sistem memang tidak mengawasi "
+          + "menerus. Buka 'Rincian per modul' di bawahnya untuk angka mentah "
+          + "tiap kemampuan." },
+    { sel: "#panelHitung", judul: "Komposisi lalu lintas",
+      teks: "Tujuh kelas sesuai lingkup POC, diukur mesin yang BERBEDA dari "
+          + "panel di atas - detektor terpisah, jadi angkanya tidak sebanding "
+          + "dengan angka toolbox. Tekan Ukur sekarang untuk mengukur kamera "
+          + "yang sedang dibuka; satu pengukuran memakan sekitar setengah "
+          + "menit. Kendaraan sedang bertanda n/a karena model tidak "
+          + "membedakan ukuran kendaraan - itu ketiadaan yang dinyatakan, "
+          + "bukan angka nol. Pada Pejalan kaki, pengendara motor dan sepeda "
+          + "sudah dikeluarkan dari hitungan." },
+    { sel: "#panelKualitas", judul: "Kualitas siaran kamera",
+      teks: "Panel ini menilai seberapa layak siaran kamera untuk tiap jenis "
+          + "pembacaan, lengkap dengan spesifikasi teknisnya. Baris merah bukan "
+          + "kerusakan sistem - itu batas yang ditentukan resolusi sumber, dan "
+          + "keterangan di bawahnya menjelaskan apa yang diperlukan untuk "
+          + "mengatasinya." },
+    { sel: "#feed", judul: "Daftar temuan",
+      teks: "Setiap baris adalah usulan mesin, bukan penetapan pelanggaran. "
+          + "Labelnya menyebutkan kewenangan: ranah Dishub berarti dapat ditindak "
+          + "sendiri secara administratif, rujuk Ditlantas berarti tilang yang "
+          + "merupakan kewenangan Kepolisian. Waktunya dalam WIB." },
+    { sel: "#inspectorPanel", judul: "Rincian kejadian",
+      teks: "Klik satu baris temuan untuk membuka kartu ini. Isinya gambar "
+          + "berkotak, identitas kamera, durasi, status pelat, kewenangan, dan "
+          + "dasar hukumnya. Periksa gambarnya sendiri sebelum menindak - mesin "
+          + "pernah menandai drum kabel di trotoar sebagai kendaraan. Tombol di "
+          + "bawah kartu untuk memutuskan tindakan.",
+      aksi: () => { const e = document.querySelector("#feed .ev"); if (e) e.click(); },
+      tutup: () => { $("inspectorPanel").hidden = true; } },
+    { sel: ".kpis", judul: "Rekap hari berjalan",
+      teks: "Ketiga kartu ini bisa diklik. Kejadian hari ini menyaring daftar "
+          + "temuan di sebelah kanan - klik tulisan ranah Dishub atau dirujuk "
+          + "untuk menyaring per kewenangan. Diverifikasi petugas membuka "
+          + "antrean yang belum ditindak. Kendaraan terpantau membuka rincian "
+          + "per kamera. Semuanya dihitung dalam waktu WIB; periksa kartu "
+          + "Diverifikasi petugas di akhir giliran tugas." },
+    { sel: "#theme", judul: "Mode gelap",
+      teks: "Mengubah tampilan terang atau gelap. Untuk peragaan lewat proyektor, "
+          + "mode gelap biasanya lebih terbaca. Pilihan ini tersimpan di peramban "
+          + "masing-masing." },
+    { sel: "#helpBtn", judul: "Membuka panduan kembali",
+      teks: "Penuntun ini dapat dijalankan ulang kapan saja lewat tombol Bantuan, "
+          + "yang juga memuat panduan lengkap dalam bentuk bacaan. Selesai - "
+          + "silakan mulai dengan memilih kamera di sisi kiri." },
+  ];
+
+  let tourI = -1;
+
+  function tourTutup() {
+    if (tourI >= 0 && TOUR[tourI] && TOUR[tourI].tutup) {
+      try { TOUR[tourI].tutup(); } catch (_) {}
+    }
+    tourI = -1;
+    document.querySelector(".tour-hole")?.remove();
+    document.querySelector(".tour-card")?.remove();
+    window.removeEventListener("resize", tourGambar);
+  }
+
+  function tourGambar() {
+    if (tourI < 0 || tourI >= TOUR.length) return;
+    const t = TOUR[tourI];
+    const el = document.querySelector(t.sel);
+    if (!el) { tourLangkah(tourI + 1); return; }
+
+    const r = el.getBoundingClientRect();
+    const pad = 6;
+    let hole = document.querySelector(".tour-hole");
+    if (!hole) {
+      hole = document.createElement("div");
+      hole.className = "tour-hole";
+      document.body.appendChild(hole);
+    }
+    hole.style.top = (r.top - pad) + "px";
+    hole.style.left = (r.left - pad) + "px";
+    hole.style.width = (r.width + pad * 2) + "px";
+    hole.style.height = (r.height + pad * 2) + "px";
+
+    let card = document.querySelector(".tour-card");
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "tour-card";
+      document.body.appendChild(card);
+    }
+    const akhir = tourI === TOUR.length - 1;
+    card.innerHTML =
+      '<div class="no">Langkah ' + (tourI + 1) + ' dari ' + TOUR.length + '</div>' +
+      '<h3>' + esc(t.judul) + '</h3><p>' + esc(t.teks) + '</p>' +
+      '<div class="tour-nav">' +
+      '<button class="icon" data-t="prev"' + (tourI ? '' : ' disabled') + '>Kembali</button>' +
+      '<button class="icon" data-t="next" style="background:var(--accent);' +
+      'border-color:var(--accent);color:var(--panel);font-weight:600">' +
+      (akhir ? 'Selesai' : 'Lanjut') + '</button>' +
+      '<span class="sp"></span>' +
+      '<button class="icon" data-t="skip">Lewati</button></div>';
+
+    // Kartu ditaruh di bawah sorotan bila muat, kalau tidak di atasnya.
+    const ch = card.offsetHeight || 170, cw = card.offsetWidth || 350;
+    const bawah = r.bottom + 14 + ch < window.innerHeight;
+    card.style.top = (bawah ? r.bottom + 12 : Math.max(10, r.top - ch - 12)) + "px";
+    card.style.left = Math.min(Math.max(10, r.left), window.innerWidth - cw - 10) + "px";
+  }
+
+  function tourLangkah(i) {
+    // Bersihkan dulu keadaan yang disiapkan langkah sebelumnya - misalnya
+    // kartu bukti yang dibuka agar bisa disorot.
+    if (tourI >= 0 && TOUR[tourI] && TOUR[tourI].tutup) {
+      try { TOUR[tourI].tutup(); } catch (_) {}
+    }
+    if (i >= TOUR.length || i < 0) { tourTutup(); return; }
+    tourI = i;
+    // Sebagian langkah perlu menyetel layar lebih dulu: menjelaskan mode
+    // Analisis sementara layar menampilkan Live hanya membuat bingung.
+    if (TOUR[i].aksi) { try { TOUR[i].aksi(); } catch (_) {} }
+    const el = document.querySelector(TOUR[i].sel);
+    if (!el) { tourLangkah(i + 1); return; }
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    setTimeout(tourGambar, 420);
+  }
+
+  function tourMulai() {
+    $("bantuan").close();
+    window.addEventListener("resize", tourGambar);
+    tourLangkah(0);
+  }
+
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest(".tour-card [data-t]");
+    if (!b) return;
+    if (b.dataset.t === "next") tourLangkah(tourI + 1);
+    else if (b.dataset.t === "prev") tourLangkah(tourI - 1);
+    else tourTutup();
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (tourI < 0) return;
+    if (ev.key === "Escape") tourTutup();
+    if (ev.key === "ArrowRight") tourLangkah(tourI + 1);
+    if (ev.key === "ArrowLeft") tourLangkah(tourI - 1);
+  });
+
+  // ------------------------------------------------- drill-down kartu KPI
+  // Umpan balik uji pengguna: angkanya terbaca, tetapi tidak ada jalan dari
+  // angka ke temuan yang membentuknya.
+  $("kpi0").addEventListener("click", bukaRincian);
+  $("kpi1").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-drill]");
+    setFilter(b ? b.dataset.drill : null);
+  });
+  $("kpi2").addEventListener("click", () => setFilter("belum"));
+  // kpi3 (Aduan masyarakat) sengaja tidak bisa diklik: tidak ada apa pun di
+  // baliknya untuk ditelusuri.
+  $("kpi3").classList.remove("klik");
+  $("kpi3").removeAttribute("role");
+  $("kpi3").removeAttribute("tabindex");
+  for (const id of ["kpi0", "kpi1", "kpi2"]) {
+    $(id).addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); $(id).click(); }
+    });
+  }
+  $("filterChip").addEventListener("click", () => setFilter(feedFilter));
+  $("rClose").addEventListener("click", () => $("rincian").close());
+
+  async function bukaRincian() {
+    $("rBody").innerHTML = '<p style="color:var(--muted);font-size:12.5px">Memuat…</p>';
+    $("rincian").showModal();
+    let baris;
+    try { baris = await api("/api/stats/cameras"); }
+    catch { $("rBody").innerHTML = '<p style="color:var(--crit);font-size:12.5px">'
+      + 'Rincian tidak tersedia — backend tidak terjangkau.</p>'; return; }
+    if (!baris.length) {
+      $("rBody").innerHTML = '<p style="color:var(--muted);font-size:12.5px">'
+        + 'Belum ada siklus analisis hari ini.</p>'; return;
+    }
+    const nama = (k) => (CAMS.find((c) => c.key === k) || {}).name || k;
+    const jum = baris.reduce((a, r) => ({
+      cycles: a.cycles + r.cycles, tracks: a.tracks + r.tracks,
+      events: a.events + r.events,
+    }), { cycles: 0, tracks: 0, events: 0 });
+    $("rBody").innerHTML =
+      '<table style="width:100%;border-collapse:collapse;font-size:12.5px">'
+      + '<thead><tr>' + ["Kamera", "Siklus", "Track", "Frame", "Temuan", "Terakhir"]
+        .map((h, i) => `<th style="text-align:${i ? "right" : "left"};padding:6px 8px;`
+          + `border-bottom:1px solid var(--line);color:var(--muted);font-size:10.5px;`
+          + `text-transform:uppercase;letter-spacing:.06em">${h}</th>`).join("")
+      + '</tr></thead><tbody>'
+      + baris.map((r) => `<tr>
+          <td style="padding:6px 8px;border-bottom:1px solid var(--line-soft)">
+            ${esc(nama(r.camera))}${r.ok_cycles < r.cycles
+              ? ` <span style="color:var(--crit)">${r.cycles - r.ok_cycles} gagal</span>` : ""}</td>
+          <td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line-soft);font-family:var(--mono)">${r.cycles}</td>
+          <td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line-soft);font-family:var(--mono)">${r.tracks.toLocaleString("id-ID")}</td>
+          <td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line-soft);font-family:var(--mono)">${r.frames.toLocaleString("id-ID")}</td>
+          <td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line-soft);font-family:var(--mono)">${r.events}</td>
+          <td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line-soft);font-family:var(--mono)">${esc(jamWIB(r.last_at))}</td>
+        </tr>`).join("")
+      + `<tr><td style="padding:7px 8px;font-weight:700">Jumlah</td>
+          <td style="text-align:right;padding:7px 8px;font-family:var(--mono);font-weight:700">${jum.cycles}</td>
+          <td style="text-align:right;padding:7px 8px;font-family:var(--mono);font-weight:700">${jum.tracks.toLocaleString("id-ID")}</td>
+          <td></td>
+          <td style="text-align:right;padding:7px 8px;font-family:var(--mono);font-weight:700">${jum.events}</td>
+          <td></td></tr>`
+      + '</tbody></table>';
+  }
+
+  // Lonceng adalah jalan pintas ke antrean verifikasi - sasaran yang sama
+  // dengan kartu Terverifikasi, supaya tidak ada dua arti untuk satu angka.
+  $("bellBtn").addEventListener("click", () => setFilter("belum"));
+
+  // ------------------------------------------------------------ pemutar
+  // Live disegarkan berkala, bukan diputar. Tombolnya karena itu menjeda dan
+  // melanjutkan penyegaran, bukan memutar video - dan dinonaktifkan pada mode
+  // lain yang memang gambar diam.
+  let liveJeda = false;
+  $("pPlay").addEventListener("click", () => {
+    liveJeda = !liveJeda;
+    $("pPlay").innerHTML = liveJeda
+      ? '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">'
+        + '<path d="M6 5l13 7-13 7V5Z"/></svg>'
+      : '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">'
+        + '<rect x="7" y="5" width="3.6" height="14" rx="1"/>'
+        + '<rect x="13.4" y="5" width="3.6" height="14" rx="1"/></svg>';
+    $("pPlay").title = liveJeda ? "Lanjutkan penyegaran live" : "Jeda penyegaran live";
+    if (liveJeda) {
+      clearInterval(liveTimer);
+      if (videoJalan) { try { $("vid").pause(); } catch {} }
+    } else if (videoJalan) {
+      try { $("vid").play(); } catch {}
+    } else startLive();
+  });
+  $("pNext").addEventListener("click", () => { clearInterval(liveTimer); startLive(); });
+
+  // ---------------------------------------------------- garis hitung
+  function tutupSuntingGaris() {
+    window.BBox?.sunting(false);    // sesi.edit dikosongkan -> henti() tidak menyisakan
+    $("ghBar").hidden = true;
+    $("pGaris").setAttribute("aria-pressed", "false");
+  }
+
+  $("pGaris").addEventListener("click", async () => {
+    if (window.BBox?.menyunting) { tutupSuntingGaris(); return; }
+    const cam = CAMS[active];
+    const opsi = {
+      onInfo: (t) => { $("ghInfo").textContent = t; },
+      onKunci: (on) => { $("ghKunci").setAttribute("aria-pressed", String(on)); $("ghKunci").disabled = false; $("ghTegak").disabled = false; },
+    };
+    if (srcMode !== "live" || !videoJalan || !window.BBox?.sunting(true, opsi)) {
+      alert("Garis hitung diatur di atas video Live. Tunggu sampai video berjalan.");
+      return;
+    }
+    $("ghBar").hidden = false;
+    $("pGaris").setAttribute("aria-pressed", "true");
+    $("ghKunci").setAttribute("aria-pressed", "false");
+    $("ghKunci").disabled = true; $("ghTegak").disabled = true;
+    $("ghStatus").textContent = "Menyiapkan latar bersih & garis putih… (±20 dtk). Sementara itu frame dibekukan.";
+    try {
+      const j = await api(`/api/garis-putih/${encodeURIComponent(cam.key)}`);
+      if (CAMS[active]?.key !== cam.key || !window.BBox?.menyunting) return;
+      window.BBox.pasangPemandu(j);
+      $("ghStatus").textContent = j.garis_putih.length
+        ? `Latar bersih siap (median ±20 dtk, kendaraan terhapus) · ${j.garis_putih.length} garis putih terdeteksi.`
+        : "Latar bersih siap, tetapi garis putih tidak terdeteksi — gambar bebas, atau tunggu siang.";
+    } catch (e) {
+      $("ghStatus").textContent = "Pemandu gagal disiapkan (" + e.message + ") — garis tetap bisa ditarik bebas di frame beku.";
+    }
+  });
+  $("ghTegak").addEventListener("click", () => {
+    if (!window.BBox?.buatTegakLurus()) alert("Klik dulu satu garis putih (biru muda) sebagai acuan.");
+    $("ghKunci").setAttribute("aria-pressed", "true");
+  });
+  $("ghKunci").addEventListener("click", () => {
+    const on = $("ghKunci").getAttribute("aria-pressed") !== "true";
+    $("ghKunci").setAttribute("aria-pressed", String(on));
+    window.BBox?.aturKunci(on);
+  });
+  $("ghBatal").addEventListener("click", tutupSuntingGaris);
+  $("ghSimpan").addEventListener("click", async () => {
+    const cam = CAMS[active];
+    const data = window.BBox?.dataSimpan();
+    if (!cam || !data) { tutupSuntingGaris(); return; }
+    const btn = $("ghSimpan");
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/garis-hitung/${encodeURIComponent(cam.key)}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.detail || res.statusText);
+      cam.tampilan_hitung = j.tampilan;
+      const b = (batch?.cameras || []).find((c) => c.key === cam.key);
+      if (b) b.tampilan_hitung = j.tampilan;
+      tutupSuntingGaris();
+      // Tampilan yang barusan disimpan langsung aktif: indeks lama bila
+      // diganti, atau yang terakhir bila posisi ini baru.
+      const aktif = !data.garis.length ? -1
+        : data.indeks != null ? data.indeks : j.tampilan.length - 1;
+      window.BBox?.aturGaris(j.tampilan, aktif);
+    } catch (e) {
+      alert("Garis gagal disimpan: " + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Peramban tidak memulai video di tab latar belakang; pemutar lalu jatuh ke
+  // still lewat batas waktu 10 detik dan tidak pernah mencoba lagi - layar
+  // yang dibuka belakangan tetap berupa salindia tanpa kotak deteksi. Begitu
+  // tab terlihat lagi, Live dicoba ulang.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && srcMode === "live" && !videoJalan) {
+      stopVideo();
+      startLive();
+    }
+  });
+
+  // ------------------------------------------------------------ Mode POC
+  // LC-009: fokus butir 1-2 surat 1316. Mode ini berlaku untuk semua penonton
+  // (disimpan di server, configs/mode_poc.yml).
+  let modePoc = false;
+  let pocSourceInitialized = false;
+
+  function pilihSumberPoc() {
+    if (!modePoc || pocSourceInitialized) return;
+    const cam = CAMS[active];
+    if (!cam || !REPLAYS[cam.key]?.available) return;
+    pocSourceInitialized = true;
+    srcMode = "rekaman";
+    syncSumber();
+    clearInterval(liveTimer);
+    stopVideo();
+  }
+
+  function terapkanModePoc(aktif) {
+    modePoc = !!aktif;
+    pocSourceInitialized = false;
+    document.body.classList.toggle("mode-poc", modePoc);
+    const b = $("btnPoc");
+    b.hidden = false;
+    b.setAttribute("aria-pressed", String(modePoc));
+    b.textContent = modePoc ? "Mode POC: nyala" : "Mode POC: mati";
+    if (modePoc) {
+      // hanya video + kotak + garis hitung; zona pelanggaran disembunyikan
+      layers.zone = false;
+      if (!POC_KEYS.has(CAMS[active]?.key)) {
+        const target = CAMS.findIndex((c) => c.key === "gerbangpemuda");
+        if (target >= 0) active = target;
+      }
+      pilihSumberPoc();
+    } else {
+      layers.zone = true;
+    }
+    try { renderCams(); renderStage(); } catch {}
+  }
+  api("/api/mode-poc").then((m) => terapkanModePoc(m.aktif)).catch(() => {});
+  $("btnPoc").addEventListener("click", async () => {
+    const nyala = !modePoc;
+    if (!nyala && !confirm("Matikan Mode POC? Fitur pelanggaran tampil lagi dan siklus analisis pelanggaran otomatis dijalankan lagi (memakai CPU server).")) return;
+    try {
+      const m = await api("/api/mode-poc", { method: "PUT", headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ aktif: nyala, jeda_siklus: nyala }) });
+      terapkanModePoc(m.aktif);
+    } catch (e) { alert("Mode POC gagal diubah: " + e.message); }
+  });
+
+  $("pShot").addEventListener("click", () => {
+    const a = document.createElement("a");
+    a.href = $("frame").src;
+    a.download = `${CAMS[active].key}-${Date.now()}.jpg`;
+    a.click();
+  });
+  // LC-011: unduh CSV & Layar TV
+  $("btnCsv").addEventListener("click", () => {
+    if (!window.BBox?.unduhCsv()) alert("Belum ada lintasan untuk diunduh.");
+  });
+  let tvPocSebelum = false;
+  function aturTv(nyala) {
+    const b = document.body;
+    if (nyala === b.classList.contains("mode-tv")) return;
+    if (nyala) {
+      tvPocSebelum = b.classList.contains("mode-poc");
+      b.classList.add("mode-tv", "mode-poc");
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      b.classList.remove("mode-tv");
+      if (!tvPocSebelum && !modePoc) b.classList.remove("mode-poc");
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    }
+    $("btnTvKeluar").hidden = !nyala;
+  }
+  $("btnTv").addEventListener("click", () => aturTv(true));
+  $("btnTvKeluar").addEventListener("click", () => aturTv(false));
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement && document.body.classList.contains("mode-tv")) aturTv(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.body.classList.contains("mode-tv")) aturTv(false);
+  });
+
+  $("pFull").addEventListener("click", () => {
+    const v = document.querySelector(".viewport");
+    if (document.fullscreenElement) document.exitFullscreen();
+    else v.requestFullscreen?.();
+  });
+
+  $("ukurHitung").addEventListener("click", async () => {
+    const btn = $("ukurHitung");
+    const cam = CAMS[active];
+    btn.disabled = true;
+    btn.textContent = "Mengukur…";
+    try {
+      await api(`/api/hitung/run?key=${encodeURIComponent(cam.key)}&seconds=12`,
+                { method: "POST" });
+    } catch (e) {
+      btn.disabled = false; btn.textContent = "Ukur sekarang";
+      alert("Gagal memulai pengukuran: " + e.message);
+      return;
+    }
+    // Menunggu dengan menengok berkala: pengukuran berjalan di latar server,
+    // dan satu putaran memakan ±30 detik di CPU.
+    const mulai = Date.now();
+    const sebelum = HITUNG && HITUNG.at;
+    const cek = setInterval(async () => {
+      await muatHitung(cam.key);
+      const selesai = HITUNG && HITUNG.at !== sebelum;
+      if (selesai || Date.now() - mulai > 180000) {
+        clearInterval(cek);
+        btn.disabled = false;
+        btn.textContent = "Ukur sekarang";
+        renderHitung();
+      }
+    }, 5000);
+  });
+
+  $("tourBtn").addEventListener("click", tourMulai);
+  $("helpBtn").addEventListener("click", () => $("bantuan").showModal());
+  $("helpClose").addEventListener("click", () => $("bantuan").close());
+  // Dibuka sendiri pada kunjungan pertama: operator baru tidak tahu ada
+  // tombol bantuan sampai ia butuh, dan saat itu biasanya sudah salah klik.
+  try {
+    if (!localStorage.getItem("rkl-help-seen")) {
+      localStorage.setItem("rkl-help-seen", "1");
+      setTimeout(tourMulai, 1200);   // tunggu data pertama masuk
+    }
+  } catch (_) {}
+
+  $("inspClose").addEventListener("click", () => { $("inspectorPanel").hidden = true; });
+  $("inspector").addEventListener("click", async (ev) => {
+    if (!ev.target.closest("#dActions")) return;
+    const b = ev.target.closest("button");
+    if (!b) return;
+    const verdict = b.dataset.verdict;
+    $("inspectorPanel").hidden = true;
+    if (!verdict || !eventAktif?.id) return;
+    try {
+      await api(`/api/events/${eventAktif.id}/verify?verdict=${verdict}`,
+                { method: "POST" });
+      await refreshBatch();          // kartu KPI dan daftar ikut bergerak
+    } catch (err) {
+      alert("Gagal menyimpan verifikasi: " + err.message);
+    }
+  });
+
+  // Theme toggle: the viewer's own theme wins until they press this.
+  const themeBtn = $("theme");
+  themeBtn.addEventListener("click", () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+    themeBtn.textContent = dark ? "Mode gelap" : "Mode terang";
+    try { localStorage.setItem("rkl-theme", dark ? "light" : "dark"); } catch (_) {}
+  });
+  try {
+    const saved = localStorage.getItem("rkl-theme");
+    if (saved) {
+      document.documentElement.setAttribute("data-theme", saved);
+      themeBtn.textContent = saved === "dark" ? "Mode terang" : "Mode gelap";
+    }
+  } catch (_) {}
+
+  const clock = () => {
+    const d = new Date();
+    $("clock").textContent = d.toLocaleTimeString("id-ID", { hour12: false }) + " WIB";
+    $("tanggal").textContent = d.toLocaleDateString("id-ID",
+      { weekday: "long", day: "numeric", month: "short", year: "numeric" });
+  };
+  clock();
+  setInterval(clock, 1000);
+
+  async function refreshBatch() {
+    try {
+      batch = await api("/api/batch");
+      REPLAYS = await api("/api/daylight-replays");
+      pilihSumberPoc();
+      stats = await api("/api/stats");
+      EVDB = await api("/api/events?limit=100");
+      // Jumlah dihitung server. Menghitung dari EVDB salah begitu kejadian hari
+      // ini melewati 100 baris - panel akan terus menulis "100" tanpa tanda.
+      try {
+        ANTRE = await api("/api/events/list?today_only=true&status=belum&per_page=5");
+      } catch { ANTRE = null; }
+      bangunCams();
+    } catch {
+      // no backend (a published artifact): stay on snapshots and demo figures
+      batch = null;
+      stats = null;
+      EVDB = [];
+    }
+    $("reanalyse").disabled = !batch;
+    renderCams();
+    await muatHitung(CAMS[active] && CAMS[active].key);
+    renderHitung();
+    renderStage();
+    renderFeed();
+    renderToolbox();
+    renderKpi();
+    renderChart();
+  }
+
+  $("reanalyse").addEventListener("click", async () => {
+    const btn = $("reanalyse");
+    const cam = CAMS[active];
+    const sebelum = camBatch(cam)?.record?.finished_at || "";
+    btn.disabled = true;
+    btn.textContent = "Menganalisis…";
+    try {
+      await api(`/api/batch/run?key=${encodeURIComponent(cam.key)}&background=true`,
+                { method: "POST" });
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "Analisis kamera ini";
+      return;
+    }
+    // Tunggu sampai stempel waktu kamera INI berubah, bukan sekadar menunggu
+    // beberapa detik: durasi analisis berbeda-beda per kamera.
+    const mulai = Date.now();
+    const cek = setInterval(async () => {
+      await refreshBatch();
+      const kini = camBatch(cam)?.record?.finished_at || "";
+      if (kini && kini !== sebelum) {
+        clearInterval(cek);
+        btn.disabled = false;
+        btn.textContent = "Analisis kamera ini";
+        srcMode = "analisis";
+        document.querySelectorAll("[data-src]").forEach((el) =>
+          el.setAttribute("aria-pressed", String(el.dataset.src === srcMode)));
+        renderStage();
+      } else if (Date.now() - mulai > 300000) {
+        clearInterval(cek);
+        btn.disabled = false;
+        btn.textContent = "Analisis kamera ini";
+      }
+    }, 5000);
+  });
+
+  setLiveChip();
+  renderCams();
+  renderStage();
+  renderGrades();
+  renderFeed();
+  renderKpi();
+  renderChart();
+  refreshBatch();
+  setInterval(refreshBatch, 20000);
+  // Live adalah tampilan bawaan, jadi deteksinya menyala sejak halaman dibuka.
+  if (pakaiDeteksi(srcMode)) watchMulai(CAMS[active]);
+  renderHud();
+})();
+</script>

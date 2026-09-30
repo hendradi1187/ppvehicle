@@ -1,0 +1,60 @@
+# Ditulis oleh halaman Manajemen Kamera - JANGAN disunting tangan.
+# Berkas ini MENIMPA configs/cameras.yml; catatan survei di sana
+# sengaja tidak pernah ditulis ulang supaya tidak hilang.
+# Terakhir diubah: 2026-09-26T15:02:36+00:00
+
+ubah:
+  cctv01:
+    name: JPO Jl. Gatot Subroto 7 CCTV-01
+    id: 502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7_CCTV-01
+    area: Gatot Subroto
+    region: Jakarta Pusat
+    owner: Polda
+    scenario: full
+    clip_seconds: 20
+    analysis_fps: 10
+  thamrin:
+    name: Simpang Jl. MH. Thamrin C07
+    id: 502491_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C07_CCTV-02
+    area: Menteng
+    region: Jakarta Pusat
+    owner: Satpol PP
+    scenario: lengkap_tanpa_marka
+    clip_seconds: 20
+    analysis_fps: 10
+    illegal_parking_time: 8
+    zone_label: Jalur sepeda
+  jatibaru:
+    id: 503675_JKP_BAKESBANGPOL_JL.-JATI-BARU-RAYA-C02_CCTV-01
+    name: Jl. Jati Baru Raya C02
+    area: Tanah Abang
+    region: Jakarta Pusat
+    owner: Bakesbangpol
+    scenario: lengkap_tanpa_marka
+    clip_seconds: 30
+    analysis_fps: 5
+    illegal_parking_time: 8
+    zone_label: Badan jalan sisi barat
+  gerbangpemuda:
+    name: Jl. Gerbang Pemuda C03
+    id: 502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03_CCTV-02
+    area: Senayan
+    region: Jakarta Pusat
+    owner: Polda
+    scenario: lengkap
+    clip_seconds: 20
+    analysis_fps: 10
+    illegal_parking_time: 120
+    zone_label: Badan jalan arah Senayan
+  cctv02:
+    name: JPO Jl. Gatot Subroto 7 CCTV-02
+    id: 502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7_CCTV-02
+    area: Gatot Subroto
+    region: Jakarta Pusat
+    owner: Polda
+    scenario: counting
+    clip_seconds: 20
+    analysis_fps: 10
+    zone_label: Jalur Sepeda
+tambahan: []
+sembunyi: []

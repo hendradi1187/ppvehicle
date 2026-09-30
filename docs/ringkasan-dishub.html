@@ -1,0 +1,319 @@
+<title>Analitik CCTV Lalu Lintas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --paper:#ffffff; --ground:#f1f3f2; --ink:#16201c; --ink-2:#3c4c46;
+    --muted:#6b7d76; --line:#d7dedb; --line-soft:#e8eeec;
+    --accent:#1c6b52; --accent-soft:#e2f0ea;
+    --crit:#a33127; --crit-soft:#fae7e4; --warn:#8a6210; --warn-soft:#fbf0d8;
+    --ok:#1c6b52;
+    --display:"Barlow Condensed","Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"IBM Plex Serif",Georgia,serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#111815; --ground:#080b0a; --ink:#dde7e2; --ink-2:#a7bab2;
+      --muted:#7b8f88; --line:#24322c; --line-soft:#1b2723;
+      --accent:#49b98f; --accent-soft:#0e2a21;
+      --crit:#e8776a; --crit-soft:#331a17; --warn:#d69f38; --warn-soft:#2e2510;
+      --ok:#49b98f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font-family:var(--body); font-size:15px; line-height:1.6; }
+  .sheet { max-width:820px; margin:0 auto; background:var(--paper);
+           padding-block:40px 56px; padding-left:16px; padding-right:16px; }
+  @media (min-width:700px){ .sheet{ padding-left:56px; padding-right:56px; } }
+
+  h1,h2,h3 { font-family:var(--display); margin:0; text-wrap:balance; }
+  h1 { font-size:40px; font-weight:700; line-height:1.03; letter-spacing:.005em; }
+  h2 { font-size:25px; font-weight:700; margin-top:38px; padding-top:14px;
+       border-top:2px solid var(--ink); }
+  h3 { font-size:18px; font-weight:600; margin-top:22px; }
+  p { margin:11px 0; max-width:68ch; }
+  .eyebrow { font-family:var(--mono); font-size:11px; font-weight:600;
+             letter-spacing:.16em; text-transform:uppercase; color:var(--accent); }
+  .lede { font-family:var(--serif); font-size:18px; line-height:1.62;
+          color:var(--ink-2); max-width:62ch; margin-top:14px; }
+  .meta { font-family:var(--mono); font-size:11.5px; color:var(--muted);
+          margin-top:20px; padding-top:12px; border-top:1px solid var(--line); }
+  strong { font-weight:600; }
+  code { font-family:var(--mono); font-size:.88em; background:var(--ground);
+         padding:1px 5px; border-radius:3px; }
+
+  .tw { overflow-x:auto; margin:16px 0; border:1px solid var(--line);
+        border-radius:6px; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; }
+  th,td { text-align:left; padding:9px 13px; border-bottom:1px solid var(--line-soft);
+          vertical-align:top; }
+  th { font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase;
+       color:var(--muted); background:var(--ground); white-space:nowrap; }
+  tr:last-child td { border-bottom:0; }
+  td.n { font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  .box { border-left:3px solid var(--accent); background:var(--accent-soft);
+         padding:13px 17px; margin:20px 0; border-radius:0 5px 5px 0; }
+  .box.warn { border-left-color:var(--warn); background:var(--warn-soft); }
+  .box.crit { border-left-color:var(--crit); background:var(--crit-soft); }
+  .box p:first-child{margin-top:0} .box p:last-child{margin-bottom:0}
+  .box .k { font-family:var(--mono); font-size:10.5px; font-weight:600;
+            letter-spacing:.11em; text-transform:uppercase; color:var(--muted);
+            display:block; margin-bottom:5px; }
+
+  ul.ck { list-style:none; padding:0; margin:14px 0; }
+  ul.ck li { padding-left:25px; position:relative; margin:9px 0; max-width:66ch; }
+  ul.ck li::before { content:""; position:absolute; left:3px; top:8px;
+                     width:9px; height:9px; border:2px solid var(--accent);
+                     border-radius:2px; }
+
+  .tag { font-family:var(--mono); font-size:10px; font-weight:600;
+         letter-spacing:.06em; text-transform:uppercase; padding:2px 7px;
+         border-radius:3px; border:1px solid; white-space:nowrap; }
+  .tag.ok   { color:var(--ok);   border-color:var(--ok);   background:var(--accent-soft); }
+  .tag.bad  { color:var(--crit); border-color:var(--crit); background:var(--crit-soft); }
+  .tag.part { color:var(--warn); border-color:var(--warn); background:var(--warn-soft); }
+
+  .sign { margin-top:44px; padding-top:18px; border-top:1px solid var(--line);
+          font-size:12.5px; color:var(--muted); }
+
+  @media print {
+    @page { size:A4; margin:16mm 14mm; }
+    body { background:#fff; color:#000; font-size:10.5pt; }
+    .sheet { max-width:none; padding:0; background:#fff; }
+    h1 { font-size:26pt; }
+    h2 { font-size:15pt; margin-top:20pt; page-break-after:avoid; }
+    h3 { font-size:12pt; page-break-after:avoid; }
+    p, li { orphans:3; widows:3; }
+    .tw, table, .box, ul.ck { page-break-inside:avoid; }
+    .box { border:1px solid #999; background:#fff !important; }
+    .tag { border:1px solid #666; background:#fff !important; color:#000 !important; }
+    th { background:#eee !important; }
+    a { color:#000; text-decoration:none; }
+    .noprint { display:none !important; }
+  }
+</style>
+
+<div class="sheet">
+
+<span class="eyebrow">Ringkasan untuk pengambil keputusan</span>
+<h1>Analitik CCTV Lalu&nbsp;Lintas</h1>
+<p class="lede">Sistem pembaca otomatis atas siaran CCTV publik DKI Jakarta,
+disiapkan untuk lingkup kewenangan Dinas Perhubungan. Dokumen ini memuat apa
+yang sudah terbukti bekerja, apa yang belum, dan apa yang kami perlukan dari
+Dishub agar dapat dilanjutkan.</p>
+
+<p class="meta">Disusun 22 September 2026 · Purwarupa, belum operasional ·
+Seluruh angka pada dokumen ini berasal dari pengujian nyata terhadap siaran
+CCTV publik, bukan proyeksi.</p>
+
+<h2>1 · Inti persoalan</h2>
+<p>Dishub memiliki jaringan CCTV yang luas, tetapi pengawasannya bertumpu pada
+petugas yang menatap layar. Satu orang tidak dapat mengawasi puluhan titik
+sekaligus, dan pelanggaran yang terjadi di luar perhatian tidak tercatat.</p>
+<p>Sistem ini membaca siaran kamera secara otomatis, menandai kendaraan yang
+melanggar aturan ruang yang ditetapkan petugas, dan menyusun berkas bukti
+lengkap dengan dasar hukumnya. <strong>Sistem tidak menetapkan pelanggaran</strong>
+— setiap temuan adalah usulan yang harus diverifikasi petugas sebelum
+ditindak.</p>
+
+<h2>2 · Yang sudah terbukti</h2>
+<p>Seluruh butir di bawah ini telah dijalankan pada siaran CCTV publik DKI yang
+sesungguhnya, bukan pada video contoh.</p>
+
+<div class="tw">
+<table>
+  <thead><tr><th>Kemampuan</th><th>Status</th><th>Bukti terukur</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Deteksi parkir liar</strong></td>
+        <td><span class="tag ok">Terbukti</span></td>
+        <td>Kendaraan diam 11,0 detik di zona Jl. Jati Baru Raya terdeteksi
+            otomatis, tersimpan lengkap dengan durasi dan bukti gambar.</td></tr>
+    <tr><td><strong>Hitung kendaraan</strong></td>
+        <td><span class="tag ok">Terbukti</span></td>
+        <td>1.076 kendaraan terlacak selama 34 siklus pemeriksaan pada lima
+            kamera, seluruhnya pada 22 September 2026. Angka ini menjumlahkan
+            hasil tiap siklus, sehingga kendaraan yang sama pada dua siklus
+            terhitung dua kali — ia menggambarkan beban lalu lintas yang
+            terbaca, bukan cacah kendaraan yang berbeda.</td></tr>
+    <tr><td><strong>Atribut kendaraan</strong></td>
+        <td><span class="tag ok">Terbukti</span></td>
+        <td>Warna dan jenis bodi terbaca; 8.030 sampel terkumpul pada
+            pemeriksaan terakhir kelima kamera, terbanyak 3.294 sampel pada
+            Simpang Jl. S. Parman C02.</td></tr>
+    <tr><td><strong>Pengenalan pelat nomor</strong></td>
+        <td><span class="tag bad">Belum memadai</span></td>
+        <td>Dari lima kamera hanya 3 pembacaan pada pemeriksaan terakhir, dan
+            tidak ada yang berpola pelat Indonesia. Penjelasan pada butir
+            3.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>3 · Batasan yang harus diketahui sejak awal</h2>
+
+<h3>Pelat nomor tidak terbaca pada siaran publik</h3>
+<p>Siaran CCTV publik DKI beresolusi <code>640×360</code> piksel. Pada
+resolusi itu pelat nomor kendaraan hanya selebar 8–15 piksel, sedangkan
+pengenalan teks memerlukan sekitar 100 piksel. <strong>Tidak ada perangkat
+lunak yang dapat memperbaiki hal ini</strong> — informasinya memang tidak
+terekam.</p>
+<div class="box crit">
+  <span class="k">Penting</span>
+  <p>Pada pengujian, modul pelat sesekali menghasilkan teks seperti
+  <code>TS1611M11</code>. Keluaran semacam itu <strong>bukan pembacaan yang
+  sahih</strong> dan tidak boleh dijadikan dasar penindakan. Sistem menandainya
+  sendiri sebagai tidak memadai.</p>
+</div>
+
+<h3>Kendaraan berjarak menengah juga terlewat</h3>
+<p>Persoalan yang sama membatasi deteksi. Pada satu frame uji, dari enam
+kendaraan yang jelas terlihat mata manusia — termasuk truk besar dan dua sepeda
+motor — sistem hanya mengenali satu. Sepeda motor, yang mendominasi lalu lintas
+Jakarta, paling terdampak karena ukurannya kecil di layar.</p>
+
+<h3>Pemantauan belum berlangsung terus-menerus</h3>
+<p>Sistem memeriksa klip pendek secara berkala, bukan mengawasi tanpa putus.
+Pelanggaran yang terjadi di antara dua pemeriksaan akan terlewat. Pengawasan
+penuh memerlukan perangkat keras yang diuraikan pada butir 6.</p>
+
+<h3>Cakupan kamera publik tidak merata</h3>
+<div class="tw">
+<table>
+  <thead><tr><th>Wilayah</th><th>Kamera di portal publik</th></tr></thead>
+  <tbody>
+    <tr><td>Jakarta Pusat</td><td class="n">36</td></tr>
+    <tr><td>Jakarta Barat</td><td class="n">8</td></tr>
+    <tr><td>Jakarta Selatan</td><td class="n">2 — keduanya tidak menghadap jalan</td></tr>
+    <tr><td>Jakarta Utara</td><td class="n">0</td></tr>
+    <tr><td>Jakarta Timur</td><td class="n">0</td></tr>
+    <tr><td>Kepulauan Seribu</td><td class="n">0</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Dari 46 kamera publik yang kami survei satu per satu, lima dipilih
+berdasarkan pengukuran seberapa besar kendaraan tampak di layar. Tiga wilayah
+DKI tidak terwakili sama sekali.</p>
+
+<h2>4 · Batas kewenangan penindakan</h2>
+<p>Sistem membedakan temuan menurut siapa yang berwenang menindak, dan
+perbedaan ini tampil pada setiap berkas:</p>
+<div class="tw">
+<table>
+  <thead><tr><th>Jenis temuan</th><th>Kewenangan</th><th>Bentuk tindakan</th></tr></thead>
+  <tbody>
+    <tr><td>Parkir di badan jalan, parkir di trotoar</td>
+        <td><strong>Dishub DKI</strong></td>
+        <td>Administratif — penderekan, cabut pentil, teguran</td></tr>
+    <tr><td>Angkutan umum ngetem di luar tempat yang ditetapkan</td>
+        <td><strong>Dishub DKI</strong></td>
+        <td>Teguran, catatan berkas trayek</td></tr>
+    <tr><td>Angkutan barang pada jam larangan</td>
+        <td><strong>Dishub DKI</strong></td>
+        <td>Teguran, pengalihan rute</td></tr>
+    <tr><td>Okupansi lajur TransJakarta, pelanggaran bergerak lain</td>
+        <td><strong>Ditlantas Polda Metro</strong></td>
+        <td>Tilang — sistem hanya meneruskan berkas</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="box warn">
+  <span class="k">Perlu dikonfirmasi</span>
+  <p>Rujukan peraturan pada setiap berkas bukti masih perlu divalidasi oleh
+  Biro Hukum Dishub sebelum sistem dipakai untuk penindakan sungguhan. Kami
+  menyusunnya dari sumber terbuka, bukan dari naskah resmi.</p>
+</div>
+
+<h2>5 · Yang kami perlukan dari Dishub</h2>
+<ul class="ck">
+  <li><strong>Akses siaran kamera sumber, resolusi 1080p atau lebih.</strong>
+      Satu permintaan ini menyelesaikan dua batasan sekaligus: pelat nomor
+      menjadi terbaca, dan kendaraan berjarak menengah termasuk sepeda motor
+      ikut terdeteksi. Ini prasyarat terpenting.</li>
+  <li><strong>Penetapan titik kamera prioritas.</strong> Lokasi mana yang
+      persoalan parkir liar dan angkutan ngetem-nya paling mendesak, agar
+      pengujian diarahkan ke sana.</li>
+  <li><strong>Validasi rujukan hukum</strong> oleh Biro Hukum, sebagaimana
+      butir 4.</li>
+  <li><strong>Satu petugas pendamping</strong> selama masa uji, untuk
+      memverifikasi temuan sistem dan menilai mana yang keliru. Umpan balik
+      inilah yang memperbaiki ketepatan sistem.</li>
+  <li><strong>Persetujuan tertulis pemanfaatan siaran CCTV</strong>, termasuk
+      klausul retensi dan pemusnahan data.</li>
+</ul>
+
+<h2>6 · Kebutuhan teknis operasional</h2>
+<p>Purwarupa berjalan pada satu server tanpa kartu grafis. Untuk pengawasan
+16–32 kamera secara terus-menerus diperlukan server dengan akselerator grafis
+kelas pusat data. Rinciannya tersedia dalam dokumen spesifikasi terpisah untuk
+tim infrastruktur.</p>
+<div class="tw">
+<table>
+  <thead><tr><th>Tahap</th><th>Kamera</th><th>Perangkat</th></tr></thead>
+  <tbody>
+    <tr><td>Purwarupa (sekarang)</td><td class="n">5</td>
+        <td>Server tanpa GPU, pemeriksaan berkala</td></tr>
+    <tr><td>Uji coba</td><td class="n">4–8</td>
+        <td>1 akselerator grafis kelas pusat data</td></tr>
+    <tr><td>Operasional</td><td class="n">16–32</td>
+        <td>2 akselerator, 128 GB memori, penyimpanan bukti 16 TB</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>7 · Perlindungan data pribadi</h2>
+<ul class="ck">
+  <li>Seluruh pengolahan berlangsung <strong>di dalam server</strong>. Tidak
+      ada citra CCTV yang dikirim ke layanan luar, tidak ada langganan pihak
+      ketiga, tidak ada data yang meninggalkan jaringan.</li>
+  <li>Model kecerdasan buatan yang dipakai berlisensi terbuka dan tersimpan
+      lokal, sehingga tidak ada ketergantungan pada penyedia luar negeri.</li>
+  <li>Pelat kendaraan dapat disamarkan pada tampilan layar melalui tombol
+      <em>Samarkan pelat</em>. Penyamaran ini berlaku pada tampilan, belum pada
+      berkas gambar yang tersimpan.</li>
+  <li><span class="tag bad">Belum dibangun</span> Penyamaran wajah, penyamaran
+      permanen pada berkas bukti, dan penghapusan otomatis setelah masa simpan
+      berakhir. Ketiganya diperlukan sebelum sistem dipakai untuk penindakan
+      sungguhan, sesuai <strong>UU No. 27 Tahun 2022 tentang Pelindungan Data
+      Pribadi</strong>, dan masuk dalam lingkup uji terbatas pada butir 8.</li>
+  <li>Sesuai <strong>PP No. 71 Tahun 2019</strong>, seluruh data ditempatkan di
+      wilayah Indonesia.</li>
+</ul>
+
+<h2>8 · Usulan langkah berikutnya</h2>
+<ul class="ck">
+  <li><strong>Peragaan sistem</strong> di hadapan tim teknis Dishub, memakai
+      kamera yang sedang berjalan saat ini.</li>
+  <li><strong>Uji terbatas 30 hari</strong> pada 4–8 titik prioritas yang
+      ditetapkan Dishub, dengan siaran sumber beresolusi penuh.</li>
+  <li><strong>Pembangunan pengaman data pribadi</strong> sebelum masa uji
+      berakhir: penyamaran wajah, penyamaran permanen pada berkas bukti, dan
+      penghapusan otomatis sesuai masa simpan yang ditetapkan Dishub.</li>
+  <li><strong>Penilaian bersama</strong> pada akhir masa uji: berapa temuan
+      yang tepat, berapa yang keliru, dan berapa waktu petugas yang dihemat.</li>
+  <li>Keputusan lanjut atau hentikan diambil berdasarkan angka hasil penilaian
+      itu, bukan berdasarkan janji.</li>
+</ul>
+
+<div class="box">
+  <span class="k">Sikap kami</span>
+  <p>Kami memilih menyampaikan batasan sistem ini sejelas kemampuannya. Sistem
+  yang dipasang dengan harapan keliru akan ditinggalkan dalam tiga bulan; yang
+  dipasang dengan harapan yang tepat akan dipakai bertahun-tahun. Setiap angka
+  pada dokumen ini dapat kami peragakan ulang di hadapan tim Dishub.</p>
+</div>
+
+<div class="sign">
+  <p><strong>Disiapkan oleh:</strong> ______________________________________<br>
+  <span style="font-size:11.5px">Nama, jabatan, dan instansi penyusun</span></p>
+  <p><strong>Kontak:</strong> ______________________________________</p>
+  <p style="margin-top:16px;font-size:11.5px">Dokumen pendukung: spesifikasi
+  server untuk tim infrastruktur, dan akses langsung ke sistem purwarupa atas
+  permintaan.</p>
+</div>
+
+</div>

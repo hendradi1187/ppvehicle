@@ -1,0 +1,13 @@
+name: counting
+title: Hitung kendaraan masuk/keluar
+description: >
+  Counter in/out saat kendaraan melewati garis virtual, plus visualisasi
+  lintasan. region_type horizontal = garis mendatar di tengah frame,
+  vertical = garis tegak. Kamera harus statis.
+modules:
+  MOT: true
+args:
+  do_entrance_counting: true
+  region_type: horizontal      # horizontal | vertical
+  draw_center_traj: true
+  secs_interval: 2

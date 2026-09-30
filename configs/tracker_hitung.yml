@@ -1,0 +1,38 @@
+# Tracker untuk mesin penghitung multi-kelas.
+#
+# WAJIB JDETracker (ByteTrack). Tracker bawaan pptracking adalah BOTSORTTracker,
+# dan ketiga tracker bawaan lain (BOTSORT, OC-SORT, DeepSORT) HANYA SATU KELAS:
+# keluarannya berupa daftar datar tanpa penanda kelas, sehingga seluruh objek
+# runtuh menjadi kelas indeks 0. Hanya JDETracker yang mengembalikan hasil
+# terindeks per kelas (defaultdict), yang justru menjadi inti modul ini.
+type: JDETracker
+
+JDETracker:
+  use_byte: True
+  # ATURAN YANG TIDAK BOLEH DILANGGAR: conf_thres tidak boleh lebih tinggi dari
+  # ambang detektor. ByteTrack hanya MEMULAI track baru dari deteksi di atas
+  # conf_thres; deteksi di bawahnya cuma dipakai untuk memperpanjang track yang
+  # sudah ada. Dengan conf_thres 0.5 sementara detektor meloloskan 0.3, setiap
+  # objek yang skornya di antara keduanya tidak pernah bisa memulai track -
+  # selamanya tak terhitung.
+  #
+  # Sepeda motor di feed 640x360 justru jatuh persis di pita itu. Diukur pada
+  # satu frame JPO Gatot Subroto 7 (24 Sep 2026), ambang deteksi sama 0.30:
+  #     conf_thres 0.5  -> sepeda motor 0
+  #     conf_thres 0.3  -> sepeda motor 6
+  # Deretan puluhan motor terparkir di trotoar terdeteksi seluruhnya oleh
+  # detektor, lalu dibuang habis oleh gerbang ini.
+  #
+  # Sapuan ambang pada frame yang sama:
+  #     0.30 -> motor  6 | 0.25 -> 10 | 0.20 -> 16 | 0.15 -> 27 | 0.10 -> 39
+  # Di 0.10 mulai muncul kelas mustahil (train, airplane) - itu derau. 0.20
+  # dipilih: deretan motor terparkir tertangkap, kelas mustahil belum muncul.
+  det_thresh: 0.20
+  conf_thres: 0.20
+  low_conf_thres: 0.05
+  match_thres: 0.9
+  # min_box_area dan vertical_ratio bawaan disetel untuk pejalan kaki. Di sini
+  # keduanya dimatikan: kita justru ingin objek kecil - sepeda motor dan sepeda
+  # - tetap terhitung.
+  min_box_area: 0
+  vertical_ratio: 0

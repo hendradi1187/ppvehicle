@@ -1,0 +1,498 @@
+<title>Spek Server Analitik CCTV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --ground: #f4f6f7;
+    --panel: #ffffff;
+    --panel-2: #eef3f4;
+    --line: #d5e0e4;
+    --line-soft: #e6edef;
+    --ink: #121c22;
+    --ink-2: #3a4e59;
+    --muted: #64798a;
+    --accent: #0c8184;
+    --accent-soft: #dcefef;
+    --crit: #b83228;
+    --warn: #96620d;
+    --warn-soft: #fbeed6;
+    --ok: #177154;
+
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #080c10; --panel: #101820; --panel-2: #16212a;
+      --line: #23333f; --line-soft: #1a2831;
+      --ink: #dde8ee; --ink-2: #a9bdc8; --muted: #7a909e;
+      --accent: #2ec4c6; --accent-soft: #0e2f33;
+      --crit: #f2685c; --warn: #e4a33e; --warn-soft: #33260f; --ok: #45c294;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #080c10; --panel: #101820; --panel-2: #16212a;
+    --line: #23333f; --line-soft: #1a2831;
+    --ink: #dde8ee; --ink-2: #a9bdc8; --muted: #7a909e;
+    --accent: #2ec4c6; --accent-soft: #0e2f33;
+    --crit: #f2685c; --warn: #e4a33e; --warn-soft: #33260f; --ok: #45c294;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--body); font-size: 15px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding-block: 28px 64px;
+          padding-left: 16px; padding-right: 16px; }
+  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance;
+               letter-spacing: .005em; }
+  h1 { font-size: 40px; line-height: 1.05; font-weight: 700; }
+  h2 { font-size: 26px; font-weight: 700; margin-top: 44px; }
+  h3 { font-size: 19px; font-weight: 600; margin-top: 26px; }
+  p { margin: 12px 0; max-width: 68ch; }
+  .lede { font-size: 17px; color: var(--ink-2); max-width: 64ch; }
+  code, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  code { font-size: .88em; background: var(--panel-2); padding: 1px 5px;
+         border-radius: 3px; }
+  a { color: var(--accent); }
+
+  .eyebrow { font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+             letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .meta { font-family: var(--mono); font-size: 12px; color: var(--muted);
+          margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+
+  .rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+  .tablewrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--line);
+               border-radius: 7px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--line-soft);
+           vertical-align: top; }
+  th { font-family: var(--body); font-size: 11px; font-weight: 600;
+       letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+       background: var(--panel-2); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums;
+           white-space: nowrap; }
+  tbody tr.total td { font-weight: 700; background: var(--panel-2); }
+
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--panel);
+    padding: 12px 16px; margin: 20px 0; border-radius: 0 7px 7px 0;
+    border-top: 1px solid var(--line); border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.crit { border-left-color: var(--crit); }
+  .callout p:first-child { margin-top: 0; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .k { font-family: var(--mono); font-size: 11px; font-weight: 600;
+                letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+                display: block; margin-bottom: 4px; }
+
+  .tiers { display: grid; gap: 14px; margin: 18px 0;
+           grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .tier { background: var(--panel); border: 1px solid var(--line);
+          border-radius: 8px; padding: 14px 16px; }
+  .tier.pick { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .tier .badge { font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+                 letter-spacing: .08em; text-transform: uppercase;
+                 color: var(--accent); }
+  .tier h3 { margin-top: 4px; font-size: 21px; }
+  .tier .scale { font-family: var(--mono); font-size: 12px; color: var(--muted);
+                 margin-top: 2px; }
+  .tier ul { margin: 12px 0 0; padding-left: 17px; font-size: 13.5px; }
+  .tier li { margin: 5px 0; }
+  .tier .price { font-family: var(--mono); font-size: 13px; font-weight: 600;
+                 margin-top: 12px; padding-top: 10px;
+                 border-top: 1px solid var(--line-soft); }
+
+  ul.checks { list-style: none; padding: 0; margin: 14px 0; }
+  ul.checks li { padding-left: 26px; position: relative; margin: 9px 0;
+                 max-width: 68ch; }
+  ul.checks li::before {
+    content: ""; position: absolute; left: 4px; top: 8px;
+    width: 9px; height: 9px; border: 2px solid var(--accent); border-radius: 2px;
+  }
+
+  .formula { font-family: var(--mono); font-size: 13.5px; background: var(--panel);
+             border: 1px solid var(--line); border-radius: 7px; padding: 13px 16px;
+             margin: 16px 0; overflow-x: auto; line-height: 1.7; }
+  .formula b { color: var(--accent); font-weight: 600; }
+</style>
+
+<div class="wrap">
+
+<span class="eyebrow">Spesifikasi Pengadaan · Rev. 2</span>
+<h1>Server Analitik CCTV Lalu&nbsp;Lintas</h1>
+<p class="lede">
+  Kebutuhan perangkat keras dan perangkat lunak untuk menjalankan pipeline
+  PP-Vehicle (PaddleDetection) di atas Linux + Docker, dari pilot 8 kamera
+  sampai operasional 32 kamera.
+</p>
+<p class="meta">
+  Rev. 2, 22 September 2026 (Rev. 1: 18 September) · basis: PaddleDetection release/2.9, paddlepaddle-gpu 3.3.1,
+  TensorRT FP16 · Harga indikatif, wajib dikonfirmasi lewat penawaran resmi.
+</p>
+
+<h2>1. Asumsi yang dipakai</h2>
+<p>
+  Semua angka di bawah berdiri di atas asumsi ini. Kalau salah satunya berubah,
+  kapasitasnya ikut berubah — jadi tolong dikonfirmasi dulu sebelum pengadaan.
+</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Asumsi</th><th>Nilai</th><th>Catatan</th></tr></thead>
+  <tbody>
+    <tr><td>Resolusi feed sumber</td><td class="num">1920×1080</td>
+        <td>Feed publik hanya 640×360 dan <strong>tidak cukup untuk baca pelat</strong></td></tr>
+    <tr><td>Frame rate sumber</td><td class="num">25 fps</td><td>H.264, ±4 Mbps per kamera</td></tr>
+    <tr><td>Frame rate analisis</td><td class="num">5 atau 10 fps</td>
+        <td><strong>Bergantung fitur.</strong> 5 fps cukup untuk parkir liar,
+            ngetem, dan aturan zona — semuanya soal kendaraan yang diam.
+            Penghitungan kendaraan lintas garis <strong>memerlukan 10
+            fps</strong>; lihat kotak di bawah tabel kapasitas</td></tr>
+    <tr><td>Presisi inferensi</td><td class="num">TensorRT FP16</td>
+        <td>Mode <code>paddle</code> tanpa TRT ±2× lebih lambat</td></tr>
+    <tr><td>GPU acuan</td><td class="num">NVIDIA T4</td>
+        <td>Basis angka resmi PP-Vehicle; GPU lain diskalakan terhadap ini</td></tr>
+    <tr><td>Operasi</td><td class="num">24/7</td><td>Dengan jendela maintenance bulanan</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>2. Beban kerja per frame</h2>
+<p>
+  Angka berikut dari model zoo resmi PP-Vehicle, diukur pada T4 dengan TensorRT.
+  Yang menentukan kapasitas server adalah <em>kombinasi modul yang diaktifkan</em>,
+  bukan jumlah kamera.
+</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Modul</th><th>Model</th><th>Waktu / frame</th><th>Wajib untuk</th></tr></thead>
+  <tbody>
+    <tr><td>Deteksi + tracking</td><td>PP-YOLOE-l</td><td class="num">25,7 ms</td>
+        <td>Semua fitur</td></tr>
+    <tr><td>Atribut kendaraan</td><td>PP-LCNet</td><td class="num">7,3 ms</td>
+        <td>Warna &amp; jenis bodi</td></tr>
+    <tr><td>Pelat nomor</td><td>PP-OCRv3 det+rec</td><td class="num">4,7 ms</td>
+        <td>Identifikasi kendaraan</td></tr>
+    <tr><td>Segmentasi lajur</td><td>PP-LiteSeg</td><td class="num">47,0 ms</td>
+        <td>Lawan arah, langgar marka</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="callout warn">
+  <span class="k">Perhatian biaya</span>
+  <p>
+    Segmentasi lajur sendirian memakan <strong>55% anggaran GPU</strong> pipeline
+    penuh — lebih mahal dari tiga modul lain digabung. Sementara lawan arah dan
+    langgar marka justru <em>bukan</em> kewenangan penindakan Dishub. Mematikan
+    modul ini menaikkan kapasitas per GPU sekitar <strong>3×</strong>. Rekomendasi:
+    jangan aktifkan di tahap pilot.
+  </p>
+</div>
+
+<h2>3. Model kapasitas</h2>
+<div class="formula">
+  Beban per stream (ms/detik) = <b>fps analisis</b> × <b>ms per frame</b><br>
+  Stream per GPU = 1000 ÷ beban per stream × <b>faktor GPU</b> × <b>0,7</b> (headroom)
+</div>
+<p>
+  Headroom 30% bukan kemewahan: lonjakan kendaraan saat jam sibuk, rebuild engine
+  TensorRT, dan job ekspor bukti semuanya berebut GPU yang sama.
+</p>
+<div class="tablewrap">
+<table>
+  <thead><tr>
+    <th rowspan="2">Profil modul</th><th rowspan="2">ms/frame</th>
+    <th colspan="2">Per T4</th><th colspan="2">Per L4</th><th colspan="2">Per L40S</th>
+  </tr><tr>
+    <th>5 fps</th><th>10 fps</th><th>5 fps</th><th>10 fps</th><th>5 fps</th><th>10 fps</th>
+  </tr></thead>
+  <tbody>
+    <tr><td><strong>A.</strong> Deteksi + tracking<br>
+            <span style="color:var(--muted);font-size:12.5px">parkir liar, ngetem, zona, penghitungan</span></td>
+        <td class="num">25,7</td><td class="num">5</td><td class="num">2</td>
+        <td class="num">11</td><td class="num">5</td><td class="num">27</td><td class="num">13</td></tr>
+    <tr><td><strong>B.</strong> A + atribut + pelat<br>
+            <span style="color:var(--muted);font-size:12.5px">+ jenis, warna, identifikasi pelat</span></td>
+        <td class="num">37,7</td><td class="num">3</td><td class="num">1</td>
+        <td class="num">7</td><td class="num">3</td><td class="num">18</td><td class="num">9</td></tr>
+    <tr><td><strong>C.</strong> B + segmentasi lajur<br>
+            <span style="color:var(--muted);font-size:12.5px">+ lawan arah, langgar marka</span></td>
+        <td class="num">84,7</td><td class="num">1</td><td class="num">&lt;1</td>
+        <td class="num">3</td><td class="num">1</td><td class="num">8</td><td class="num">4</td></tr>
+  </tbody>
+</table>
+</div>
+<p style="font-size:13px;color:var(--muted)">
+  Faktor skala relatif T4: L4 ≈ 2,3× · A10 ≈ 2,8× · L40S ≈ 5,5×. Headroom 30%.
+  Beban berbanding lurus dengan laju frame, sehingga kolom 10 fps persis
+  separuh kolom 5 fps, dibulatkan ke bawah.
+</p>
+
+<div class="callout warn">
+  <strong>Koreksi terhadap Rev. 1 — laju frame menentukan separuh kapasitas</strong>
+  <p>Rev. 1 memakai 5 fps untuk semua fitur. Pengukuran pada purwarupa 22
+  September 2026 (Gatot Subroto, satu klip 30 detik, tiga laju frame)
+  membuktikan asumsi itu tidak berlaku untuk penghitungan kendaraan:</p>
+  <table style="margin:8px 0">
+    <thead><tr><th>Laju analisis</th><th>Track</th><th>Kendaraan terhitung lintas garis</th><th>Waktu inferensi</th></tr></thead>
+    <tbody>
+      <tr><td class="num">5 fps</td><td class="num">132</td><td class="num">3</td><td class="num">29 dtk</td></tr>
+      <tr><td class="num">10 fps</td><td class="num">63</td><td class="num">22</td><td class="num">55 dtk</td></tr>
+      <tr><td class="num">20 fps</td><td class="num">72</td><td class="num">22</td><td class="num">101 dtk</td></tr>
+    </tbody>
+  </table>
+  <p>Penghitungan mensyaratkan <em>track yang sama</em> melintasi garis. Pada 5
+  fps ID track pecah di tengah penyeberangan, sehingga kendaraan tidak
+  terhitung — angka 3 itu bukan lalu lintas yang sepi, melainkan kegagalan
+  pelacakan. 10 fps adalah titik jenuhnya; 20 fps memberi angka identik dengan
+  biaya dua kali lipat.</p>
+  <p><strong>Akibat pengadaan:</strong> bila penghitungan kendaraan termasuk
+  lingkup, pakai kolom 10 fps — kapasitas per GPU menjadi separuh. Bila yang
+  diperlukan hanya parkir liar, ngetem, dan aturan zona, kolom 5 fps tetap
+  berlaku. Ini keputusan lingkup yang harus diambil Dishub sebelum jumlah GPU
+  dikunci.</p>
+</div>
+
+<h2>4. Tiga tingkat spesifikasi</h2>
+<div class="tiers">
+  <div class="tier">
+    <span class="badge">Tingkat 1</span>
+    <h3>Pilot</h3>
+    <div class="scale">4–8 kamera · profil A/B</div>
+    <ul>
+      <li><strong>GPU</strong> 1× NVIDIA L4 24 GB</li>
+      <li><strong>CPU</strong> 16 core (Xeon Silver 4410Y / EPYC 9124)</li>
+      <li><strong>RAM</strong> 64 GB DDR5 ECC</li>
+      <li><strong>Sistem</strong> 2× 480 GB NVMe RAID-1</li>
+      <li><strong>Bukti</strong> 4 TB NVMe/SSD</li>
+      <li><strong>Jaringan</strong> 2× 10 GbE</li>
+      <li>Rackmount 1U/2U, PSU redundan</li>
+    </ul>
+    <div class="price">≈ USD 14.000 – 20.000</div>
+  </div>
+
+  <div class="tier pick">
+    <span class="badge">Tingkat 2 · rekomendasi</span>
+    <h3>Operasional</h3>
+    <div class="scale">16–32 kamera · profil B</div>
+    <ul>
+      <li><strong>GPU</strong> 2× NVIDIA L4 24 GB<br>
+          <span style="color:var(--muted)">atau 1× L40S 48 GB</span></li>
+      <li><strong>CPU</strong> 32 core (Xeon Gold 6430 / EPYC 9354)</li>
+      <li><strong>RAM</strong> 128 GB DDR5 ECC</li>
+      <li><strong>Sistem</strong> 2× 960 GB NVMe RAID-1</li>
+      <li><strong>Bukti</strong> 16 TB NVMe/SSD RAID-5</li>
+      <li><strong>Jaringan</strong> 2× 25 GbE</li>
+      <li>Rackmount 2U, PSU redundan, IPMI/iDRAC</li>
+    </ul>
+    <div class="price">≈ USD 32.000 – 48.000</div>
+  </div>
+
+  <div class="tier">
+    <span class="badge">Tingkat 3</span>
+    <h3>Skala kota</h3>
+    <div class="scale">64+ kamera · profil B/C</div>
+    <ul>
+      <li><strong>GPU</strong> 2–3 node × 4× L40S 48 GB</li>
+      <li><strong>CPU</strong> 64 core per node</li>
+      <li><strong>RAM</strong> 256 GB per node</li>
+      <li><strong>Bukti</strong> storage terpisah, S3-compatible (MinIO/Ceph), 100 TB+</li>
+      <li><strong>Jaringan</strong> 2× 25 GbE per node</li>
+      <li>Orkestrasi Kubernetes + NVIDIA GPU Operator</li>
+    </ul>
+    <div class="price">≈ USD 150.000+</div>
+  </div>
+</div>
+<p style="font-size:13px;color:var(--muted)">
+  Harga indikatif perangkat keras saja, belum termasuk rack, UPS, jaringan,
+  lisensi, instalasi, dan dukungan. Minta penawaran resmi ke distributor.
+</p>
+
+<div class="callout crit">
+  <strong>Jumlah kamera di atas berlaku pada 5 fps</strong>
+  <p>Angka kamera pada tiap tingkat disusun dengan asumsi 5 fps. Bila
+  penghitungan kendaraan lintas garis termasuk lingkup — sehingga diperlukan
+  10 fps — kapasitas nyatanya sebagai berikut:</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Tingkat</th><th>GPU sesuai spesifikasi</th>
+      <th>Tertulis</th><th>Nyata, profil B @ 5 fps</th>
+      <th>Nyata, profil B @ 10 fps</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Pilot</td><td>1× L4</td><td class="num">4–8</td>
+          <td class="num">7</td><td class="num">3</td></tr>
+      <tr><td>2 · Operasional</td><td>2× L4 <em>atau</em> 1× L40S</td>
+          <td class="num">16–32</td><td class="num">14 atau 18</td>
+          <td class="num">6 atau 9</td></tr>
+      <tr><td>3 · Skala kota</td><td>8–12× L40S</td><td class="num">64+</td>
+          <td class="num">144–216</td><td class="num">72–108</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><strong>Tingkat 2 tidak mencapai 16–32 kamera pada 10 fps.</strong> Untuk
+  16 kamera dengan penghitungan aktif diperlukan sekitar <strong>2× L40S</strong>;
+  untuk 32 kamera sekitar <strong>4× L40S</strong>. Keduanya berpindah ke kelas
+  sasis dan harga yang berbeda dari rentang di atas, jadi rentang USD pada
+  Tingkat 2 <strong>tidak berlaku untuk lingkup dengan penghitungan</strong> dan
+  wajib diminta ulang ke distributor.</p>
+  <p>Tingkat 3 tetap memadai pada kedua laju.</p>
+</div>
+
+<h2>5. Empat hal yang sering terlewat</h2>
+
+<h3>Dekode video, bukan inferensi, yang lebih dulu jenuh</h3>
+<p>
+  Mendekode 32 stream 1080p25 di CPU dengan OpenCV/FFmpeg menghabiskan sekitar
+  16–24 core sebelum GPU-nya sibuk. T4 dan L4 punya mesin <strong>NVDEC</strong>
+  terpisah yang sanggup puluhan stream 1080p tanpa menyentuh core CUDA.
+  Pastikan FFmpeg di image dibangun dengan <code>--enable-cuvid</code>
+  <code>--enable-nvdec</code>, atau pertimbangkan NVIDIA DeepStream sebagai lapisan
+  ingest. Tanpa ini, CPU 16 core akan jadi penyebab tersendat yang tidak terduga.
+</p>
+
+<h3>Engine TensorRT harus di-cache</h3>
+<p>
+  Build engine TRT pertama kali memakan 3–8 menit per model. Kalau tidak
+  dipersistenkan, setiap restart container menghentikan layanan selama itu.
+  Mount volume khusus untuk cache engine dan panggang ke dalam image saat rilis.
+</p>
+
+<h3>VRAM per worker</h3>
+<p>
+  Satu proses worker (PP-YOLOE-l + OCR + atribut, engine TRT dimuat) memakai
+  <strong>3–4 GB VRAM</strong>. L4 24 GB menampung 5–6 worker; itu batas atas
+  paralelisme per kartu, terlepas dari sisa kapasitas komputasi.
+</p>
+
+<h3>Jangan pakai GeForce untuk ini</h3>
+<div class="callout crit">
+  <span class="k">Risiko kepatuhan</span>
+  <p>
+    RTX 4090 memang lebih murah per FLOP, tetapi <strong>EULA driver NVIDIA
+    melarang penggunaan GeForce di datacenter</strong>. Untuk instansi pemerintah
+    ini temuan audit yang nyata. Tambahan lagi: tanpa ECC, pendinginan tidak
+    dirancang untuk rack, dan tidak ada jalur dukungan enterprise. Gunakan L4,
+    L40S, atau A10.
+  </p>
+</div>
+
+<h2>6. Perangkat lunak</h2>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Lapisan</th><th>Pilihan</th><th>Versi minimum</th></tr></thead>
+  <tbody>
+    <tr><td>Sistem operasi</td><td>Ubuntu Server LTS</td><td class="num">22.04 / 24.04</td></tr>
+    <tr><td>Driver NVIDIA</td><td>Datacenter branch</td><td class="num">550.x</td></tr>
+    <tr><td>Container runtime</td><td>Docker CE</td><td class="num">26.x</td></tr>
+    <tr><td>GPU passthrough</td><td>NVIDIA Container Toolkit</td><td class="num">1.15+</td></tr>
+    <tr><td>Framework</td><td>paddlepaddle-gpu</td><td class="num">3.3.1 (cu126)</td></tr>
+    <tr><td>Pipeline</td><td>PaddleDetection</td><td class="num">release/2.9</td></tr>
+    <tr><td>Basis data</td><td>PostgreSQL</td><td class="num">16</td></tr>
+    <tr><td>Objek / bukti</td><td>MinIO (S3-compatible)</td><td class="num">terbaru</td></tr>
+    <tr><td>Monitoring</td><td>Prometheus + Grafana + DCGM Exporter</td><td class="num">—</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  CUDA toolkit <strong>tidak perlu</strong> dipasang di host — sudah dibawa image.
+  Host hanya butuh driver dan Container Toolkit.
+</p>
+
+<h2>7. Storage untuk bukti</h2>
+<p>
+  <strong>Asumsi 120 kejadian per kamera per hari belum teruji</strong> —
+  purwarupa memeriksa klip berkala, bukan mengawasi tanpa putus, sehingga
+  lajunya tidak dapat dibandingkan. Ukur ulang pada masa uji sebelum mengunci
+  kapasitas penyimpanan.
+  Perhitungan untuk 32 kamera, asumsi 120 kejadian per kamera per hari, setiap
+  kejadian menyimpan satu snapshot dan klip 10 detik (pra-roll 3 detik).
+</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Komponen</th><th>Per kejadian</th><th>Per hari</th><th>Retensi 30 hari</th></tr></thead>
+  <tbody>
+    <tr><td>Snapshot JPEG 1080p</td><td class="num">300 KB</td>
+        <td class="num">1,2 GB</td><td class="num">36 GB</td></tr>
+    <tr><td>Klip 10 dtk @ 4 Mbps</td><td class="num">5 MB</td>
+        <td class="num">19,2 GB</td><td class="num">576 GB</td></tr>
+    <tr><td>Metadata + log</td><td class="num">4 KB</td>
+        <td class="num">16 MB</td><td class="num">0,5 GB</td></tr>
+    <tr class="total"><td>Total</td><td class="num">—</td>
+        <td class="num">±20,4 GB</td><td class="num">±613 GB</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Retensi 30 hari muat nyaman di 4 TB. Kapasitas 16 TB pada Tingkat 2 memberi
+  ruang untuk retensi 90 hari, pertumbuhan jumlah kamera, dan buffer rekaman
+  berkelanjutan bila diperlukan sebagai alat bukti.
+</p>
+
+<h2>8. Jaringan</h2>
+<ul class="checks">
+  <li><strong>Ingest</strong> 32 kamera × 4 Mbps = <span class="mono">128 Mbps</span>
+      berkelanjutan. Ringan, tetapi harus stabil — paket hilang merusak tracking
+      lebih parah daripada bandwidth rendah.</li>
+  <li><strong>Jalur ke sumber</strong> konfirmasikan dengan Diskominfotik apakah
+      feed sumber diakses lewat VPN, jaringan tertutup Pemprov, atau internet
+      publik. Ini menentukan apakah server perlu ditempatkan di datacenter
+      Pemprov atau bisa kolokasi.</li>
+  <li><strong>Segregasi</strong> VLAN terpisah untuk ingest kamera dan untuk
+      akses operator. Antarmuka manajemen (IPMI) tidak boleh menyentuh jaringan
+      yang sama.</li>
+</ul>
+
+<h2>9. Kepatuhan &amp; penempatan data</h2>
+<ul class="checks">
+  <li><strong>UU 27/2022 (PDP)</strong> rekaman wajah dan pelat adalah data
+      pribadi. Terapkan penyamaran otomatis pada objek non-terduga, retensi
+      terbatas, dan jejak audit siapa mengakses bukti apa.</li>
+  <li><strong>PP 71/2019</strong> data sistem elektronik sektor publik wajib
+      ditempatkan di wilayah Indonesia. Ini secara praktis mengeluarkan opsi
+      cloud luar negeri.</li>
+  <li><strong>On-premise vs cloud</strong> untuk pilot, satu instans GPU di
+      penyedia dalam negeri (Biznet, Lintasarta, Telkom NeuCentrIX) jauh lebih
+      cepat diadakan daripada pengadaan perangkat keras. Untuk operasional
+      24/7 jangka panjang, on-premise lebih murah dalam ±14 bulan.</li>
+  <li><strong>Izin sumber</strong> perlu perjanjian tertulis dengan
+      Diskominfotik/Dishub untuk mengakses feed CCTV, termasuk klausul retensi
+      dan pemusnahan data.</li>
+</ul>
+
+<h2>10. Daftar periksa pengadaan</h2>
+<ul class="checks">
+  <li>Konfirmasi resolusi feed sumber. <strong>Jika hanya 640×360, coret fitur
+      pelat nomor dari lingkup</strong> — tidak ada perangkat keras yang bisa
+      memperbaikinya.</li>
+  <li><strong>Kunci laju frame analisis</strong> (5 atau 10 fps) bersama profil
+      modul sebelum menentukan jumlah GPU. Keduanya sama menentukannya:
+      berpindah dari 5 ke 10 fps memotong kapasitas per GPU menjadi separuh.</li>
+  <li>Kunci profil modul (A, B, atau C) sebelum menentukan jumlah GPU.</li>
+  <li>Minta demo NVDEC dari vendor: dekode 16 stream 1080p bersamaan dengan
+      utilisasi CPU di bawah 30%.</li>
+  <li>Pastikan garansi 3 tahun on-site NBD untuk GPU — waktu tunggu RMA kartu
+      datacenter di Indonesia bisa berminggu-minggu.</li>
+  <li>Alokasikan UPS minimal 30 menit; pemadaman saat rebuild engine TRT
+      dapat merusak cache.</li>
+  <li>Siapkan lingkungan staging (boleh 1× L4 saja) — mengubah konfigurasi
+      langsung di produksi tidak layak untuk sistem yang menghasilkan alat bukti.</li>
+</ul>
+
+<hr class="rule" style="margin-top:44px">
+<p class="meta" style="border:0">
+  Dokumen ini berpasangan dengan repositori <code>ppvehicle</code>
+  (<code>docker/Dockerfile.gpu</code>, <code>docker/docker-compose.yml</code>,
+  <code>configs/profiles/gpu.yml</code>). Angka beban kerja berasal dari model zoo
+  resmi PP-Vehicle pada T4; ukur ulang pada perangkat keras final sebelum
+  menetapkan SLA.
+</p>
+
+</div>

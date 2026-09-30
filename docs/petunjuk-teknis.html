@@ -1,0 +1,598 @@
+<title>Petunjuk Teknis Pengoperasian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --paper:#fff; --ground:#f1f3f2; --ink:#16201c; --ink-2:#3c4c46;
+    --muted:#6b7d76; --line:#d7dedb; --line-soft:#e8eeec;
+    --accent:#1c6b52; --accent-soft:#e2f0ea;
+    --crit:#a33127; --crit-soft:#fae7e4; --warn:#8a6210; --warn-soft:#fbf0d8;
+    --display:"Barlow Condensed","Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"IBM Plex Serif",Georgia,serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#111815; --ground:#080b0a; --ink:#dde7e2; --ink-2:#a7bab2;
+      --muted:#7b8f88; --line:#24322c; --line-soft:#1b2723;
+      --accent:#49b98f; --accent-soft:#0e2a21;
+      --crit:#e8776a; --crit-soft:#331a17; --warn:#d69f38; --warn-soft:#2e2510;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+       font-family:var(--body);font-size:15px;line-height:1.6}
+  .sheet{max-width:840px;margin:0 auto;background:var(--paper);
+         padding-block:40px 56px;padding-left:16px;padding-right:16px}
+  @media (min-width:700px){.sheet{padding-left:56px;padding-right:56px}}
+
+  h1,h2,h3,h4{font-family:var(--display);margin:0;text-wrap:balance}
+  h1{font-size:40px;font-weight:700;line-height:1.03}
+  h2{font-size:25px;font-weight:700;margin-top:34px;padding-top:13px;
+     border-top:2px solid var(--ink)}
+  h3{font-size:18px;font-weight:600;margin-top:24px}
+  h4{font-size:14px;font-weight:600;margin-top:16px;letter-spacing:.03em;
+     text-transform:uppercase;color:var(--accent)}
+  p{margin:9px 0;max-width:70ch}
+  .eyebrow{font-family:var(--mono);font-size:11px;font-weight:600;
+           letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:17px;line-height:1.6;
+        color:var(--ink-2);max-width:64ch;margin-top:13px}
+  .meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+        margin-top:18px;padding-top:12px;border-top:1px solid var(--line)}
+  code{font-family:var(--mono);font-size:.87em;background:var(--ground);
+       padding:1px 5px;border-radius:3px}
+  b.btn{font-weight:600;background:var(--accent-soft);color:var(--accent);
+        padding:1px 6px;border-radius:3px;white-space:nowrap;
+        border:1px solid var(--accent)}
+
+  .tw{overflow-x:auto;margin:13px 0;border:1px solid var(--line);border-radius:6px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line-soft);
+        vertical-align:top}
+  th{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+     color:var(--muted);background:var(--ground);white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  td.n{font-family:var(--mono);white-space:nowrap}
+
+  ol.steps{counter-reset:s;list-style:none;padding:0;margin:13px 0}
+  ol.steps>li{counter-increment:s;position:relative;padding-left:36px;
+              margin:11px 0;max-width:68ch}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;
+    width:24px;height:24px;border-radius:50%;background:var(--accent);
+    color:var(--paper);font-family:var(--mono);font-size:11.5px;font-weight:600;
+    display:flex;align-items:center;justify-content:center}
+
+  .box{border-left:3px solid var(--accent);background:var(--accent-soft);
+       padding:11px 15px;margin:16px 0;border-radius:0 5px 5px 0;
+       border-top:1px solid var(--line);border-right:1px solid var(--line);
+       border-bottom:1px solid var(--line)}
+  .box.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .box.crit{border-left-color:var(--crit);background:var(--crit-soft)}
+  .box p:first-child{margin-top:0}.box p:last-child{margin-bottom:0}
+  .box .k{font-family:var(--mono);font-size:10.5px;font-weight:600;
+          letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+          display:block;margin-bottom:4px}
+
+  .toc{background:var(--ground);border:1px solid var(--line);border-radius:6px;
+       padding:13px 18px;margin:20px 0}
+  .toc ol{margin:5px 0 0;padding-left:20px;font-size:13px;line-height:1.8}
+
+  @media print{
+    @page{size:A4;margin:15mm 13mm}
+    body{background:#fff;color:#000;font-size:9.5pt}
+    .sheet{max-width:none;padding:0;background:#fff}
+    h1{font-size:24pt} h2{font-size:13.5pt;margin-top:16pt;page-break-after:avoid}
+    h3{font-size:11pt;page-break-after:avoid} h4{font-size:9.5pt}
+    p,li{orphans:3;widows:3}
+    .tw,table,.box,ol.steps>li,.toc{page-break-inside:avoid}
+    .box{border:1px solid #999;background:#fff!important}
+    b.btn{border:1px solid #666;background:#fff!important;color:#000!important}
+    th{background:#eee!important} .toc{background:#fff!important}
+    a{color:#000;text-decoration:none}
+  }
+</style>
+
+<div class="sheet">
+
+<span class="eyebrow">Petunjuk teknis · Edisi 2</span>
+<h1>Pengoperasian Ruang&nbsp;Kendali&nbsp;Lalin</h1>
+<p class="lede">Panduan langkah demi langkah bagi petugas Dinas Perhubungan
+dalam mengoperasikan sistem analitik CCTV lalu lintas. Seluruh nama tombol dan
+istilah dalam dokumen ini sama persis dengan yang tampil di layar.</p>
+
+<p class="meta">Edisi 2 · 22 September 2026 · Menyesuaikan penuntun bawaan
+aplikasi yang kini memuat 16 langkah pada Ruang Kendali dan 12 langkah pada
+Editor Zona · Berlaku untuk purwarupa di <code>http://100.96.136.65:8100</code></p>
+
+<div class="toc">
+  <strong style="font-family:var(--display);font-size:15px">Isi</strong>
+  <ol>
+    <li>Prasyarat akses</li>
+    <li>Tiga halaman dan penuntun bawaan</li>
+    <li>Ruang Kendali — kepala halaman</li>
+    <li>Ruang Kendali — panel kamera</li>
+    <li>Ruang Kendali — panggung gambar, sumber, dan lapisan</li>
+    <li>Ruang Kendali — membaca hasil</li>
+    <li>Menangani satu temuan</li>
+    <li>Editor Zona</li>
+    <li>Prosedur harian</li>
+    <li>Batas sistem — yang tidak boleh diklaim</li>
+    <li>Gangguan umum dan penanganannya</li>
+    <li>Rujukan cepat</li>
+  </ol>
+</div>
+
+<h2>1 · Prasyarat akses</h2>
+<p>Sistem hanya dapat dibuka melalui jaringan Tailscale. Ini disengaja: aplikasi
+belum memiliki mekanisme kata sandi, sehingga tidak boleh terbuka di internet.</p>
+<ol class="steps">
+  <li>Pastikan Tailscale terpasang dan aktif pada komputer yang dipakai.</li>
+  <li>Buka peramban, kunjungi <code>http://100.96.136.65:8100</code></li>
+  <li>Bila halaman tidak terbuka, periksa status Tailscale lebih dahulu — bukan
+      alamatnya.</li>
+</ol>
+<div class="box warn">
+  <span class="k">Perhatian</span>
+  <p>Komputer tanpa Tailscale <strong>tidak akan bisa membuka sistem sama
+  sekali</strong>. Bila akan dipakai untuk peragaan di ruang rapat, pasang dan
+  uji Tailscale jauh hari, bukan pada pagi hari peragaan.</p>
+</div>
+
+<h2>2 · Tiga halaman dan penuntun bawaan</h2>
+<div class="tw">
+<table>
+  <thead><tr><th>Halaman</th><th>Alamat</th><th>Penuntun</th><th>Dipakai untuk</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Ruang Kendali</strong></td><td class="n">/demo</td>
+        <td class="n">16 langkah</td>
+        <td>Pengawasan harian: melihat kamera, memeriksa temuan, menindak</td></tr>
+    <tr><td><strong>Editor Zona</strong></td><td class="n">/zona</td>
+        <td class="n">12 langkah</td>
+        <td>Menentukan area yang diawasi pada tiap kamera</td></tr>
+    <tr><td><strong>Konsol operator</strong></td><td class="n">/</td>
+        <td class="n">—</td>
+        <td>Pengujian teknis. Untuk tim teknis, bukan petugas pengawasan</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Penuntun berjalan sendiri pada kunjungan pertama dari sebuah komputer. Untuk
+mengulangnya: <b class="btn">? Bantuan</b> lalu <b class="btn">Jalankan penuntun</b>
+di Ruang Kendali, atau <b class="btn">? Panduan</b> di Editor Zona. Tombol panah
+kiri dan kanan berfungsi, tombol Esc menutup.</p>
+<p>Dokumen ini memuat seluruh isi kedua penuntun tersebut, ditambah prosedur
+harian dan penanganan gangguan yang tidak muat ditampilkan di layar.</p>
+
+<h2>3 · Ruang Kendali — kepala halaman</h2>
+<p>Deretan penanda di bagian atas menyatakan keadaan sistem. Bacalah dari kiri
+ke kanan setiap kali membuka.</p>
+<div class="tw">
+<table>
+  <thead><tr><th>Penanda</th><th>Artinya</th></tr></thead>
+  <tbody>
+    <tr><td><b class="btn">Seluruhnya keluaran pipeline</b> (hijau)</td>
+        <td><strong>Periksa ini lebih dahulu.</strong> Hijau berarti seluruh
+            angka di layar berasal dari pembacaan mesin. Bila kuning, ia akan
+            menyebutkan bagian mana yang masih berupa contoh — jangan pakai
+            bagian itu untuk mengambil keputusan.</td></tr>
+    <tr><td><b class="btn">Live · segar tiap 3 dtk</b></td>
+        <td>Sambungan ke server CCTV sehat. Bila tertulis <em>Live tak
+            terjangkau</em>, jaringan terputus dan layar beralih ke cuplikan
+            tersimpan.</td></tr>
+    <tr><td><b class="btn">50 kamera publik</b></td>
+        <td>Jumlah kamera yang tersedia di portal CCTV publik DKI.</td></tr>
+    <tr><td>Jam</td>
+        <td>Waktu WIB. Seluruh waktu dalam sistem memakai WIB, termasuk pada
+            kartu bukti.</td></tr>
+    <tr><td><b class="btn">? Bantuan</b></td>
+        <td>Membuka panduan bacaan, sekaligus tombol untuk menjalankan ulang
+            penuntun 16 langkah.</td></tr>
+    <tr><td><b class="btn">Editor Zona</b></td>
+        <td>Berpindah ke halaman pengaturan area pengawasan.</td></tr>
+    <tr><td><b class="btn">Analisis kamera ini</b></td>
+        <td>Memeriksa ulang kamera yang sedang dibuka. Lihat bagian 5.</td></tr>
+    <tr><td><b class="btn">Mode gelap</b></td>
+        <td>Mengubah tampilan terang atau gelap. Untuk peragaan lewat proyektor,
+            mode gelap biasanya lebih terbaca. Pilihan tersimpan di peramban
+            masing-masing.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>4 · Ruang Kendali — panel kamera</h2>
+<p>Daftar kamera di sisi kiri, dikelompokkan per wilayah DKI. Klik nama kamera
+untuk membukanya.</p>
+<ul style="max-width:68ch">
+  <li><strong>Titik merah</strong> pada suatu kamera menandai adanya temuan yang
+      perlu ditindak.</li>
+  <li><strong>Angka <code>skor</code></strong> di bawah nama menunjukkan seberapa
+      besar kendaraan tampak pada kamera itu. Makin tinggi, makin andal hasil
+      pembacaannya. Kamera berskor rendah tetap berguna untuk pemantauan
+      visual, tetapi temuannya perlu diperiksa lebih teliti.</li>
+  <li><strong>Wilayah bernilai nol</strong> ditampilkan apa adanya. Itu berarti
+      portal CCTV publik memang tidak memiliki kamera di wilayah tersebut,
+      bukan kerusakan sistem.</li>
+</ul>
+
+<h2>5 · Ruang Kendali — panggung gambar, sumber, dan lapisan</h2>
+
+<h4>Keterangan pada gambar</h4>
+<p>Pojok kiri bawah gambar selalu menyebutkan nomor kamera, namanya, dan waktu.
+Pada mode Analisis, <strong>waktu ini adalah waktu pemeriksaan, bukan waktu
+sekarang</strong>. Biasakan membacanya sebelum menyimpulkan apa pun.</p>
+
+<h4>Tiga sumber gambar</h4>
+<div class="tw">
+<table>
+  <thead><tr><th>Sumber</th><th>Isinya</th><th>Kapan dipakai</th></tr></thead>
+  <tbody>
+    <tr><td><b class="btn">Live</b></td>
+        <td>Frame kamera sungguhan, disegarkan tiap 3 detik. Tanpa kotak
+            deteksi.</td>
+        <td>Melihat kondisi jalan saat ini</td></tr>
+    <tr><td><b class="btn">Analisis</b></td>
+        <td>Hasil kerja mesin: kotak kendaraan, zona, jejak lintasan.</td>
+        <td><strong>Mode utama saat bertugas</strong></td></tr>
+    <tr><td><b class="btn">Pantau</b></td>
+        <td>Siklus pendek berulang pada <strong>satu</strong> kamera: klip 6
+            detik, tracking saja. Kotak diperbarui tiap ±13 detik</td>
+        <td>Mengamati satu titik secara berkelanjutan. Bukan siaran langsung —
+            kotaknya tertinggal satu putaran, dan atribut serta pelat tidak
+            ikut dibaca. Berhenti sendiri bila halaman ditutup</td></tr>
+    <tr><td><b class="btn">Cuplikan</b></td>
+        <td>Gambar tersimpan di dalam aplikasi.</td>
+        <td>Bila jaringan ke server CCTV terputus</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box">
+  <span class="k">Cara membaca gambar Analisis</span>
+  <p>Gambarnya adalah frame asli kamera tanpa tulisan. Kotak, jejak, dan zona
+  digambar di atasnya dari angka hasil pembacaan mesin, seperlunya saja:
+  kendaraan biasa hanya bergaris tipis, sedangkan yang melanggar bergaris merah
+  tebal dan diberi keterangan lama diamnya. Ringkasan jumlah muncul sekali di
+  pojok kiri atas, bukan diulang pada tiap kendaraan.</p>
+  <p>Keluaran mentah pipeline — yang menulis warna, jenis, dan skor pada setiap
+  kendaraan — tetap disimpan dan dapat diminta tim teknis bila diperlukan untuk
+  pemeriksaan.</p>
+</div>
+
+<h4>Empat lapisan tampilan</h4>
+<div class="tw">
+<table>
+  <thead><tr><th>Lapisan</th><th>Yang digambar</th></tr></thead>
+  <tbody>
+    <tr><td><b class="btn">Zona</b></td><td>Area yang diawasi pada kamera itu</td></tr>
+    <tr><td><b class="btn">Objek</b></td>
+        <td>Kotak kendaraan. Kendaraan biasa bergaris tipis tanpa tulisan;
+            yang melanggar bergaris merah tebal disertai nomor lacak dan lama
+            diamnya. Tidak aktif pada mode Live, karena tidak ada hasil
+            pembacaan untuk detik itu</td></tr>
+    <tr><td><b class="btn">Lintasan</b></td><td>Jejak gerak kendaraan</td></tr>
+    <tr><td><b class="btn">Samarkan pelat</b></td>
+        <td>Menutup bagian pelat demi perlindungan data pribadi</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Baris keterangan</h4>
+<p>Baris di bawah tombol berubah mengikuti mode yang dipilih dan menjelaskan apa
+yang sedang dilihat. Baris ini juga memunculkan peringatan bila zona baru saja
+diubah tetapi belum dipakai pemeriksaan.</p>
+
+<div class="box">
+  <span class="k">Yang sering disalahpahami</span>
+  <p>Mode Analisis <strong>tidak menampilkan detik ini</strong>, melainkan
+  pemeriksaan terakhir. Untuk memperbaruinya tekan
+  <b class="btn">Analisis kamera ini</b> — sekitar 40 sampai 60 detik untuk satu
+  kamera. Layar berpindah sendiri ke mode Analisis setelah selesai.</p>
+</div>
+
+<h2>6 · Ruang Kendali — membaca hasil</h2>
+
+<h4>Empat angka ringkas</h4>
+<div class="tw">
+<table>
+  <thead><tr><th>Angka</th><th>Artinya</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Track unik</strong></td>
+        <td>Jumlah objek berbeda yang terlacak selama pemeriksaan</td></tr>
+    <tr><td><strong>Frame dianalisis</strong></td>
+        <td>Berapa gambar yang diperiksa</td></tr>
+    <tr><td><strong>Kejadian</strong></td>
+        <td>Jumlah pelanggaran yang ditemukan pada pemeriksaan itu</td></tr>
+    <tr><td><strong>Waktu proses</strong></td>
+        <td>Lama pemeriksaan berjalan</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Tanda <code>—</code> berarti kamera tersebut belum pernah diperiksa.</p>
+
+<h4>Empat toolbox</h4>
+<p>Menampilkan hasil keempat kemampuan mesin untuk kamera yang sedang dibuka.
+Di kanan atas panel tertera nama zona yang berlaku.</p>
+<div class="tw">
+<table>
+  <thead><tr><th>Baris</th><th>Yang dibaca</th><th>Cara menilainya</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Pengenalan pelat nomor</strong></td><td>Nomor kendaraan</td>
+        <td>Pada CCTV publik selalu bertanda <code>TIDAK MEMADAI</code>.
+            Abaikan keluarannya meski ada teksnya.</td></tr>
+    <tr><td><strong>Atribut kendaraan</strong></td><td>Warna dan jenis bodi</td>
+        <td>Ditampilkan sebagai sebaran, misalnya <code>black 131 · sedan 176</code>.
+            Berguna untuk mencari kembali kendaraan pada rekaman.</td></tr>
+    <tr><td><strong>Hitung kendaraan</strong></td><td>Kendaraan masuk zona</td>
+        <td>Angka mentah untuk gambaran kepadatan.</td></tr>
+    <tr><td><strong>Deteksi parkir liar</strong></td><td>Kendaraan diam melewati ambang</td>
+        <td>Bertanda <code>NIHIL</code> bila tidak ada. Bila ada, temuannya
+            masuk ke panel Kejadian.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Kualitas sumber</h4>
+<p>Menilai seberapa layak siaran kamera untuk tiap jenis pembacaan, lengkap
+dengan spesifikasi teknis siarannya. Empat baris yang dinilai: deteksi dan
+hitung kendaraan, klasifikasi jenis kendaraan, deteksi diam atau masuk zona,
+dan baca pelat nomor.</p>
+<p>Baris merah <strong>bukan kerusakan sistem</strong> — itu batas yang
+ditentukan resolusi sumber. Keterangan di bawah panel menjelaskan apa yang
+diperlukan untuk mengatasinya.</p>
+
+<h4>Rekap hari berjalan</h4>
+<p>Tiga kartu di bagian bawah: jumlah temuan beserta pembagiannya menurut
+kewenangan, berapa yang sudah diverifikasi petugas, dan jumlah kendaraan
+terpantau. Semuanya dihitung dalam waktu WIB. Grafik di sebelahnya menunjukkan
+sebaran temuan per jam. Periksa kartu <strong>Diverifikasi petugas</strong> pada
+akhir giliran tugas.</p>
+<p><strong>Ketiga kartu dapat diklik</strong> untuk melihat angka di baliknya:</p>
+<div class="tw">
+<table>
+  <thead><tr><th>Kartu yang diklik</th><th>Yang terjadi</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Kejadian hari ini</strong></td>
+        <td>Panel Kejadian menampilkan seluruh temuan hari itu. Menekan tulisan
+            <em>ranah Dishub</em> atau <em>dirujuk</em> menyaringnya per
+            kewenangan</td></tr>
+    <tr><td><strong>Diverifikasi petugas</strong></td>
+        <td>Panel Kejadian menampilkan hanya yang belum diverifikasi — antrean
+            kerja yang tersisa</td></tr>
+    <tr><td><strong>Kendaraan terpantau</strong></td>
+        <td>Membuka rincian per kamera: jumlah siklus, track, frame, temuan,
+            dan waktu pemeriksaan terakhir</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Saringan yang sedang aktif tampil sebagai tombol kecil di kepala panel
+Kejadian. Tekan tombol itu untuk menampilkan seluruh temuan kembali.</p>
+
+<h2>7 · Menangani satu temuan</h2>
+<ol class="steps">
+  <li>Buka panel <strong>Kejadian</strong> di sisi kanan. Tiap baris memuat jenis
+      temuan, lokasi, waktu WIB, dan label kewenangan.</li>
+  <li>Perhatikan label kewenangannya. <strong>Ranah Dishub</strong> berarti dapat
+      ditindak sendiri secara administratif. <strong>Rujuk Ditlantas</strong>
+      berarti tilang, kewenangan Kepolisian — sistem hanya meneruskan berkas.</li>
+  <li>Klik baris tersebut untuk membuka <strong>kartu bukti</strong>.</li>
+  <li>Periksa isi kartu: gambar berkotak, identitas kamera, operator kamera,
+      jenis kendaraan, durasi, status pelat, tingkat keyakinan, kewenangan,
+      status verifikasi, dan dasar hukum.</li>
+  <li>Perhatikan baris <strong>Gambar</strong>. Bila tertulis bahwa gambar
+      berasal dari pemeriksaan terbaru dan bukan momen kejadian, berarti kamera
+      itu sudah diperiksa ulang sejak temuan tercatat — gambarnya menunjukkan
+      lokasi, bukan peristiwanya.</li>
+  <li><strong>Periksa gambarnya sendiri.</strong> Pastikan yang ditandai memang
+      kendaraan dan memang melanggar.</li>
+  <li>Pilih tindakan pada tombol di bawah kartu: terbitkan perintah, kirim
+      petugas, teruskan ke Ditlantas, atau tandai
+      <strong>bukan pelanggaran</strong>.</li>
+</ol>
+<div class="box crit">
+  <span class="k">Ketentuan pokok</span>
+  <p>Sistem <strong>tidak menetapkan pelanggaran</strong>. Setiap baris adalah
+  usulan mesin. Penindakan hanya sah setelah diverifikasi petugas. Mesin pernah
+  menandai drum kabel di trotoar sebagai kendaraan. Menandai temuan keliru
+  sebagai <em>bukan pelanggaran</em> bukan kegagalan — itu data yang memperbaiki
+  ketepatan sistem.</p>
+</div>
+
+<h2>8 · Editor Zona</h2>
+<p>Zona menentukan area mana pada gambar yang diawasi. Inilah pengaturan yang
+paling menentukan ketepatan temuan.</p>
+<ol class="steps">
+  <li>Buka <b class="btn">Editor Zona</b> dari kepala halaman Ruang Kendali.</li>
+  <li>Pilih kamera pada daftar <strong>Kamera</strong>. Zona yang berlaku, nama,
+      dan ambang parkirnya termuat otomatis — Anda menyunting yang sudah ada,
+      bukan memulai dari nol.</li>
+  <li>Klik pada gambar untuk menambah titik sudut. Seret titik yang sudah ada
+      untuk menggesernya. <strong>Minimal tiga titik.</strong></li>
+  <li>Gunakan tombol perbaikan bila perlu — lihat tabel di bawah.</li>
+  <li>Isi <strong>Nama zona</strong>. Nama ini muncul di kartu bukti yang dibaca
+      petugas lapangan, jadi tulislah yang bermakna bagi mereka — misalnya
+      <em>Jalur sepeda</em>, bukan <em>Zona 1</em>.</li>
+  <li>Tentukan <strong>Ambang parkir liar</strong> sesuai pedoman di bawah.</li>
+  <li>Simpan dengan tombol yang sesuai.</li>
+  <li>Perhatikan area pesan di bawah tombol. Bila menekan Simpan dan
+      <strong>tidak ada pesan apa pun</strong>, berarti ada yang tidak beres —
+      laporkan ke tim teknis.</li>
+</ol>
+
+<h4>Tombol pada Editor Zona</h4>
+<div class="tw">
+<table>
+  <thead><tr><th>Tombol</th><th>Akibatnya</th></tr></thead>
+  <tbody>
+    <tr><td><b class="btn">Undo</b></td><td>Membatalkan titik terakhir</td></tr>
+    <tr><td><b class="btn">Kosongkan</b></td>
+        <td>Menghapus semua titik dan memulai dari awal</td></tr>
+    <tr><td><b class="btn">Muat ulang frame</b></td>
+        <td>Mengambil gambar terbaru dari kamera. Berguna bila gambar yang
+            tampil sudah lama atau terhalang kendaraan besar</td></tr>
+    <tr><td><b class="btn">Simpan &amp; analisis</b></td>
+        <td><strong>Pilihan yang dianjurkan.</strong> Menyimpan zona lalu
+            langsung memeriksa ulang kamera itu (±40 detik). Mode Live,
+            Cuplikan, dan Analisis semuanya memakai zona baru</td></tr>
+    <tr><td><b class="btn">Simpan saja</b></td>
+        <td>Hanya menyimpan. Poligonnya langsung terlihat di semua mode,
+            <strong>tetapi angka dan daftar temuan masih hasil hitungan dengan
+            zona lama</strong> sampai ada pemeriksaan baru. Ruang Kendali
+            memberi peringatan selama keduanya belum sejalan</td></tr>
+    <tr><td><b class="btn">Kembalikan bawaan</b></td>
+        <td>Membuang suntingan, kembali ke zona yang ditetapkan tim teknis.
+            Mati bila kamera itu belum pernah disunting</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Pedoman menggambar zona</h4>
+<p>Zona sebaiknya mengikuti bentuk area yang benar-benar diawasi — misalnya
+hanya jalur sepeda, bukan seluruh lebar jalan — agar kendaraan yang sah
+melintas tidak ikut tertandai. Koordinat yang tampil dalam piksel asli video
+<code>640×360</code>, bukan piksel layar; berguna untuk mencatat atau menyalin
+zona ke kamera lain yang sudut pandangnya mirip.</p>
+
+<h4>Pedoman ambang parkir</h4>
+<p>Ambang <strong>tidak boleh seragam</strong>. Di simpang padat, kendaraan
+berhenti lama karena lampu merah, bukan karena parkir.</p>
+<div class="tw">
+<table>
+  <thead><tr><th>Jenis zona</th><th>Ambang</th><th>Alasan</th></tr></thead>
+  <tbody>
+    <tr><td>Jalur sepeda, bahu jalan, trotoar</td><td class="n">8 detik</td>
+        <td>Tidak ada alasan sah kendaraan bermotor berhenti di sana</td></tr>
+    <tr><td>Badan jalan pada simpang</td><td class="n">120 detik</td>
+        <td>Harus melebihi satu siklus lampu merah agar kendaraan yang antre
+            tidak ikut ditandai</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Penanda di kepala halaman menyatakan asal nilai yang tampil:
+<code>zona dari cameras.yml</code> berarti nilai bawaan tim teknis,
+<code>zona dari editor</code> berarti hasil suntingan lewat halaman ini. Waktu
+penyimpanan terakhir tertera di kepala panel Pengaturan.</p>
+
+<h2>9 · Prosedur harian</h2>
+<ol class="steps">
+  <li>Buka Ruang Kendali. Periksa penanda kejujuran di kepala halaman berwarna
+      hijau bertuliskan <em>Seluruhnya keluaran pipeline</em>.</li>
+  <li>Telusuri daftar kamera. Dahulukan yang bertitik merah.</li>
+  <li>Untuk tiap kamera bertanda, pilih mode <b class="btn">Analisis</b>, baca
+      keterangan waktu pada gambar, dan periksa panel Empat toolbox.</li>
+  <li>Bila pemeriksaan terakhir sudah lama, tekan
+      <b class="btn">Analisis kamera ini</b> dan tunggu selesai.</li>
+  <li>Tangani tiap baris pada panel Kejadian sesuai bagian 7.</li>
+  <li>Pada akhir giliran tugas, periksa kartu <strong>Diverifikasi petugas</strong>
+      — pastikan tidak ada temuan yang tertinggal.</li>
+</ol>
+
+<h2>10 · Batas sistem — yang tidak boleh diklaim</h2>
+<div class="tw">
+<table>
+  <thead><tr><th>Batas</th><th>Sebabnya</th><th>Akibat bagi petugas</th></tr></thead>
+  <tbody>
+    <tr><td>Pelat nomor tidak terbaca</td>
+        <td>Siaran publik 640×360; pelat hanya 8–15 piksel, pengenalan teks
+            perlu ±100</td>
+        <td>Jangan pakai keluaran pelat sebagai dasar tindakan, meski ada
+            teksnya</td></tr>
+    <tr><td>Kendaraan jauh terlewat</td>
+        <td>Objek terlalu kecil pada resolusi tersebut</td>
+        <td>Sepeda motor paling terdampak. Jumlah temuan bukan jumlah
+            pelanggaran sesungguhnya</td></tr>
+    <tr><td>Pengawasan tidak terus-menerus</td>
+        <td>Sistem memeriksa klip pendek secara berkala</td>
+        <td>Pelanggaran di antara dua pemeriksaan tidak tercatat</td></tr>
+    <tr><td>Mesin bisa keliru</td>
+        <td>Objek menyerupai kendaraan dapat tertandai</td>
+        <td>Verifikasi gambar wajib sebelum menindak</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Keempat batas di atas hilang atau berkurang besar bila sistem memperoleh
+akses siaran sumber beresolusi 1080p atau lebih, dan perangkat keras untuk
+pengawasan berkelanjutan.</p>
+
+<h2>11 · Gangguan umum dan penanganannya</h2>
+<div class="tw">
+<table>
+  <thead><tr><th>Gejala</th><th>Penyebab lazim</th><th>Tindakan</th></tr></thead>
+  <tbody>
+    <tr><td>Halaman tidak terbuka sama sekali</td><td>Tailscale tidak aktif</td>
+        <td>Periksa status Tailscale, lalu muat ulang</td></tr>
+    <tr><td>Poligon sudah berubah tetapi angka dan temuan tetap sama</td>
+        <td>Angka masih hasil pemeriksaan terakhir, yang memakai zona lama</td>
+        <td>Tekan <b class="btn">Analisis kamera ini</b>, atau gunakan
+            <b class="btn">Simpan &amp; analisis</b> sejak awal</td></tr>
+    <tr><td>Gambar Live tidak muncul</td>
+        <td>Jaringan ke server CCTV terputus</td>
+        <td>Beralih ke mode <b class="btn">Cuplikan</b>; laporkan bila
+            berlanjut</td></tr>
+    <tr><td>Angka ringkas bertanda <code>—</code></td>
+        <td>Kamera belum pernah diperiksa</td>
+        <td>Tekan <b class="btn">Analisis kamera ini</b></td></tr>
+    <tr><td>Tombol <b class="btn">Objek</b> tidak bisa ditekan</td>
+        <td>Sedang pada mode Live, atau kamera belum pernah diperiksa</td>
+        <td>Bukan kerusakan. Pilih mode <b class="btn">Analisis</b> pada kamera
+            yang sudah diperiksa</td></tr>
+    <tr><td>Panel Kejadian kosong</td>
+        <td>Memang belum ada temuan pada pemeriksaan hari itu</td>
+        <td>Bukan kerusakan. Kosong berarti tidak ada yang melewati ambang</td></tr>
+    <tr><td>Menekan Simpan tanpa pesan apa pun muncul</td>
+        <td>Kemungkinan kegagalan yang tidak tertangani</td>
+        <td>Laporkan ke tim teknis beserta nama kamera</td></tr>
+    <tr><td>Penanda kejujuran berwarna kuning</td>
+        <td>Sebagian tampilan masih berupa contoh</td>
+        <td>Baca bagian yang disebutkan pada penanda; jangan pakai bagian itu
+            untuk keputusan</td></tr>
+    <tr><td>Temuan yang jelas keliru</td>
+        <td>Kekeliruan pengenalan objek</td>
+        <td>Tandai <em>bukan pelanggaran</em>, catat nama kamera dan jam WIB,
+            sampaikan ke tim teknis</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>12 · Rujukan cepat</h2>
+<div class="tw">
+<table>
+  <thead><tr><th>Istilah</th><th>Maksudnya</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Track</strong></td>
+        <td>Satu objek yang diikuti mesin lintas gambar. Track unik = jumlah
+            objek berbeda</td></tr>
+    <tr><td><strong>Frame</strong></td><td>Satu gambar diam dari rekaman</td></tr>
+    <tr><td><strong>Zona</strong></td>
+        <td>Area pada gambar yang diawasi, digambar petugas</td></tr>
+    <tr><td><strong>Ambang parkir</strong></td>
+        <td>Lama kendaraan harus diam di zona sebelum ditandai</td></tr>
+    <tr><td><strong>Siklus / pemeriksaan</strong></td>
+        <td>Satu putaran perekaman klip dan pembacaan oleh mesin</td></tr>
+    <tr><td><strong>Ranah Dishub</strong></td>
+        <td>Dapat ditindak sendiri secara administratif</td></tr>
+    <tr><td><strong>Rujuk Ditlantas</strong></td>
+        <td>Tilang, kewenangan Kepolisian; sistem hanya meneruskan berkas</td></tr>
+    <tr><td><strong>WIB</strong></td>
+        <td>Seluruh waktu dalam sistem, termasuk pada kartu bukti dan rekap</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box">
+  <span class="k">Umpan balik</span>
+  <p>Catatan petugas mengenai temuan yang keliru adalah masukan paling berharga
+  bagi perbaikan sistem. Sertakan nama kamera, tanggal, dan jam WIB — ketiganya
+  tertera pada kartu bukti.</p>
+</div>
+
+<div style="margin-top:38px;padding-top:18px;border-top:1px solid var(--line);
+            font-size:12.5px;color:var(--muted)">
+  <p><strong>Disiapkan oleh:</strong> ______________________________________</p>
+  <p><strong>Kontak dukungan teknis:</strong> ______________________________</p>
+  <p style="margin-top:14px">Dokumen terkait: ringkasan untuk pengambil
+  keputusan, dan spesifikasi server untuk tim infrastruktur.</p>
+</div>
+
+</div>

@@ -1,0 +1,13 @@
+# Probe bayangan khusus ARM64/GB10. Tidak menggantikan service POC CPU.
+# Basis vLLM sudah terbukti berjalan pada GB10 dan membawa PyTorch CUDA ARM64.
+FROM vllm/vllm-openai:latest
+
+WORKDIR /app
+RUN /usr/bin/python3 -m pip install --no-cache-dir ultralytics==8.3.0 lapx==0.10.0
+
+COPY scripts/gpu_arm64_shadow_probe.py /app/gpu_arm64_shadow_probe.py
+COPY scripts/gpu_arm64_shadow_batch.py /app/gpu_arm64_shadow_batch.py
+COPY scripts/gpu_arm64_shadow_tracking.py /app/gpu_arm64_shadow_tracking.py
+COPY scripts/gpu_arm64_live_shadow.py /app/gpu_arm64_live_shadow.py
+ENTRYPOINT []
+CMD ["/usr/bin/python3", "/app/gpu_arm64_shadow_probe.py"]

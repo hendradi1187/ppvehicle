@@ -1,0 +1,40 @@
+name: lengkap
+title: Seluruh modul PP-Vehicle (sesuai diagram resmi)
+description: >
+  Semua kotak pada diagram arsitektur PP-Vehicle dalam satu run: deteksi
+  PP-YOLOE, tracker OC-SORT, atribut PP-LCNet, pelat PP-OCRv3, segmentasi
+  lajur PP-Seg untuk pelanggaran marka dan lawan arah, serta lintasan untuk
+  parkir liar.
+
+  Penghitungan memakai mode "Regional break-in and counting" dari dokumen
+  ppvehicle_mot_en.md (do_break_in_counting + region_type custom), bukan
+  garis-lintas horizontal. Alasannya sama dengan empat_toolbox: upstream
+  memakai satu region_type untuk dua mode yang saling meniadakan, dan parkir
+  liar menuntut custom. Kamera tanpa zona memakai skenario `full`.
+
+  Marka dari PP-Seg dilaporkan apa adanya dan ditandai "hasil segmentasi
+  model" di layar. Pada feed 640x360 segmentasi ini terbukti bisa mengikuti
+  pagar pembatas, jadi setiap pelanggaran marka WAJIB diverifikasi petugas -
+  yang memang sudah menjadi alur antrean verifikasi.
+modules:
+  MOT: true
+  VEHICLE_ATTR: true
+  VEHICLE_PLATE: true
+  VEHICLE_PRESSING: true
+  VEHICLE_RETROGRADE: true
+args:
+  do_break_in_counting: true
+  region_type: custom
+  illegal_parking_time: 8
+  draw_center_traj: true
+overrides:
+  VEHICLE_ATTR:
+    color_threshold: 0.5
+    type_threshold: 0.5
+  VEHICLE_PLATE:
+    det_limit_side_len: 736
+    rec_batch_num: 6
+  VEHICLE_RETROGRADE:
+    # Indonesia berjalan di KIRI. Dokumen: "if the vehicle keeps left
+    # driving, it is set as False".
+    keep_right_flag: false

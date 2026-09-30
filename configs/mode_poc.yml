@@ -1,0 +1,10 @@
+# Mode POC: fokus butir 1 & 2 lampiran Surat Dishub 1316/KI.03.01
+# (traffic counting real-time + klasifikasi 7 kelas).
+#   aktif        : dasbor menyembunyikan fitur di luar butir 1-2 (pelanggaran,
+#                  antrean verifikasi, aduan, analisis/pantau/cuplikan, zona).
+#                  Tidak ada fitur yang dihapus; matikan untuk tampilan lengkap.
+#   jeda_siklus  : siklus analisis pelanggaran otomatis (tiap ~15 menit, 5 CPU)
+#                  tidak dijalankan, supaya CPU dipakai deteksi & hitung Live.
+# Diubah lewat tombol "Mode POC" di dasbor (PUT /api/mode-poc).
+aktif: true
+jeda_siklus: true

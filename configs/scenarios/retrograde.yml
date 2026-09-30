@@ -1,0 +1,21 @@
+name: retrograde
+title: Deteksi kendaraan lawan arah
+description: >
+  Segmentasi lajur (PP-LiteSeg / BDD100K) + arah gerak track untuk menandai
+  kendaraan yang melawan arus.
+  fence_line [x1,y1,x2,y2] (y2 > y1) memisahkan dua arah; kosongkan agar
+  garis diturunkan otomatis dari hasil segmentasi.
+  keep_right_flag: true untuk lalu lintas jalur kanan (Cina/AS).
+  UNTUK INDONESIA set keep_right_flag: false — kita jalur kiri.
+modules:
+  MOT: true
+  VEHICLE_RETROGRADE: true
+overrides:
+  VEHICLE_RETROGRADE:
+    frame_len: 8
+    sample_freq: 7
+    filter_horizontal_flag: true
+    keep_right_flag: false
+    deviation: 45
+    move_scale: 0.01
+    fence_line: []

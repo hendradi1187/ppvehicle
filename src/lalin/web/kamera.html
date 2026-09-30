@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manajemen Kamera</title>
+<link rel="icon" href="/aset/dishub-dki.png">
+<link rel="stylesheet" href="/aset/fonts/fonts.css">
+<style>
+  /* Token DISHUB, sama persis dengan Ruang Kendali. */
+  :root {
+    --biru-900:#063B73; --biru-800:#07539A; --biru-700:#0868C7;
+    --biru-600:#0B78E3; --biru-500:#168AF5;
+    --emas:#F2C94C; --ai:#22C7D6; --ai-terang:#35E0EF;
+    --ground:#eef2f4; --panel:#fff; --panel-2:#f5f8fa; --panel-3:#eaf0f5;
+    --line:rgba(6,59,115,.14); --line-soft:rgba(6,59,115,.07);
+    --line-hover:rgba(6,59,115,.26); --line-active:rgba(11,120,227,.55);
+    --ink:#0B1A25; --ink-2:#33495a; --muted:#5d7385; --disabled:#93a7b4;
+    --accent:var(--biru-800); --accent-soft:#e3eefb; --accent-ink:#fff;
+    --crit:#B02318; --crit-soft:#fbe6e4;
+    --warn:#8f5e0b; --warn-soft:#fcf0d5;
+    --ok:#0F7A45; --ok-soft:#dcf1e5;
+    --info:#8a6410; --info-soft:#fcf2d6;
+    --ai-soft:#d8f4f7; --ai-ink:#0a6c76;
+    --emblem-bg:#fff; --emblem-ring:rgba(6,59,115,.16); --emblem-shadow:none;
+    --wordmark-sub:#8a6410;
+    --shadow:0 1px 2px rgba(6,59,115,.07),0 8px 24px rgba(6,59,115,.06);
+    --display:"Barlow Condensed","Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --ground:#07131D; --panel:#0B1A25; --panel-2:#0F2230; --panel-3:#132B3A;
+    --line:rgba(148,180,200,.12); --line-soft:rgba(148,180,200,.07);
+    --line-hover:rgba(148,180,200,.22); --line-active:rgba(11,120,227,.55);
+    --ink:#F1F6FA; --ink-2:#A6BAC8; --muted:#718898; --disabled:#4F6574;
+    --accent:var(--biru-500); --accent-soft:rgba(11,120,227,.16); --accent-ink:#04121f;
+    --crit:#F87A6E; --crit-soft:rgba(217,45,32,.18);
+    --warn:#F5C451; --warn-soft:rgba(245,196,81,.15);
+    --ok:#3FD08C; --ok-soft:rgba(21,153,87,.18);
+    --info:var(--emas); --info-soft:rgba(242,201,76,.15);
+    --ai-soft:rgba(34,199,214,.14); --ai-ink:var(--ai-terang);
+    --emblem-ring:rgba(148,180,200,.28); --emblem-shadow:0 0 0 3px rgba(255,255,255,.06);
+    --wordmark-sub:var(--emas);
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 28px rgba(0,0,0,.35);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#07131D; --panel:#0B1A25; --panel-2:#0F2230; --panel-3:#132B3A;
+    --line:rgba(148,180,200,.12); --line-soft:rgba(148,180,200,.07);
+    --line-hover:rgba(148,180,200,.22); --line-active:rgba(11,120,227,.55);
+    --ink:#F1F6FA; --ink-2:#A6BAC8; --muted:#718898; --disabled:#4F6574;
+    --accent:var(--biru-500); --accent-soft:rgba(11,120,227,.16); --accent-ink:#04121f;
+    --crit:#F87A6E; --crit-soft:rgba(217,45,32,.18);
+    --warn:#F5C451; --warn-soft:rgba(245,196,81,.15);
+    --ok:#3FD08C; --ok-soft:rgba(21,153,87,.18);
+    --info:var(--emas); --info-soft:rgba(242,201,76,.15);
+    --ai-soft:rgba(34,199,214,.14); --ai-ink:var(--ai-terang);
+    --emblem-ring:rgba(148,180,200,.28); --emblem-shadow:0 0 0 3px rgba(255,255,255,.06);
+    --wordmark-sub:var(--emas);
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+       font-family:var(--body);font-size:14px;line-height:1.55}
+  header{position:sticky;top:0;z-index:20;background:var(--panel);
+         border-bottom:1px solid var(--line);display:flex;align-items:center;
+         gap:12px;flex-wrap:wrap;padding:10px 16px}
+  .emblem{width:34px;height:34px;flex:none;border-radius:50%;
+          background:var(--emblem-bg);border:1px solid var(--emblem-ring);
+          box-shadow:var(--emblem-shadow);display:grid;place-items:center}
+  .emblem img{width:26px;height:26px;display:block}
+  .brandlock{display:flex;align-items:center;gap:11px}
+  .wm b{display:block;font-family:var(--display);font-size:19px;font-weight:700;
+        line-height:1;letter-spacing:.02em}
+  .wm span{display:block;font-size:9px;font-weight:700;letter-spacing:.17em;
+           text-transform:uppercase;color:var(--wordmark-sub);margin-top:3px}
+  h1{font-family:var(--display);font-size:22px;font-weight:700;margin:0 0 0 6px}
+  .spacer{flex:1 1 auto}
+  .icon,button.icon{font:inherit;font-size:12.5px;padding:6px 11px;border-radius:7px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);
+        cursor:pointer;text-decoration:none;display:inline-block}
+  .icon:hover{border-color:var(--line-hover);color:var(--ink)}
+  main{max-width:1180px;margin:0 auto;padding:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+         box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+  .head{display:flex;align-items:center;gap:10px;padding:11px 14px;
+        border-bottom:1px solid var(--line)}
+  .head h2{font-family:var(--display);font-size:15px;font-weight:700;margin:0;
+           letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 12px;font-size:10px;letter-spacing:.08em;
+     text-transform:uppercase;color:var(--muted);background:var(--panel-2);
+     border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.n{font-family:var(--mono);white-space:nowrap}
+  /* Id portal panjangnya 50+ karakter; ia harus boleh melipat, kalau tidak
+     selnya melebar dan menimpa kolom sebelahnya. */
+  .sumber{font-family:var(--mono);font-size:10px;line-height:1.45;
+          word-break:break-all;white-space:normal;max-width:210px}
+  .tag{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+       padding:2px 6px;border-radius:4px;border:1px solid var(--line);
+       color:var(--muted);white-space:nowrap}
+  .tag.bawaan{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .tag.ubah{color:var(--info);border-color:var(--info);background:var(--info-soft)}
+  .tag.zona{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+  .tag.nol{color:var(--crit);border-color:var(--crit);background:var(--crit-soft)}
+  .aksi{display:flex;gap:4px;flex-wrap:nowrap}
+  td:last-child{white-space:nowrap;width:1%}
+  .aksi button{font:inherit;font-size:10.5px;padding:3px 7px;border-radius:5px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);
+        cursor:pointer}
+  .aksi button:hover{border-color:var(--line-hover);color:var(--ink)}
+  .aksi button.bahaya:hover{border-color:var(--crit);color:var(--crit)}
+  .primary{background:var(--accent);border-color:var(--accent);
+           color:var(--accent-ink);font-weight:600}
+  .catatan{padding:11px 14px;font-size:12px;color:var(--muted);line-height:1.5}
+  .catatan strong{color:var(--ink-2)}
+  /* ---- formulir ---- */
+  dialog{border:1px solid var(--line);border-radius:11px;padding:0;
+         background:var(--panel);color:var(--ink);max-width:980px;
+         width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.35)}
+  dialog::backdrop{background:rgba(4,12,18,.62)}
+  .dh{display:flex;align-items:center;gap:10px;padding:13px 16px;
+      border-bottom:1px solid var(--line)}
+  .dh h3{font-family:var(--display);font-size:18px;margin:0}
+  form{padding:14px 16px 16px}
+  .grid{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  label{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;
+        text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  input,select{width:100%;padding:7px 9px;font:inherit;font-size:13px;
+       border-radius:6px;border:1px solid var(--line);background:var(--panel-2);
+       color:var(--ink)}
+  input:focus,select:focus{outline:2px solid var(--line-active);outline-offset:1px}
+  .bantu{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+  fieldset{border:1px solid var(--line);border-radius:8px;padding:11px 12px;
+           margin:13px 0 0}
+  legend{font-size:10.5px;font-weight:700;letter-spacing:.07em;
+         text-transform:uppercase;color:var(--muted);padding:0 5px}
+  .uji{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .uji > div{flex:1;min-width:220px}
+  .hasiluji{font-size:11.5px;margin-top:7px;font-family:var(--mono)}
+  .hasiluji.ok{color:var(--ok)} .hasiluji.gagal{color:var(--crit)}
+  .tombol{display:flex;gap:8px;margin-top:15px;flex-wrap:wrap}
+  .tombol button{font:inherit;font-size:13px;padding:8px 14px;border-radius:7px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink);
+        cursor:pointer}
+  .kosong{padding:20px 14px;color:var(--muted);font-size:12.5px}
+  /* ---- tab sumber ---- */
+  .tabsumber{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 11px}
+  .tabsumber button{font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;
+        border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);
+        cursor:pointer;margin-bottom:-1px}
+  .tabsumber button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+  .tabsumber button .soon{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;
+        margin-left:5px;padding:1px 5px;border-radius:3px;border:1px solid var(--line)}
+  .panelsumber[hidden]{display:none}
+  /* ---- kanvas zona & marka ---- */
+  .gambar{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:12px;align-items:start}
+  @media (max-width:720px){ .gambar{grid-template-columns:1fr} }
+  .kanvas{position:relative;aspect-ratio:16/9;background:#05101a;border-radius:7px;
+        overflow:hidden;border:1px solid var(--line)}
+  .kanvas img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+  .kanvas svg{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+  .kanvas .nihil{position:absolute;inset:0;display:grid;place-items:center;
+        color:#9fb3c2;font-size:12px;text-align:center;padding:14px;pointer-events:none}
+  /* display:grid di atas mengalahkan [hidden] bawaan peramban - tanpa baris
+     ini petunjuk kosong tetap menimpa snapshot yang sudah dimuat. */
+  .kanvas .nihil[hidden],.kanvas img[hidden]{display:none}
+  .mode{display:flex;gap:4px;margin-bottom:8px}
+  .mode button{flex:1;font:inherit;font-size:12px;font-weight:600;padding:6px 8px;
+        border-radius:6px;border:1px solid var(--line);background:var(--panel-2);
+        color:var(--ink-2);cursor:pointer}
+  .mode button[aria-pressed="true"].zona{background:var(--ok);border-color:var(--ok);color:#fff}
+  .mode button[aria-pressed="true"].marka{background:#d9a400;border-color:#d9a400;color:#1a1300}
+  .alat{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+  .alat button{font:inherit;font-size:11.5px;padding:4px 9px;border-radius:5px;
+        border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);cursor:pointer}
+  .alat button:disabled{opacity:.45;cursor:default}
+  .ringkas{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+  .ringkas b{font-family:var(--mono)}
+  .saran{margin-top:9px;padding:8px 10px;border-radius:6px;font-size:12px;line-height:1.45;
+        background:var(--info-soft);color:var(--ink-2);border:1px solid var(--line)}
+  .saran.awas{background:var(--crit-soft);border-color:var(--crit)}
+  .saran button{font:inherit;font-size:11.5px;margin-top:6px;padding:4px 9px;border-radius:5px;
+        border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="brandlock">
+    <span class="emblem"><img src="/aset/dishub-emblem.png" width="26" height="26" alt=""></span>
+    <span class="wm"><b>DISHUB</b><span>DKI Jakarta</span></span>
+  </span>
+  <h1>Manajemen Kamera</h1>
+  <span class="spacer"></span>
+  <a class="icon" href="/demo">Ruang Kendali</a>
+  <a class="icon" href="/zona">Editor Zona</a>
+  <button class="icon" id="tema" type="button">Mode gelap</button>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="head">
+      <h2>Daftar kamera</h2>
+      <span class="spacer"></span>
+      <button class="icon primary" id="tambah" type="button">+ Tambah kamera</button>
+    </div>
+    <div id="tabel"><p class="kosong">Memuat…</p></div>
+    <p class="catatan" id="catatanBawaan"></p>
+  </section>
+
+  <section class="panel" id="panelSembunyi" hidden>
+    <div class="head"><h2>Kamera bawaan yang disembunyikan</h2></div>
+    <div id="tabelSembunyi"></div>
+    <p class="catatan">Kamera bawaan tidak pernah dihapus dari
+      <code>configs/cameras.yml</code> — catatan surveinya terlalu berharga untuk
+      dibuang. Menghapus hanya menyembunyikannya, dan bisa dibatalkan di sini.</p>
+  </section>
+
+  <section class="panel">
+    <div class="head"><h2>Yang belum tersedia di sini</h2></div>
+    <p class="catatan">
+      <strong>Penemuan ONVIF</strong> dan <strong>RTSP langsung</strong> belum ada.
+      Kamera purwarupa ini bersumber dari portal CCTV publik DKI lewat HLS, bukan
+      dari kamera di jaringan lokal — jadi pemindaian jaringan tidak berlaku
+      sebelum Dishub memberi akses ke jaringan kameranya sendiri.
+      <br><br>
+      <strong>Region of Interest</strong> tidak diduplikasi di formulir ini: ia
+      sudah ada di <a href="/zona">Editor Zona</a>, lengkap dengan penuntun 12
+      langkah dan kalibrasi ambang parkir. Menggambar poligon di dua tempat
+      berbeda hanya akan membuat keduanya berselisih.
+    </p>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <div class="dh">
+    <h3 id="dlgJudul">Tambah kamera</h3>
+    <span class="spacer"></span>
+    <button class="icon" id="tutup" type="button">Tutup</button>
+  </div>
+  <form id="form" method="dialog">
+    <div class="grid">
+      <div>
+        <label for="f_key">Kunci (key)</label>
+        <input id="f_key" required pattern="[A-Za-z0-9_-]+">
+        <p class="bantu">Penanda internal, huruf/angka tanpa spasi. Tidak bisa
+          diubah setelah disimpan.</p>
+      </div>
+      <div>
+        <label for="f_name">Nama kamera</label>
+        <input id="f_name" required>
+        <p class="bantu">Yang dibaca petugas, mis. “Jl. Jati Baru Raya C02”.</p>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>Sumber siaran</legend>
+      <div class="tabsumber" role="tablist">
+        <button type="button" role="tab" data-sumber="portal" aria-selected="true">Portal CCTV DKI (HLS)</button>
+        <button type="button" role="tab" data-sumber="rtsp" aria-selected="false">RTSP langsung</button>
+        <button type="button" role="tab" data-sumber="onvif" aria-selected="false">ONVIF<span class="soon">perlu akses jaringan</span></button>
+      </div>
+
+      <div class="panelsumber" data-panel="portal">
+        <div class="uji">
+          <div>
+            <label for="f_id">ID kamera portal CCTV DKI</label>
+            <input id="f_id" placeholder="503675_JKP_BAKESBANGPOL_JL.-JATI-BARU-RAYA-C02_CCTV-01">
+          </div>
+        </div>
+        <p class="bantu">Salin dari alamat kamera di portal publik jakcctv.jakarta.go.id.</p>
+      </div>
+
+      <div class="panelsumber" data-panel="rtsp" hidden>
+        <div class="uji">
+          <div>
+            <label for="f_rtsp">Alamat RTSP</label>
+            <input id="f_rtsp" placeholder="rtsp://pengguna:sandi@10.20.30.40:554/stream1" autocomplete="off">
+          </div>
+        </div>
+        <p class="bantu">Untuk kamera yang dapat dijangkau langsung dari server ini.
+          Klipnya diperkecil ke 640×360 supaya zona dan marka yang digambar di bawah
+          jatuh di koordinat yang sama dengan frame analisis. Alamat ini
+          tersimpan apa adanya di <code>configs/cameras_custom.yml</code>, termasuk
+          sandi di dalamnya; pakai akun kamera khusus baca, bukan akun admin.</p>
+      </div>
+
+      <div class="panelsumber" data-panel="onvif" hidden>
+        <p class="bantu" style="font-size:12.5px"><strong>Belum tersedia, dan itu disengaja.</strong>
+          Penemuan ONVIF bekerja dengan memindai jaringan lokal
+          (WS-Discovery) untuk mencari kamera. Server purwarupa ini berada di
+          jaringan bersama milik instansi lain dan tidak terhubung ke jaringan kamera Dishub;
+          memindai jaringan itu tanpa izin pemiliknya bukan tindakan yang boleh
+          dilakukan aplikasi ini diam-diam. Begitu Dishub memberi akses ke
+          segmen jaringan kameranya, pemindaian bisa dibangun di tab ini. Sementara itu, masukkan
+          alamat RTSP kamera secara langsung di tab sebelah.</p>
+      </div>
+
+      <div class="uji" style="margin-top:4px">
+        <button class="icon" id="ujiSumber" type="button">Cek sumber</button>
+        <span class="hasiluji" id="hasilUji" style="margin:0"></span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Penempatan</legend>
+      <div class="grid">
+        <div><label for="f_area">Area</label><input id="f_area" placeholder="Tanah Abang"></div>
+        <div>
+          <label for="f_region">Wilayah DKI</label>
+          <select id="f_region">
+            <option value="">—</option>
+            <option>Jakarta Pusat</option><option>Jakarta Barat</option>
+            <option>Jakarta Selatan</option><option>Jakarta Timur</option>
+            <option>Jakarta Utara</option><option>Kepulauan Seribu</option>
+          </select>
+        </div>
+        <div>
+          <label for="f_owner">Operator kamera</label>
+          <input id="f_owner" list="operator" placeholder="Bakesbangpol">
+          <datalist id="operator">
+            <option>Polda</option><option>Satpol PP</option>
+            <option>Bakesbangpol</option><option>Dishub</option>
+          </datalist>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Pengambilan dan analisis</legend>
+      <div class="grid">
+        <div>
+          <label for="f_scenario">Skenario</label>
+          <select id="f_scenario"><option value="">—</option></select>
+        </div>
+        <div>
+          <label for="f_clip">Panjang klip (detik)</label>
+          <input id="f_clip" type="number" min="5" max="120">
+          <p class="bantu">Minimal 3× ambang parkir, kalau tidak alarmnya tidak
+            sempat menyala.</p>
+        </div>
+        <div>
+          <label for="f_fps">Laju analisis (fps)</label>
+          <input id="f_fps" type="number" min="1" max="25">
+          <p class="bantu">10 fps bila penghitungan lintas garis dipakai; di
+            bawah itu ID track pecah dan kendaraan tidak terhitung.</p>
+        </div>
+        <div>
+          <label for="f_parkir">Ambang parkir liar (detik)</label>
+          <input id="f_parkir" type="number" min="3" max="600">
+          <p class="bantu">8 dtk untuk jalur sepeda atau bahu jalan; 120 dtk
+            untuk badan jalan di simpang, supaya antrean lampu merah tidak
+            ikut tertandai.</p>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset id="fsGambar">
+      <legend>Zona pengawasan &amp; garis marka</legend>
+      <div class="gambar">
+        <div>
+          <div class="kanvas" id="kanvas">
+            <img id="snap" alt="" hidden>
+            <svg id="lapis" viewBox="0 0 640 360" preserveAspectRatio="none" aria-label="Kanvas zona dan marka"></svg>
+            <div class="nihil" id="snapNihil">Tekan <strong>&nbsp;Ambil snapshot&nbsp;</strong> untuk memuat gambar kamera,
+              lalu klik di atasnya untuk menggambar.</div>
+          </div>
+          <div class="alat">
+            <button type="button" id="ambilSnap">Ambil snapshot</button>
+            <button type="button" id="urung">Urungkan titik</button>
+            <button type="button" id="garisBaru">Garis marka baru</button>
+            <button type="button" id="bersihkan">Hapus semua (mode ini)</button>
+            <span class="hasiluji" id="snapPesan" style="margin:0 0 0 4px"></span>
+          </div>
+        </div>
+        <div>
+          <div class="mode" role="group" aria-label="Mode gambar">
+            <button type="button" class="zona" data-mode="zona" aria-pressed="true">Zona</button>
+            <button type="button" class="marka" data-mode="marka" aria-pressed="false">Marka</button>
+          </div>
+          <div id="bantuMode" class="bantu"></div>
+          <div style="margin-top:8px">
+            <label for="f_zona">Nama zona</label>
+            <input id="f_zona" placeholder="Jalur sepeda">
+          </div>
+          <p class="ringkas" id="ringkas" style="margin-top:9px"></p>
+          <div id="saran"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="tombol">
+      <button class="primary" id="simpan" type="button">Simpan kamera</button>
+      <button id="batal" type="button">Batal</button>
+      <span class="spacer"></span>
+      <span class="hasiluji" id="pesan"></span>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  async function api(path, opts) {
+    const res = await fetch(path, opts);
+    if (!res.ok) {
+      let d = {};
+      try { d = await res.json(); } catch (_) {}
+      throw new Error(d.detail || `${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  }
+
+  let DATA = { cameras: [], disembunyikan: [] };
+  let editKey = null;
+  let SKENARIO = [];        // dari /api/scenarios, membawa daftar modul
+
+  // ---- keadaan kanvas. Koordinat SELALU dalam frame 640x360, sama dengan
+  // frame analisis; tampilan di layar hanya skalanya.
+  let sumber = "portal";
+  let mode = "zona";
+  let zona = [];            // [[x,y], ...]
+  let marka = [];           // [[[x,y], [x,y], ...], ...]  - tiap item satu garis
+  let asal = { zona: "[]", marka: "[]" };   // untuk tahu apa yang berubah
+
+  // ------------------------------------------------------------- daftar
+  function render() {
+    const c = DATA.cameras;
+    if (!c.length) {
+      $("tabel").innerHTML = '<p class="kosong">Belum ada kamera.</p>';
+    } else {
+      $("tabel").innerHTML = `<table><thead><tr>
+          <th>Nama</th><th>Wilayah</th><th>Operator</th><th>Sumber</th>
+          <th>Klip / fps</th><th>Ambang</th><th>Zona &amp; marka</th><th>Asal</th><th></th>
+        </tr></thead><tbody>` + c.map((k) => `
+        <tr>
+          <td><strong>${esc(k.name)}</strong><br>
+              <span class="bantu">${esc(k.area || "—")}</span></td>
+          <td>${esc(k.region || "—")}</td>
+          <td>${esc(k.owner || "—")}</td>
+          <td><div class="sumber">${k.rtsp_url
+                ? '<span class="tag ubah">RTSP</span> ' + esc(k.rtsp_url.replace(/\/\/[^@/]*@/, "//•••@"))
+                : esc(k.id || "—")}</div></td>
+          <td class="n" style="white-space:normal">${k.clip_seconds ?? "—"} dtk<br>${k.analysis_fps ?? "—"} fps</td>
+          <td class="n">${k.illegal_parking_time ?? "—"}</td>
+          <td>${k.punya_zona
+                ? `<span class="tag zona">${esc(k.zone_label || "ada")}</span>`
+                : '<span class="tag nol">belum</span>'}
+              ${(k.marka || []).length ? `<span class="tag" style="color:#b58900;border-color:#b58900">${k.marka.length} ruas marka</span>` : ""}</td>
+          <td>${k.bawaan ? '<span class="tag bawaan">bawaan</span>' : '<span class="tag">tambahan</span>'}
+              ${k.disunting ? '<span class="tag ubah">disunting</span>' : ""}</td>
+          <td><div class="aksi">
+            <button data-edit="${esc(k.key)}">Sunting</button>
+            <button data-zona="${esc(k.key)}">Zona &amp; marka</button>
+            <button class="bahaya" data-hapus="${esc(k.key)}">Hapus</button>
+          </div></td>
+        </tr>`).join("") + "</tbody></table>";
+    }
+    const nBawaan = c.filter((x) => x.bawaan).length;
+    $("catatanBawaan").innerHTML =
+      `<strong>${nBawaan}</strong> kamera bawaan dari <code>configs/cameras.yml</code>, `
+      + `<strong>${c.length - nBawaan}</strong> tambahan. Suntingan disimpan ke `
+      + `<code>configs/cameras_custom.yml</code> yang menimpa berkas bawaan — `
+      + `catatan survei di sana tidak pernah ditulis ulang.`;
+
+    const s = DATA.disembunyikan || [];
+    $("panelSembunyi").hidden = !s.length;
+    $("tabelSembunyi").innerHTML = s.length
+      ? `<table><tbody>` + s.map((k) => `<tr>
+           <td class="n">${esc(k)}</td>
+           <td style="text-align:right"><div class="aksi" style="justify-content:flex-end">
+             <button data-pulih="${esc(k)}">Pulihkan</button></div></td></tr>`).join("")
+        + "</tbody></table>"
+      : "";
+  }
+
+  async function muat() {
+    try {
+      DATA = await api("/api/kamera");
+      render();
+    } catch (e) {
+      $("tabel").innerHTML = `<p class="kosong">Gagal memuat: ${esc(e.message)}</p>`;
+    }
+  }
+
+  // ----------------------------------------------------------- formulir
+  async function isiSkenario() {
+    try {
+      SKENARIO = await api("/api/scenarios");
+      $("f_scenario").innerHTML = '<option value="">—</option>'
+        + SKENARIO.map((x) => `<option value="${esc(x.name)}">${esc(x.title)}</option>`).join("");
+    } catch (_) { /* biarkan kosong; skenario boleh diisi belakangan */ }
+  }
+
+  // --------------------------------------------------------- tab sumber
+  function pilihSumber(nama) {
+    sumber = nama;
+    document.querySelectorAll("[data-sumber]").forEach((b) =>
+      b.setAttribute("aria-selected", String(b.dataset.sumber === nama)));
+    document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== nama));
+    $("ujiSumber").disabled = nama === "onvif";
+    $("hasilUji").textContent = "";
+  }
+  document.querySelector(".tabsumber").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-sumber]");
+    if (b) pilihSumber(b.dataset.sumber);
+  });
+
+  // Alamat snapshot disusun dari ISIAN formulir, bukan dari yang tersimpan,
+  // supaya kamera baru yang belum disimpan pun bisa digambari.
+  function alamatSnapshot() {
+    if (sumber === "rtsp") {
+      const r = $("f_rtsp").value.trim();
+      return r ? `/api/kamera/snapshot?rtsp=${encodeURIComponent(r)}` : null;
+    }
+    const id = $("f_id").value.trim();
+    return id ? `/api/kamera/snapshot?id=${encodeURIComponent(id)}` : null;
+  }
+
+  // ------------------------------------------------------------- kanvas
+  // Garis marka disimpan sebagai ruas [x1,y1,x2,y2]; di layar disusun ulang
+  // menjadi polyline dengan menyambung ruas yang ujungnya bertemu.
+  function ruasKeGaris(ruas) {
+    const garis = [];
+    for (const g of ruas || []) {
+      const a = [Math.round(g[0]), Math.round(g[1])], b = [Math.round(g[2]), Math.round(g[3])];
+      const akhir = garis.length ? garis[garis.length - 1] : null;
+      const ujung = akhir ? akhir[akhir.length - 1] : null;
+      if (ujung && ujung[0] === a[0] && ujung[1] === a[1]) akhir.push(b);
+      else garis.push([a, b]);
+    }
+    return garis;
+  }
+  const garisKeRuas = () => marka.flatMap((g) =>
+    g.slice(1).map((b, i) => [g[i][0], g[i][1], b[0], b[1]]));
+
+  function gambarUlang() {
+    const bagian = [];
+    if (zona.length) {
+      const pts = zona.map((p) => p.join(",")).join(" ");
+      bagian.push(zona.length >= 3
+        ? `<polygon points="${pts}" fill="rgba(15,160,90,.22)" stroke="#1fd17e" stroke-width="2.5" stroke-linejoin="round"/>`
+        : `<polyline points="${pts}" fill="none" stroke="#1fd17e" stroke-width="2.5" stroke-dasharray="6 4"/>`);
+      zona.forEach((p, i) => bagian.push(
+        `<circle cx="${p[0]}" cy="${p[1]}" r="${i === zona.length - 1 && mode === "zona" ? 5.5 : 4}" fill="#1fd17e" stroke="#04121f" stroke-width="1.5"/>`));
+    }
+    marka.forEach((g, gi) => {
+      if (g.length >= 2) bagian.push(`<polyline points="${g.map((p) => p.join(",")).join(" ")}" fill="none" stroke="#ffc400" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`);
+      g.forEach((p, i) => bagian.push(`<circle cx="${p[0]}" cy="${p[1]}" r="${gi === marka.length - 1 && i === g.length - 1 && mode === "marka" ? 5.5 : 3.5}" fill="#ffc400" stroke="#1a1300" stroke-width="1.5"/>`));
+      if (g.length) bagian.push(`<text x="${g[0][0] + 6}" y="${g[0][1] - 6}" fill="#ffc400" font-size="12" font-weight="700" font-family="IBM Plex Mono, monospace" paint-order="stroke" stroke="#000" stroke-width="3">M${gi + 1}</text>`);
+    });
+    $("lapis").innerHTML = bagian.join("");
+
+    const nRuas = garisKeRuas().length;
+    $("ringkas").innerHTML = `Zona: <b>${zona.length}</b> titik${zona.length && zona.length < 3 ? " (butuh ≥ 3)" : ""}<br>`
+      + `Marka: <b>${marka.filter((g) => g.length >= 2).length}</b> garis, <b>${nRuas}</b> ruas`;
+    $("bantuMode").innerHTML = mode === "zona"
+      ? "Klik untuk menambah titik sudut zona, searah jarum jam. Zona dipakai untuk parkir liar dan penghitungan masuk-zona."
+      : "Gambar <strong>hanya marka membujur garis utuh</strong> (PM 67/2018): pembatas lajur utuh, pembatas jalur sepeda atau busway, garis tepi. "
+        + "Garis putus-putus boleh dilintasi, jadi jangan digambar. Klik titik-titik di sepanjang garis; <em>Garis marka baru</em> memulai garis terpisah.";
+    $("urung").disabled = mode === "zona" ? !zona.length : !marka.some((g) => g.length);
+    $("garisBaru").disabled = mode !== "marka" || !marka.length || marka[marka.length - 1].length < 2;
+    renderSaran();
+  }
+
+  function pilihMode(m) {
+    mode = m;
+    document.querySelectorAll("[data-mode]").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+    gambarUlang();
+  }
+  document.querySelector(".mode").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-mode]");
+    if (b) pilihMode(b.dataset.mode);
+  });
+
+  $("lapis").addEventListener("click", (ev) => {
+    const r = $("lapis").getBoundingClientRect();
+    const x = Math.round(Math.max(0, Math.min(640, (ev.clientX - r.left) / r.width * 640)));
+    const y = Math.round(Math.max(0, Math.min(360, (ev.clientY - r.top) / r.height * 360)));
+    if (mode === "zona") zona.push([x, y]);
+    else {
+      if (!marka.length) marka.push([]);
+      marka[marka.length - 1].push([x, y]);
+    }
+    gambarUlang();
+  });
+  $("urung").addEventListener("click", () => {
+    if (mode === "zona") zona.pop();
+    else {
+      const g = marka[marka.length - 1];
+      if (g) { g.pop(); if (!g.length) marka.pop(); }
+    }
+    gambarUlang();
+  });
+  $("garisBaru").addEventListener("click", () => { marka.push([]); gambarUlang(); });
+  $("bersihkan").addEventListener("click", () => {
+    const apa = mode === "zona" ? "seluruh titik zona" : "seluruh garis marka";
+    if (!confirm(`Hapus ${apa} di kanvas? Perubahan baru tersimpan setelah Simpan kamera.`)) return;
+    if (mode === "zona") zona = []; else marka = [];
+    gambarUlang();
+  });
+
+  $("ambilSnap").addEventListener("click", () => {
+    const url = alamatSnapshot();
+    const el = $("snapPesan");
+    if (!url) { el.className = "hasiluji gagal"; el.textContent = sumber === "onvif" ? "Pilih tab Portal atau RTSP." : "Isi sumbernya dulu."; return; }
+    el.className = "hasiluji"; el.textContent = "Mengambil… (±5–15 dtk)";
+    const img = $("snap");
+    img.onload = () => { img.hidden = false; $("snapNihil").hidden = true; el.className = "hasiluji ok"; el.textContent = "Snapshot dimuat"; };
+    img.onerror = async () => {
+      let alasan = "";
+      try { const r = await fetch(url); const d = await r.json(); alasan = d.detail || ""; } catch (_) {}
+      el.className = "hasiluji gagal"; el.textContent = "Gagal: " + (alasan || "sumber tidak terjangkau").slice(0, 140);
+    };
+    img.src = url + "&t=" + Date.now();
+  });
+
+  // ------------------------------------------------------ saran skenario
+  // Aturannya diturunkan dari apa yang digambar, bukan dihafal operator:
+  // deteksi marka tanpa garis operator jatuh ke segmentasi PP-Seg, yang di
+  // feed 640x360 terbukti mengikuti pagar dan menghasilkan pelanggaran palsu.
+  function saranSkenario() {
+    const adaZona = zona.length >= 3, adaMarka = garisKeRuas().length > 0;
+    if (adaZona && adaMarka) return "lengkap";
+    if (adaZona) return "lengkap_tanpa_marka";
+    if (adaMarka) return "full";
+    return "counting";
+  }
+  function renderSaran() {
+    const el = $("saran");
+    const pilih = $("f_scenario").value;
+    const s = SKENARIO.find((x) => x.name === pilih);
+    const pakaiMarka = !!(s && (s.modules || []).includes("VEHICLE_PRESSING"));
+    const adaMarka = garisKeRuas().length > 0;
+    const saran = saranSkenario();
+    const judul = (n) => (SKENARIO.find((x) => x.name === n) || {}).title || n;
+    if (pakaiMarka && !adaMarka) {
+      el.innerHTML = `<div class="saran awas"><strong>Skenario ini menyalakan deteksi marka, tetapi garisnya belum digambar.</strong> `
+        + `Tanpa garis operator, sistem memakai segmentasi lajur otomatis yang di feed ini sering mengikuti pagar. `
+        + `Gambar garisnya di mode Marka, atau pakai “${esc(judul(saran))}”.`
+        + `<br><button type="button" data-saran="${esc(saran)}">Pakai saran</button></div>`;
+    } else if (pilih !== saran) {
+      el.innerHTML = `<div class="saran">Saran untuk isi kanvas ini: <strong>${esc(judul(saran))}</strong>.`
+        + `<br><button type="button" data-saran="${esc(saran)}">Pakai saran</button></div>`;
+    } else {
+      el.innerHTML = "";
+    }
+  }
+  $("saran").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-saran]");
+    if (!b) return;
+    $("f_scenario").value = b.dataset.saran;
+    renderSaran();
+  });
+  $("f_scenario").addEventListener("change", renderSaran);
+
+  function buka(k) {
+    editKey = k ? k.key : null;
+    $("dlgJudul").textContent = k ? `Sunting ${k.name}` : "Tambah kamera";
+    $("f_key").value = k ? k.key : "";
+    $("f_key").disabled = !!k;
+    $("f_name").value = k ? k.name || "" : "";
+    $("f_id").value = k ? k.id || "" : "";
+    $("f_area").value = k ? k.area || "" : "";
+    $("f_region").value = k ? k.region || "" : "";
+    $("f_owner").value = k ? k.owner || "" : "";
+    $("f_scenario").value = k ? k.scenario || "" : "";
+    $("f_clip").value = k ? k.clip_seconds ?? "" : "";
+    $("f_fps").value = k ? k.analysis_fps ?? "" : "";
+    $("f_parkir").value = k ? k.illegal_parking_time ?? "" : "";
+    $("f_rtsp").value = k ? k.rtsp_url || "" : "";
+    $("f_zona").value = k ? k.zone_label || "" : "";
+    pilihSumber(k && k.rtsp_url ? "rtsp" : "portal");
+    $("hasilUji").textContent = "";
+    $("pesan").textContent = "";
+    $("snapPesan").textContent = "";
+    const img = $("snap"); img.hidden = true; img.removeAttribute("src");
+    $("snapNihil").hidden = false;
+    const rp = (k && k.region_polygon) || [];
+    zona = [];
+    for (let i = 0; i + 1 < rp.length; i += 2) zona.push([rp[i], rp[i + 1]]);
+    marka = ruasKeGaris(k ? k.marka : []);
+    asal = { zona: JSON.stringify(zona), marka: JSON.stringify(garisKeRuas()) };
+    pilihMode("zona");
+    $("dlg").showModal();
+    // Kamera tersimpan langsung dimuatkan snapshot-nya: menggambar di atas
+    // kanvas gelap hanya menebak letak marka.
+    if (k) $("ambilSnap").click();
+  }
+
+  $("tambah").addEventListener("click", () => buka(null));
+  $("tutup").addEventListener("click", () => $("dlg").close());
+  $("batal").addEventListener("click", () => $("dlg").close());
+
+  $("ujiSumber").addEventListener("click", async () => {
+    const el = $("hasilUji");
+    if (sumber === "rtsp") {
+      const r0 = $("f_rtsp").value.trim();
+      if (!r0) { el.className = "hasiluji gagal"; el.textContent = "Isi alamat RTSP dulu."; return; }
+      el.className = "hasiluji"; el.textContent = "Menguji… (maks. 25 dtk)";
+      try {
+        const r = await api(`/api/kamera/uji-rtsp?rtsp=${encodeURIComponent(r0)}`);
+        el.className = "hasiluji " + (r.ok ? "ok" : "gagal");
+        el.textContent = r.ok ? `Terjangkau · ${r.resolusi} · ${r.fps} fps · ${r.codec} (dianalisis pada 640×360)`
+                              : "Tidak terjangkau: " + r.error;
+      } catch (e) { el.className = "hasiluji gagal"; el.textContent = "Gagal menguji: " + e.message; }
+      return;
+    }
+    const id = $("f_id").value.trim();
+    if (!id) { el.className = "hasiluji gagal"; el.textContent = "Isi id-nya dulu."; return; }
+    el.className = "hasiluji"; el.textContent = "Menguji…";
+    try {
+      const r = await api(`/api/kamera/uji?id=${encodeURIComponent(id)}`);
+      if (r.ok) {
+        el.className = "hasiluji ok";
+        el.textContent = `Terjangkau · ${r.resolusi || "?"} @ ${r.fps || "?"} fps`;
+      } else {
+        el.className = "hasiluji gagal";
+        el.textContent = "Tidak terjangkau: "
+          + (r.preview?.error || `status ${r.preview?.status}`);
+      }
+    } catch (e) {
+      el.className = "hasiluji gagal";
+      el.textContent = "Gagal menguji: " + e.message;
+    }
+  });
+
+  $("simpan").addEventListener("click", async () => {
+    const angka = (v) => (v === "" ? null : Number(v));
+    const muatan = {
+      key: $("f_key").value.trim(),
+      name: $("f_name").value.trim(),
+      id: $("f_id").value.trim(),
+      area: $("f_area").value.trim(),
+      region: $("f_region").value,
+      owner: $("f_owner").value.trim(),
+      scenario: $("f_scenario").value || saranSkenario(),
+      clip_seconds: angka($("f_clip").value),
+      analysis_fps: angka($("f_fps").value),
+      illegal_parking_time: angka($("f_parkir").value),
+      zone_label: $("f_zona").value.trim(),
+      // Tab yang aktif menentukan sumbernya; isian tab lain dikosongkan supaya
+      // kamera tidak menyimpan dua sumber yang saling bertentangan.
+      rtsp_url: sumber === "rtsp" ? $("f_rtsp").value.trim() : "",
+    };
+    if (sumber === "rtsp") muatan.id = muatan.id || "";
+    if (zona.length && zona.length < 3) {
+      $("pesan").className = "hasiluji gagal";
+      $("pesan").textContent = "Zona butuh minimal 3 titik, atau hapus titiknya.";
+      return;
+    }
+    if (!muatan.key || !muatan.name) {
+      $("pesan").className = "hasiluji gagal";
+      $("pesan").textContent = "Kunci dan nama wajib diisi.";
+      return;
+    }
+    $("pesan").className = "hasiluji"; $("pesan").textContent = "Menyimpan…";
+    try {
+      await api("/api/kamera", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(muatan),
+      });
+      // Zona dan marka disimpan SESUDAH kamera, karena keduanya menuntut
+      // kameranya sudah dikenal; dan hanya bila berubah, supaya menyunting
+      // nama kamera tidak memperbarui cap waktu zona dan membuat dashboard
+      // mengira zonanya baru digambar.
+      const k = muatan.key;
+      const json = { "Content-Type": "application/json" };
+      if (JSON.stringify(zona) !== asal.zona) {
+        if (zona.length >= 3) {
+          await api(`/api/cameras/${encodeURIComponent(k)}/zone`, { method: "PUT", headers: json,
+            body: JSON.stringify({ region_polygon: zona.flat(), zone_label: muatan.zone_label,
+                                   illegal_parking_time: muatan.illegal_parking_time }) });
+        } else {
+          try { await api(`/api/cameras/${encodeURIComponent(k)}/zone`, { method: "DELETE" }); } catch (_) {}
+        }
+      }
+      const ruas = garisKeRuas();
+      if (JSON.stringify(ruas) !== asal.marka) {
+        await api(`/api/marka/${encodeURIComponent(k)}`, { method: "PUT", headers: json,
+          body: JSON.stringify({ garis: ruas }) });
+      }
+      $("dlg").close();
+      await muat();
+    } catch (e) {
+      $("pesan").className = "hasiluji gagal";
+      $("pesan").textContent = "Gagal: " + e.message;
+    }
+  });
+
+  // -------------------------------------------------------------- aksi
+  $("tabel").addEventListener("click", async (ev) => {
+    const b = ev.target.closest("button");
+    if (!b) return;
+    if (b.dataset.edit) {
+      buka(DATA.cameras.find((c) => c.key === b.dataset.edit));
+    } else if (b.dataset.zona) {
+      buka(DATA.cameras.find((c) => c.key === b.dataset.zona));
+      $("fsGambar").scrollIntoView({ block: "start" });
+    } else if (b.dataset.hapus) {
+      const k = DATA.cameras.find((c) => c.key === b.dataset.hapus);
+      // Konfirmasi wajib, dan kalimatnya menyebut akibat yang BERBEDA untuk
+      // kamera bawaan: ia disembunyikan, bukan dihapus, dan bisa dipulihkan.
+      const pesan = k.bawaan
+        ? `Sembunyikan "${k.name}"?\n\nKamera bawaan tidak dihapus dari `
+          + `cameras.yml — catatan surveinya tetap utuh, dan bisa dipulihkan `
+          + `kapan saja dari daftar di bawah.`
+        : `Hapus "${k.name}" secara permanen?\n\nKamera tambahan tidak punya `
+          + `cadangan; zonanya tetap tersimpan tetapi tidak lagi terpakai.`;
+      if (!confirm(pesan)) return;
+      try {
+        await api(`/api/kamera/${encodeURIComponent(k.key)}`, { method: "DELETE" });
+        await muat();
+      } catch (e) { alert("Gagal menghapus: " + e.message); }
+    }
+  });
+
+  $("tabelSembunyi").addEventListener("click", async (ev) => {
+    const b = ev.target.closest("[data-pulih]");
+    if (!b) return;
+    try {
+      await api(`/api/kamera/${encodeURIComponent(b.dataset.pulih)}/pulihkan`,
+                { method: "POST" });
+      await muat();
+    } catch (e) { alert("Gagal memulihkan: " + e.message); }
+  });
+
+  // -------------------------------------------------------------- tema
+  const tema = $("tema");
+  tema.addEventListener("click", () => {
+    const gelap = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", gelap ? "light" : "dark");
+    tema.textContent = gelap ? "Mode gelap" : "Mode terang";
+    try { localStorage.setItem("rkl-theme", gelap ? "light" : "dark"); } catch (_) {}
+  });
+  try {
+    const s = localStorage.getItem("rkl-theme");
+    if (s) {
+      document.documentElement.setAttribute("data-theme", s);
+      tema.textContent = s === "dark" ? "Mode terang" : "Mode gelap";
+    }
+  } catch (_) {}
+
+  isiSkenario();
+  muat();
+})();
+</script>
+</body>
+</html>

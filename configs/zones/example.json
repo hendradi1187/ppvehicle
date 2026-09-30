@@ -1,0 +1,7 @@
+{
+  "name": "contoh-bahu-jalan",
+  "video": "data/samples/jalan.mp4",
+  "frame_size": [1920, 1080],
+  "note": "Zona persegi di bahu jalan kanan, untuk uji parkir liar.",
+  "region_polygon": [600, 300, 1300, 300, 1300, 800, 600, 800]
+}

@@ -1,0 +1,30 @@
+# Profil untuk pupr-argo-dev: Xeon Gold 5218, 16 core, 19 GB RAM, tanpa GPU.
+#
+# Server ini dipakai bersama project lain (atevent, regahu, antrean), jadi
+# profil ini sengaja TIDAK mengambil semua core. Batas kerasnya ada di
+# docker/docker-compose.server.yml; angka di sini hanya memberi tahu Paddle
+# berapa thread yang boleh dipakai, dan harus <= batas CPU container.
+name: server
+device: cpu
+run_mode: paddle
+enable_mkldnn: true
+
+# Container dibatasi 8 CPU, dan jatah itu DIBAGI dua mesin yang bisa berjalan
+# bersamaan: pipeline PP-Vehicle (siklus otomatis) dan mesin penghitung tujuh
+# kelas (Live/Pantau serta pengukuran tiap siklus). 5 + 3 = 8.
+#
+# Sebelumnya pipeline memakai 8 sendirian. Begitu deteksi Live ikut berjalan,
+# 14+ thread berebut 8 core dan keduanya melambat +-2,5x - diukur 24 Sep 2026:
+# PP-YOLOE CRN S turun dari 183 ke 1.957 ms/frame, load average 32.
+# Jatah mesin penghitung diatur di LALIN_CPU_THREADS (src/lalin/_entry_hitung.py).
+cpu_threads: 5
+
+# Tetap PP-YOLOE-s dulu. Model -l tujuh kali lebih berat dan di CPU tidak
+# sepadan; naikkan hanya setelah throughput nyata di server ini terukur.
+detector: ppyoloe_s
+
+# Server ini 4x lebih banyak core dari laptop pengembangan, jadi frame skip
+# tidak perlu seagresif profil cpu.
+skip_frame_num: 1
+
+visual: true

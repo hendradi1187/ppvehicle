@@ -1,0 +1,8 @@
+name: press_line
+title: Deteksi pelanggaran marka (press line)
+description: >
+  Menandai kendaraan yang bannya menyentuh/melewati garis marka lajur,
+  berdasarkan segmentasi PP-LiteSeg.
+modules:
+  MOT: true
+  VEHICLE_PRESSING: true

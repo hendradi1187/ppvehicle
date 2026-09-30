@@ -2289,7 +2289,7 @@
       <div class="wilgrp kosong"><div class="wil kosong">${esc(w.region)}<span>0</span></div>
       <div class="wil-note">${esc(w.note)}</div></div>`).join("") + "</div>";
     $("cams").innerHTML = html;
-    $("camCount").textContent = modePoc ? `${tampil} / 2` : `${CAMS.length} / 46`;
+    $("camCount").textContent = modePoc ? `${tampil} / ${POC_KEYS.size}` : `${CAMS.length} / 46`;
   }
 
   $("camSearch").addEventListener("input", (ev) => {

@@ -366,6 +366,17 @@ def main() -> int:
                 if labels[cid] == "person" and any(
                         tumpang_relatif((x, y, w, h), t) >= AMBANG_PENGENDARA for t in tunggangan):
                     id_pengendara[key].add(uid)
+                # Detector/tracker boleh mengeluarkan kotak yang sedikit
+                # melewati tepi frame. Bbox publik harus selalu berada di
+                # dalam kanvas 640x360 agar overlay dan metrik luas tidak
+                # memakai koordinat negatif atau melewati ukuran frame.
+                x1 = max(0.0, min(W, x))
+                y1 = max(0.0, min(H, y))
+                x2 = max(0.0, min(W, x + w))
+                y2 = max(0.0, min(H, y + h))
+                if x2 <= x1 or y2 <= y1:
+                    continue
+                x, y, w, h = x1, y1, x2 - x1, y2 - y1
                 kotak.append([uid, label, round(x, 1), round(y, 1), round(w, 1),
                               round(h, 1), round(float(sc), 3), uid in id_pengendara[key]])
         baris = {"jenis": "frame", "key": key, "pts": pts, "n": frame_id[key], "ms": ms,

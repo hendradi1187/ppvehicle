@@ -375,19 +375,12 @@
   .bbhud .bb-detail { flex-basis: 100%; color: var(--muted); font-size: 10px; }
   .bbhud .bb-detail summary { cursor: pointer; }
   .bbhud .bb-detail > div { margin-top: 3px; }
-  .sourcebar { display:flex; align-items:center; flex-wrap:wrap; gap:7px; padding:9px 12px;
-        border-bottom:1px solid var(--line); background:var(--panel-2); }
-  .sourcebar .source-title { font-size:10px; font-weight:700; letter-spacing:.08em;
-        text-transform:uppercase; color:var(--muted); margin-right:3px; }
-  .sourcebar .source-help { margin-left:auto; font-size:10.5px; color:var(--muted); }
-  .sourcebar [data-src="live"][aria-pressed="true"] { border-color:var(--ok); color:var(--ok); }
-  .sourcebar [data-src="rekaman"][aria-pressed="true"] { border-color:var(--warn); color:var(--warn); }
   /* LC-009: Mode POC - sembunyikan yang bukan butir 1-2 surat 1316 */
   body.mode-poc .rightcol, body.mode-poc #panelAI, body.mode-poc #panelHitung,
   body.mode-poc .chartcard, body.mode-poc .kpis, body.mode-poc #panelKualitas,
   body.mode-poc #reanalyse, body.mode-poc #bellBtn, body.mode-poc #railVerif,
   body.mode-poc a.railitem[href="/aduan"], body.mode-poc #grpLapisan, body.mode-poc #hint,
-  body.mode-poc [data-src]:not([data-src="live"]):not([data-src="rekaman"]) { display: none !important; }
+  body.mode-poc [data-src]:not([data-src="live"]) { display: none !important; }
   body.mode-poc .shell { grid-template-columns: 278px minmax(0, 1fr); }
   @media (max-width: 1180px) { body.mode-poc .shell { grid-template-columns: 200px minmax(0, 1fr); } }
   @media (max-width: 820px)  { body.mode-poc .shell { grid-template-columns: minmax(0, 1fr); } }
@@ -457,7 +450,6 @@
   @media (max-width: 700px) { body.mode-poc .camtools { grid-template-columns: minmax(0, 1fr); } }
   /* LC-010: Mode POC - panel hitungan menjadi rel di kanan video (layar lebar).
      Tinggi rel = tinggi kolom video (contain: size), isi rel bisa digulir. */
-  /* POC tetap perlu pemilih Live/Rekaman siang. Kontrol lapisan lain disembunyikan. */
   body.mode-poc .toolbar { display: none !important; }
   @media (min-width: 1100px) {
     /* LC-013: lebar video dibatasi tinggi layar (video + pemutar terlihat tanpa
@@ -1132,15 +1124,6 @@
         <span class="vtime mono" id="vTime">—</span>
         <span class="vwhere" id="vWhere">—</span>
       </div>
-      <div class="sourcebar" id="grpSumber">
-        <span class="source-title">Sumber tampilan</span>
-        <button class="seg" type="button" data-src="live" aria-pressed="true">CCTV Live</button>
-        <button class="seg" type="button" data-src="rekaman" aria-pressed="false">Replay hasil analisis</button>
-        <button class="seg" type="button" data-src="analisis" aria-pressed="false">Analisis</button>
-        <button class="seg" type="button" data-src="pantau" aria-pressed="false">Pantau</button>
-        <button class="seg" type="button" data-src="cuplikan" aria-pressed="false">Cuplikan</button>
-        <span class="source-help" id="sourceHelp">CCTV real diprioritaskan; replay tidak pernah disebut Live.</span>
-      </div>
       <div class="viewport">
         <img id="frame" alt="" >
         <video id="vid" playsinline muted hidden></video>
@@ -1160,7 +1143,6 @@
         <span class="plabel" id="pLabel">LIVE</span>
         <span class="ptrack" aria-hidden="true"><i id="pFill" style="width:0%"></i></span>
         <button class="pbtn ptext" id="pGaris" type="button" title="Tarik atau geser garis hitung kamera ini">Atur garis</button>
-        <button class="pbtn ptext" id="pZona" type="button" title="Gambar area jalan yang menjadi fokus deteksi kamera ini">Atur area fokus</button>
         <button class="pbtn" id="pShot" type="button" title="Unduh frame ini">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
                stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/>
@@ -1184,6 +1166,13 @@
       </div>
       <div class="bbhud" id="bbhud" hidden></div>
       <div class="toolbar">
+        <span class="grp" id="grpSumber">
+          <span class="label">Tampilan</span>
+          <button class="seg" type="button" data-src="live" aria-pressed="true">Live</button>
+          <button class="seg" type="button" data-src="analisis" aria-pressed="false">Analisis</button>
+          <button class="seg" type="button" data-src="pantau" aria-pressed="false">Pantau</button>
+          <button class="seg" type="button" data-src="cuplikan" aria-pressed="false">Cuplikan</button>
+        </span>
         <span class="grp swrow" id="grpLapisan">
           <span class="label" style="margin-left:6px">Lapisan visual</span>
           <button class="sw" type="button" data-layer="zone" aria-pressed="true">
@@ -1550,13 +1539,11 @@
   // frame from the last batch cycle, "cuplikan" = the snapshot bundled with
   // the page (works with no network at all).
   let srcMode = "live";
-  const POC_KEYS = new Set(["gerbangpemuda", "benhil2"]);
   let liveWorking = null;   // null = belum diketahui
   let liveTimer = null;
   let liveFails = 0;
   let batch = null;         // payload terakhir dari /api/batch
   let stats = null;         // payload terakhir dari /api/stats
-  let REPLAYS = {};         // klip siang POC yang tersedia di backend
 
   // Real figures only once at least one batch cycle has been recorded today;
   // before that the tiles keep their illustrative values, clearly tagged.
@@ -1640,13 +1627,6 @@
     if (srcMode === "analisis") {
       el.className = "chip live"; el.textContent = "Hasil analisis pipeline"; return;
     }
-    if (srcMode === "rekaman") {
-      const item = REPLAYS[CAMS[active]?.key];
-      el.className = "chip live";
-      el.textContent = item?.analysed_available
-        ? "Replay siang · hasil tracking" : "Replay rekaman siang";
-      return;
-    }
     if (srcMode === "cuplikan") {
       el.className = "chip"; el.textContent = "Cuplikan tersimpan"; return;
     }
@@ -1688,15 +1668,9 @@
     const cam = CAMS[active];
     let hint = "";
     if (srcMode === "live") {
-      hint = liveWorking === false
-        ? "CCTV real kamera ini sedang tidak dapat dijangkau. Layar tidak otomatis "
-          + "mengaku sebagai Live; pilih Replay hasil analisis bila perlu pembuktian demo."
-        : "CCTV real. Angka melintas dihitung sejak Live dibuka dan hanya bertambah "
-          + "ketika objek melewati garis yang Anda tentukan.";
-    } else if (srcMode === "rekaman") {
-      hint = REPLAYS[cam.key]?.available
-        ? "Rekaman siang asli untuk pengujian berulang. Video menampilkan hasil baseline tracking bila tersedia; klip ini tidak mengubah source Live dan belum menjadi data training tervalidasi sebelum anotasinya direview."
-        : "Kamera ini belum mempunyai rekaman siang POC. Pilih Benhil CCTV-2 atau Gerbang Pemuda.";
+      hint = "Frame kamera sungguhan, disegarkan tiap 3 detik. Kotak deteksi "
+           + "disembunyikan karena overlay contoh tidak cocok dengan frame nyata. "
+           + "Poligon zona tetap berlaku (kamera statis).";
     } else if (srcMode === "pantau") {
       hint = WATCH && WATCH.running
         ? `Siklus pendek berulang: klip ${WATCH.seconds} detik @${WATCH.fps} fps, `
@@ -1752,7 +1726,6 @@
     if (hls) { try { hls.destroy(); } catch {} hls = null; }
     const v = $("vid");
     try { v.pause(); v.removeAttribute("src"); v.load(); } catch {}
-    v.loop = false;
     v.hidden = true;
     v.style.opacity = "";
     $("frame").style.visibility = "";
@@ -1870,66 +1843,6 @@
     return true;
   }
 
-  function mulaiReplay(cam) {
-    const item = REPLAYS[cam.key];
-    if (!item?.available) { stopVideo(); return false; }
-    const v = $("vid");
-    if (videoKey === `replay:${cam.key}` && v.src) return true;
-    stopVideo();
-    videoKey = `replay:${cam.key}`;
-    v.hidden = false;
-    v.style.opacity = "1";
-    v.loop = true;
-    v.muted = true;
-    v.playsInline = true;
-    v.src = item.analysed_available ? item.analysis_url : item.url;
-    renderReplayHud(cam, item.metrics);
-    v.addEventListener("playing", () => {
-      if (srcMode !== "rekaman" || CAMS[active]?.key !== cam.key) return;
-      videoJalan = true;
-      $("frame").style.visibility = "hidden";
-      setLiveChip();
-      applyLiveConstraints();
-    }, { once: true });
-    v.addEventListener("error", () => {
-      if (srcMode === "rekaman") {
-        stopVideo();
-        $("hint").textContent = "Rekaman siang gagal dimuat; source Live tidak terpengaruh.";
-      }
-    }, { once: true });
-    v.play().catch(() => {});
-    return true;
-  }
-
-  function renderReplayHud(cam, metrics) {
-    const el = $("bbhud");
-    if (!metrics || !Object.keys(metrics).length) { el.hidden = true; return; }
-    const warna = { motorcycle: "#ff4d4f", car: "#36cfc9", bus: "#faad14",
-                    truck: "#b37feb", person: "#fadb14", bicycle: "#73d13d" };
-    const traffic = metrics.traffic || {};
-    const counting = metrics.counting || {};
-    const classes = (metrics.classes || []).map((x) => `
-      <div class="bb-k${x.visible_median ? "" : " redup"}">
-        <i style="background:${warna[x.detector_label] || "#94a3b8"}"></i>
-        <span class="nm">${esc(x.name)}</span>
-        <b>${esc(x.visible_median)}</b>
-        <small>tampak/frame · puncak ${esc(x.visible_max)}</small>
-      </div>`).join("");
-    el.innerHTML = `
-      <div class="bb-kepala"><b class="bb-n">${esc(traffic.visible_median ?? "—")}</b>
-        <span class="bb-kam">kendaraan tampak pada frame khas · ${esc(cam.name)}</span>
-        <span class="tot">${esc(traffic.state || "UNKNOWN")}</span></div>
-      <div class="bb-warn">REPLAY, BUKAN CCTV LIVE · ${esc(metrics.status)} · ${esc(traffic.reason || "")}</div>
-      <div class="bb-kelas">${classes}</div>
-      <div class="bb-lain">
-        <span class="bb-sub">ID track terbentuk <b>${esc(counting.unique_tracks ?? "—")}</b> (bukan hitungan garis)</span>
-        <span class="bb-sub">Area jalan terisi <b>${traffic.occupancy_ratio == null ? "—" : (traffic.occupancy_ratio * 100).toFixed(1) + "%"}</b></span>
-        <span class="bb-sub">Objek berhenti <b>${traffic.stopped_ratio == null ? "—" : (traffic.stopped_ratio * 100).toFixed(0) + "%"}</b></span>
-      </div>
-      <div class="bb-detail">Ringkasan rekaman: ${esc(metrics.analyzed_frames)} frame @ ${esc(metrics.sampling_fps)} FPS analisis. Hitungan garis baru sah setelah operator menggambar garis dan menjalankan CCTV Live.</div>`;
-    el.hidden = false;
-  }
-
   function pullLive() {
     if (srcMode !== "live") return;
     const cam = CAMS[active];
@@ -1973,7 +1886,6 @@
 
   function startLive() {
     clearInterval(liveTimer);
-    if (srcMode === "rekaman") { mulaiReplay(CAMS[active]); return; }
     if (srcMode !== "live") { stopVideo(); return; }
     // Still ditarik sekali lebih dulu supaya panggung terisi seketika sementara
     // manifest HLS masih dimuat; begitu video berjalan polling dihentikan.
@@ -2198,8 +2110,7 @@
 
   // Thumbnail diambil dari preview portal CCTV; kalau tak terjangkau, jatuh ke
   // cuplikan tersimpan. Ini gambar yang sama dengan yang dipakai editor zona.
-  const cuplikan = (c) => (modePoc && REPLAYS[c.key]?.poster_url
-      ? REPLAYS[c.key].poster_url : c.img)
+  const cuplikan = (c) => c.img
     || (c.portalLain ? `/api/kamera/snapshot?key=${encodeURIComponent(c.key)}` : "")
     || (c.id ? `${LIVE_BASE}${encodeURIComponent(c.id)}/preview.jpg` : "");
 
@@ -2209,31 +2120,28 @@
   }
 
   function camThumb(c) {
-    if (modePoc && REPLAYS[c.key]?.poster_url) return REPLAYS[c.key].poster_url;
     // LC-016: server portal lain tidak punya preview.jpg - ambil lewat server (cache 60 dtk)
     if (c.portalLain) return `/api/kamera/snapshot?key=${encodeURIComponent(c.key)}`;
     return `${LIVE_BASE}${encodeURIComponent(c.id || "")}/preview.jpg`;
   }
 
   function renderChips() {
-    const dasar = modePoc ? CAMS.filter((c) => POC_KEYS.has(c.key)) : CAMS;
-    const wilayah = [...new Set(dasar.map((c) => c.region))];
+    const wilayah = [...new Set(CAMS.map((c) => c.region))];
     const tombol = (label, nilai, n) =>
       `<button class="rchip" type="button" data-region="${nilai ?? ""}"` +
       ` aria-pressed="${(camRegion ?? "") === (nilai ?? "")}">${esc(label)}` +
       `<b>${n}</b></button>`;
     $("regionChips").innerHTML =
-      tombol("Semua", null, dasar.length)
+      tombol("Semua", null, CAMS.length)
       + wilayah.map((w) => tombol(w.replace("Jakarta ", "Jkt "), w,
-          dasar.filter((c) => c.region === w).length)).join("");
+          CAMS.filter((c) => c.region === w).length)).join("");
   }
 
   function renderCams() {
     renderChips();
     const q = camQuery.trim().toLowerCase();
     const lolos = (c) =>
-      (!modePoc || POC_KEYS.has(c.key))
-      && (!camRegion || c.region === camRegion)
+      (!camRegion || c.region === camRegion)
       && (!q || `${c.name} ${c.area} ${c.owner} ${c.region}`.toLowerCase().includes(q));
 
     // Urutan wilayah mengikuti daftar DKI, lalu wilayah lain yang muncul di
@@ -2276,7 +2184,7 @@
     // Wilayah tanpa kamera ditampilkan, tidak disembunyikan: celah cakupan
     // adalah informasi, dan menyembunyikannya membuat portal publik terlihat
     // lebih lengkap daripada kenyataannya.
-    const kosong = modePoc ? [] : WILAYAH_DKI
+    const kosong = WILAYAH_DKI
       .filter((w) => !CAMS.some((c) => c.region === w))
       .map((w) => (WILAYAH_KOSONG.find((x) => x.region === w)
                    || { region: w, note: "belum ada kamera terdaftar" }));
@@ -2284,7 +2192,7 @@
       <div class="wilgrp kosong"><div class="wil kosong">${esc(w.region)}<span>0</span></div>
       <div class="wil-note">${esc(w.note)}</div></div>`).join("") + "</div>";
     $("cams").innerHTML = html;
-    $("camCount").textContent = modePoc ? `${tampil} / 2` : `${CAMS.length} / 46`;
+    $("camCount").textContent = `${CAMS.length} / 46`;
   }
 
   $("camSearch").addEventListener("input", (ev) => {
@@ -2313,13 +2221,6 @@
   function renderStage() {
     const c = CAMS[active];
     const b = camBatch(c);
-    const replayBtn = document.querySelector('[data-src="rekaman"]');
-    if (replayBtn) {
-      replayBtn.disabled = !REPLAYS[c.key]?.available;
-      replayBtn.title = replayBtn.disabled
-        ? "Rekaman siang belum tersedia untuk kamera ini"
-        : "Putar rekaman siang tanpa mengganti source Live";
-    }
 
     if (srcMode === "pantau") {
       const w = WATCH && WATCH.record && WATCH.record.key === c.key
@@ -2411,8 +2312,6 @@
       $("vTime").textContent = w
         ? `${tanggalJamWIB(w.at)} · putaran ${WATCH.rounds}`
         : "menyiapkan putaran pertama…";
-    } else if (srcMode === "rekaman") {
-      $("vTime").textContent = "rekaman siang tersimpan";
     } else if (srcMode === "analisis" && b?.record?.finished_at) {
       $("vTime").textContent = tanggalJamWIB(b.record.finished_at);
     } else if (srcMode === "live" && hidup) {
@@ -2421,17 +2320,15 @@
           hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
         + " WIB";
     } else {
-      $("vTime").textContent = srcMode === "live" && liveWorking === false
-        ? "CCTV real tidak terjangkau" : "menyambungkan CCTV real";
+      $("vTime").textContent = "cuplikan tersimpan";
     }
     $("pLabel").textContent = srcMode === "live" ? "LIVE"
-      : srcMode === "rekaman" ? "REPLAY SIANG"
       : srcMode === "pantau" ? "PANTAU"
       : srcMode === "analisis" ? "ANALISIS" : "CUPLIKAN";
     $("pLabel").style.color = srcMode === "live" && hidup ? "var(--ok)"
       : srcMode === "pantau" ? "var(--ai-ink)" : "var(--muted)";
     // Pemutar hanya bermakna pada mode Live: dua mode lain adalah gambar diam.
-    $("pPlay").disabled = !["live", "rekaman"].includes(srcMode);
+    $("pPlay").disabled = srcMode !== "live";
     $("pNext").disabled = srcMode !== "live";
   }
 
@@ -3187,7 +3084,7 @@
     stopVideo();                       // aliran kamera lama harus dilepas dulu
     if (pakaiDeteksi(srcMode)) watchMulai(CAMS[active]);
     renderStage();
-    if (["live", "rekaman"].includes(srcMode)) startLive();
+    if (srcMode === "live") startLive();
     renderHud();
     HITUNG = null; renderHitung();
     muatHitung(CAMS[active].key).then(renderHitung);
@@ -3212,7 +3109,7 @@
       el.setAttribute("aria-pressed", String(el.dataset.src === srcMode)));
   }
 
-  $("grpSumber").addEventListener("click", (ev) => {
+  document.querySelector(".toolbar").addEventListener("click", (ev) => {
     const b = ev.target.closest("[data-src]");
     if (!b) return;
     const sebelum = srcMode;
@@ -3537,14 +3434,8 @@
       onInfo: (t) => { $("ghInfo").textContent = t; },
       onKunci: (on) => { $("ghKunci").setAttribute("aria-pressed", String(on)); $("ghKunci").disabled = false; $("ghTegak").disabled = false; },
     };
-    let siap = false;
-    if (srcMode === "live" && videoJalan) siap = !!window.BBox?.sunting(true, opsi);
-    else if (srcMode === "rekaman" && videoJalan) {
-      siap = !!window.BBox?.mulaiEditor?.($("vid"), $("bbox"), cam.name,
-        cam.tampilan_hitung, { key: cam.key, onInfo: opsi.onInfo, onKunci: opsi.onKunci });
-    }
-    if (!siap) {
-      alert("Buka CCTV Live atau Replay hasil analisis sampai gambarnya tampil, lalu coba lagi.");
+    if (srcMode !== "live" || !videoJalan || !window.BBox?.sunting(true, opsi)) {
+      alert("Garis hitung diatur di atas video Live. Tunggu sampai video berjalan.");
       return;
     }
     $("ghBar").hidden = false;
@@ -3562,11 +3453,6 @@
     } catch (e) {
       $("ghStatus").textContent = "Pemandu gagal disiapkan (" + e.message + ") — garis tetap bisa ditarik bebas di frame beku.";
     }
-  });
-  $("pZona").addEventListener("click", () => {
-    const cam = CAMS[active];
-    if (!cam) return;
-    window.open(`/zona?camera=${encodeURIComponent(cam.key)}`, "_blank", "noopener");
   });
   $("ghTegak").addEventListener("click", () => {
     if (!window.BBox?.buatTegakLurus()) alert("Klik dulu satu garis putih (biru muda) sebagai acuan.");
@@ -3622,22 +3508,8 @@
   // LC-009: fokus butir 1-2 surat 1316. Mode ini berlaku untuk semua penonton
   // (disimpan di server, configs/mode_poc.yml).
   let modePoc = false;
-  let pocSourceInitialized = false;
-
-  function pilihSumberPoc() {
-    if (!modePoc || pocSourceInitialized) return;
-    const cam = CAMS[active];
-    if (!cam) return;
-    pocSourceInitialized = true;
-    srcMode = "live";
-    syncSumber();
-    clearInterval(liveTimer);
-    stopVideo();
-  }
-
   function terapkanModePoc(aktif) {
     modePoc = !!aktif;
-    pocSourceInitialized = false;
     document.body.classList.toggle("mode-poc", modePoc);
     const b = $("btnPoc");
     b.hidden = false;
@@ -3646,15 +3518,13 @@
     if (modePoc) {
       // hanya video + kotak + garis hitung; zona pelanggaran disembunyikan
       layers.zone = false;
-      if (!POC_KEYS.has(CAMS[active]?.key)) {
-        const target = CAMS.findIndex((c) => c.key === "gerbangpemuda");
-        if (target >= 0) active = target;
+      if (srcMode !== "live") {
+        document.querySelector('[data-src="live"]')?.click();
       }
-      pilihSumberPoc();
     } else {
       layers.zone = true;
     }
-    try { renderCams(); renderStage(); } catch {}
+    try { renderStage(); } catch {}
   }
   api("/api/mode-poc").then((m) => terapkanModePoc(m.aktif)).catch(() => {});
   $("btnPoc").addEventListener("click", async () => {
@@ -3793,8 +3663,6 @@
   async function refreshBatch() {
     try {
       batch = await api("/api/batch");
-      REPLAYS = await api("/api/daylight-replays");
-      pilihSumberPoc();
       stats = await api("/api/stats");
       EVDB = await api("/api/events?limit=100");
       // Jumlah dihitung server. Menghitung dari EVDB salah begitu kejadian hari

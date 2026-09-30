@@ -26,13 +26,17 @@ def iou(a: list[float], b: list[float]) -> float:
     return inter / union if union else 0.0
 
 
-def load_predictions(path: Path, threshold: float) -> list[dict]:
+def load_predictions(path: Path, threshold: float, image_ids: set[int] | None = None) -> tuple[list[dict], int, int]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(raw, dict):
         raw = raw.get("predictions", raw.get("annotations", []))
     out = []
     unresolved = 0
+    ignored_out_of_split = 0
     for item in raw:
+        if image_ids is not None and int(item.get("image_id", -1)) not in image_ids:
+            ignored_out_of_split += 1
+            continue
         score = float(item.get("score", 1.0))
         category = item.get("category_id")
         if category is None:
@@ -41,7 +45,7 @@ def load_predictions(path: Path, threshold: float) -> list[dict]:
         if score >= threshold:
             out.append({**item, "category_id": int(category), "score": score,
                         "bbox": [float(x) for x in item["bbox"]]})
-    return out, unresolved
+    return out, unresolved, ignored_out_of_split
 
 
 def evaluate(gt: dict, predictions: list[dict], iou_threshold: float) -> dict:
@@ -108,13 +112,17 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     gt = json.loads(args.ground_truth.read_text(encoding="utf-8"))
-    predictions, unresolved = load_predictions(args.predictions, args.score_threshold)
     if not gt.get("annotations"):
         raise SystemExit("GROUND_TRUTH_REQUIRED: annotations is empty")
+    gt_image_ids = {int(x["id"]) for x in gt.get("images", [])}
+    predictions, unresolved, ignored_out_of_split = load_predictions(
+        args.predictions, args.score_threshold, gt_image_ids)
     report = evaluate(gt, predictions, args.iou_threshold)
     report.update({"ground_truth": str(args.ground_truth), "predictions": str(args.predictions),
                    "score_threshold": args.score_threshold, "evaluated_predictions": len(predictions),
-                   "unresolved_suggestions": unresolved, "status": "VALIDATED_AGAINST_GROUND_TRUTH"})
+                   "unresolved_suggestions": unresolved,
+                   "ignored_predictions_out_of_split": ignored_out_of_split,
+                   "status": "VALIDATED_AGAINST_GROUND_TRUTH"})
     text = json.dumps(report, ensure_ascii=False, indent=2)
     if args.output:
         args.output.write_text(text + "\n", encoding="utf-8")

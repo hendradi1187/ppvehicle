@@ -24,10 +24,12 @@ from mot_sde_infer import SDE_Detector
 RAW_TO_DISHUB = {
     "motorcycle": 1,
     "car": 2,
+    "bus": 4,
+    "truck": 5,
     "person": 6,
     "bicycle": 7,
 }
-ALLOWED = set(RAW_TO_DISHUB) | {"bus", "truck"}
+ALLOWED = set(RAW_TO_DISHUB)
 
 
 def main() -> int:
@@ -81,7 +83,7 @@ def main() -> int:
                     "bbox": [round(x1, 2), round(y1, 2), round(x2 - x1, 2), round(y2 - y1, 2)],
                     "score": round(score, 4),
                     "review_status": "SUGGESTION_NOT_GROUND_TRUTH",
-                    "review_note": "bus/truck require human Dishub taxonomy mapping" if label in {"bus", "truck"} else "confirm box and class",
+                    "review_note": "confirm box and class; operational mapping is car/bus/truck",
                 })
     output = {"status": "SUGGESTIONS_ONLY_NOT_GROUND_TRUTH", "model": "ppyoloe_plus_l_coco",
               "threshold": args.threshold, "categories": [

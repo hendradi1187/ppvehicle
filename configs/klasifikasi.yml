@@ -9,10 +9,15 @@
 #   L3 kelas          : 7 kelas surat resmi Dishub
 #
 # Status sumber: OFFICIAL | PROJECT_BASELINE | PROVISIONAL | PENDING_VALIDATION
-# Status klasifikasi per objek: CLASSIFIED | AMBIGUOUS | UNKNOWN | REJECTED
+# Status klasifikasi untuk POC: CLASSIFIED | UNKNOWN (REJECTED internal)
 # (UNKNOWN adalah STATUS, bukan kelas ke-8.)
 
-versi: "2026-09-26.1"
+versi: "2026-09-28.4"
+
+persetujuan_poc:
+  status: APPROVED_BY_OPERATOR
+  tanggal: "2026-09-28"
+  cakupan: "Aturan tampilan dan penghitungan POC; persetujuan ini tidak menandai setiap deteksi video tervalidasi satu per satu."
 
 acuan:
   nama_kelas:
@@ -53,7 +58,7 @@ jenis_rinci:
   metromini:           {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 Tabel 1-1 KS (bus metromini)", catatan: "PKJI istilah 1.7.93 tidak konsisten (MP) - ikut Tabel 1-1"}
   kopaja:              {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 KS (bus sedang)"}
   bus_sedang:          {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 KS"}
-  truk_2_sumbu:        {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 KS (2 sumbu, panjang <= 9,0 m)", catatan: "truk 2 sumbu yang sangat besar -> AMBIGUOUS {KS, TB} (F8)"}
+  truk_2_sumbu:        {kelas: kendaraan_sedang, status: PROVISIONAL, sumber: "PKJI 2023 KS (2 sumbu, panjang <= 9,0 m)", catatan: "kasus ukuran yang tak dapat dipastikan -> UNKNOWN hingga diverifikasi (F8)"}
   bus_besar:           {kelas: bus_besar,        status: PROVISIONAL, sumber: "PKJI 2023 BB"}
   bus_transjakarta:    {kelas: bus_besar,        status: PROVISIONAL, sumber: "PKJI 2023 BB; Perda DKI 5/2014 Ps.111(3)a"}
   truk_3_sumbu:        {kelas: truk_berat,       status: PROVISIONAL, sumber: "PKJI 2023 TB"}
@@ -65,34 +70,26 @@ jenis_rinci:
   gerobak:             {kelas: null,             status: PENDING_VALIDATION, sumber: "PKJI 2023 KTB (bukan sepeda)", catatan: "F19"}
   delman:              {kelas: null,             status: PENDING_VALIDATION, sumber: "PKJI 2023 KTB (bukan sepeda)"}
 
-# L1 -> keputusan DENGAN MODEL SAAT INI (PP-YOLOE+ L COCO, tanpa classifier).
-# COCO `bus` dan `truck` masing-masing mencakup lebih dari satu kelas PKJI,
-# jadi keduanya AMBIGUOUS dan tidak dipaksa ke satu kelas:
-#   bus   = Metromini/bus sedang (KS) atau bus besar/Transjakarta (BB)
-#   truck = pikap/truk kecil (MP), truk 2 sumbu (KS), atau truk berat (TB)
+# L1 -> keputusan operasional POC.
+# Untuk konsistensi dengan model COCO dan endpoint live, tiga kelompok
+# kendaraan ini memakai label mentah yang sama di seluruh sistem:
+#   kendaraan_sedang -> car
+#   bus_besar        -> bus
+#   truk_berat       -> truck
+# Kelas resmi 7 di atas tetap dipertahankan sebagai metadata/kompatibilitas.
 # ambang_yakin: skor minimum agar satu pengamatan dihitung "yakin"
 # (dikalibrasi dari 104 kotak truk/bus 26-09-2026 untuk bus/truck; kelas lain
 # BELUM dikalibrasi). Tanpa cukup pengamatan yakin -> UNKNOWN.
 label_detektor:
   motorcycle: {kelas: sepeda_motor,    ambang_yakin: 0.45}
-  car:        {kelas: mobil_penumpang, ambang_yakin: 0.50}
+  car:        {kelas_raw: car,         ambang_yakin: 0.50}
   person:     {kelas: pejalan_kaki,    ambang_yakin: 0.50}
   bicycle:    {kelas: sepeda,          ambang_yakin: 0.45}
-  bus:
-    kandidat: [kendaraan_sedang, bus_besar]
-    kunci_tampil: bus
-    nama_tampil: "Bus (Sedang/Besar belum terpilah)"
-    warna: "#db2777"
-    ambang_yakin: 0.60
-  truck:
-    kandidat: [mobil_penumpang, kendaraan_sedang, truk_berat]
-    kunci_tampil: truk
-    nama_tampil: "Truk (belum terpilah)"
-    warna: "#f97316"
-    ambang_yakin: 0.60
+  bus:        {kelas_raw: bus,         ambang_yakin: 0.60}
+  truck:      {kelas_raw: truck,        ambang_yakin: 0.60}
 
 gerbang:
-  # sebuah track CLASSIFIED/AMBIGUOUS bila >= porsi_yakin pengamatannya yakin
+  # sebuah track CLASSIFIED bila >= porsi_yakin pengamatannya yakin
   porsi_yakin: 0.5
   kunci_tidak_dikenal: tidak_dikenal
-  nama_tidak_dikenal: "Tidak Dikenal"
+  nama_tidak_dikenal: "Perlu Validasi"

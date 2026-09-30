@@ -1,4 +1,4 @@
-"""Mesin deteksi LANGSUNG: PP-YOLOE+ L + ByteTrack pada HLS atau RTSP.
+"""Mesin deteksi LANGSUNG: PP-YOLOE+ L + ByteTrack pada aliran HLS menerus.
 
 Kenapa ada mesin ketiga. Live di dasbor memutar HLS yang sama dengan yang
 dibaca server, tetapi peramban memutarnya +-4 segmen di belakang tepi siaran
@@ -27,22 +27,28 @@ from __future__ import annotations
 
 import base64
 import collections
+import copy
 import json
 import os
 import re
-import cv2
 import subprocess
 import sys
 import threading
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 PD_DIR = os.environ["LALIN_PD_DIR"]
 MODEL_DIR = os.environ["LALIN_MODEL_DIR"]
-SOURCE = os.environ["LALIN_SOURCE"]
-SOURCE_KIND = os.environ.get("LALIN_SOURCE_KIND", "hls").lower()
-LIVE_FRAME_PATH = os.environ.get("LALIN_LIVE_FRAME_PATH", "")
+SOURCE = os.environ.get("LALIN_SOURCE", "")
+SOURCES = json.loads(os.environ.get("LALIN_SOURCES_JSON", "{}")) or {"default": SOURCE}
+if not all(isinstance(k, str) and isinstance(v, str) and v for k, v in SOURCES.items()):
+    raise ValueError("LALIN_SOURCES_JSON harus berupa object key -> URL")
+# Modul aturan lama masih membaca LALIN_SOURCE pada saat import. Dalam mode
+# multi-camera nilainya hanya dipakai untuk inisialisasi konstanta, jadi pakai
+# URL pertama sebagai compatibility shim; tiap FFmpeg tetap memakai SOURCES.
+if not SOURCE:
+    SOURCE = next(iter(SOURCES.values()))
+    os.environ["LALIN_SOURCE"] = SOURCE
 TRACKER_CFG = os.environ["LALIN_TRACKER_CFG"]
 THRESHOLD = float(os.environ.get("LALIN_THRESHOLD", "0.30"))
 INTERVAL = float(os.environ.get("LALIN_INTERVAL", "0.6"))
@@ -191,11 +197,17 @@ def main() -> int:
 
     detector.postprocess = _post
 
-    # HLS mempertahankan PTS MPEG-TS supaya cocok dengan hls.js. RTSP memakai
-    # timestamp decoder; PTS yang mundur dinormalisasi pada loop pemrosesan.
-    # select mengambil satu frame tiap INTERVAL detik dan showinfo mencatat PTS.
+    # Satu predictor dibagi semua kamera; tracker wajib terpisah agar ID dari
+    # Benhil tidak pernah bercampur dengan Gerbang Pemuda.
+    trackers = {key: copy.deepcopy(detector.tracker) for key in SOURCES}
+
+    # ffmpeg: -copyts mempertahankan PTS asli MPEG-TS, yang juga dipakai hls.js
+    # di peramban. select mengambil satu frame tiap INTERVAL detik TANPA
+    # mengubah PTS-nya (filter fps akan membulatkannya). showinfo menulis
+    # pts_time tiap frame yang keluar ke stderr.
     pilih = f"select='isnan(prev_selected_t)+gte(t-prev_selected_t\\,{INTERVAL})'"
-    argv = ["ffmpeg", "-hide_banner", "-loglevel", "info", "-nostdin",
+    def argv_untuk(source: str) -> list[str]:
+        return ["ffmpeg", "-hide_banner", "-loglevel", "info", "-nostdin",
             # TANPA -re: dengan -re ffmpeg tertahan 2 segmen (+-15 dtk) di
             # belakang tepi siaran dan hasil hanya +-5 dtk di depan video
             # peramban - terlalu tipis. Tanpa -re segmen datang sekaligus;
@@ -207,27 +219,30 @@ def main() -> int:
             # LC-017: dekoder dibatasi 2 thread. Bawaan ffmpeg = semua core, yang
             # berebut dengan detektor; pada kamera HD 3200x1800 tunda median
             # turun dari 7,7 ke 1,0 dtk (uji 27-09-2026, Bendungan Hilir 2).
-            "-threads", "2"]
-    if SOURCE_KIND == "rtsp":
-        argv += ["-rtsp_transport", "tcp", "-rw_timeout", "15000000"]
-    else:
-        argv += ["-live_start_index", "-2", "-copyts", "-rw_timeout", "15000000"]
-    argv += ["-i", SOURCE, "-an", "-sn",
+            "-threads", "2",
+            "-live_start_index", "-2", "-copyts",
+            "-rw_timeout", "15000000", "-i", source, "-an", "-sn",
             "-vf", f"{pilih},scale={W}:{H},showinfo",
             "-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", "bgr24", "pipe:1"]
     pola = re.compile(rb"pts_time:\s*(-?[0-9.]+)")
     ukuran = W * H * 3
-    # Frame dibaca terus oleh thread sendiri; antrean pendek (3) membuang frame
-    # tertua bila detektor tertinggal, supaya hasil tidak makin jauh di
-    # belakang siaran.
-    antre: collections.deque = collections.deque(maxlen=80)
-    habis = threading.Event()
-    ff_kini: list = [None]
+    # HLS tidak selalu keluar rata: stream resolusi rendah dapat mengirim satu
+    # segmen sekaligus, sedangkan stream HD terdepak lebih pelan oleh decode.
+    # Buffer 2 frame membuat kamera burst hanya kebagian 1/4 scheduler. Simpan
+    # jendela bounded <= TERTINGGAL_MAKS; deque otomatis membuang yang tertua.
+    # Ini tetap latest-window (bukan backlog tak terbatas) dan menyetarakan
+    # round-robin dua kamera tanpa menambah RAM berarti (< 30 MB total).
+    panjang_antre = max(2, int(TERTINGGAL_MAKS / INTERVAL) + 1)
+    antre = {key: collections.deque(maxlen=panjang_antre) for key in SOURCES}
+    meter = {key: {"diterima": 0, "dibuang_penuh": 0, "dibuang_pts": 0,
+                   "dibuang_lag": 0, "putus": 0} for key in SOURCES}
+    ff_kini: dict[str, subprocess.Popen] = {}
 
-    def jalankan_ffmpeg():
+    def jalankan_ffmpeg(key: str, source: str):
         """Satu proses ffmpeg; kembali bila alirannya putus."""
-        ff = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
-        ff_kini[0] = ff
+        ff = subprocess.Popen(argv_untuk(source), stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, bufsize=0)
+        ff_kini[key] = ff
         pts_antre: collections.deque = collections.deque()
 
         def baca_stderr():
@@ -251,46 +266,57 @@ def main() -> int:
                     break
                 time.sleep(0.01)
             pts = pts_antre.popleft() if pts_antre else None
-            antre.append((pts, time.time(), buf))
+            meter[key]["diterima"] += 1
+            if len(antre[key]) == antre[key].maxlen:
+                meter[key]["dibuang_penuh"] += 1
+            antre[key].append((pts, time.time(), buf))
 
-    def pemasok():
+    def pemasok(key: str, source: str):
         # Jaringan ke Bali Tower sesekali timeout. ffmpeg dijalankan ulang;
         # tracker di proses ini tetap hidup, jadi ID kendaraan tidak hilang.
         putus = 0
         while True:
-            kode = jalankan_ffmpeg()
+            kode = jalankan_ffmpeg(key, source)
             putus += 1
-            keluar({"jenis": "putus", "kode": kode, "ke": putus})
+            meter[key]["putus"] = putus
+            keluar({"jenis": "putus", "key": key, "kode": kode, "ke": putus,
+                    "capture": dict(meter[key])})
             time.sleep(min(2 * putus, 10))
 
-    threading.Thread(target=pemasok, daemon=True).start()
+    for key, source in SOURCES.items():
+        threading.Thread(target=pemasok, args=(key, source), daemon=True).start()
 
     keluar({"jenis": "mulai", "labels": labels, "malam": malam, "ambang": ambang,
             "interval": INTERVAL, "model": os.path.basename(MODEL_DIR.rstrip("/")),
+            "keys": list(SOURCES),
             "at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
-    frame_id = 0
-    pts_terakhir = None
-    abu_terakhir = 0.0
-    id_pengendara: set[int] = set()
+    frame_id = {key: 0 for key in SOURCES}
+    pts_terakhir = {key: None for key in SOURCES}
+    abu_terakhir = {key: 0.0 for key in SOURCES}
+    id_pengendara = {key: set() for key in SOURCES}
+    keys = list(SOURCES)
+    cursor = 0
     while True:
-        if not antre:
+        key = next((keys[(cursor + i) % len(keys)] for i in range(len(keys))
+                    if antre[keys[(cursor + i) % len(keys)]]), None)
+        if key is None:
             time.sleep(0.02)
             continue
-        pts, diterima, buf = antre.popleft()
-        # LC-006 (D2): ffmpeg HLS yang tersambung ulang mulai lagi 2 segmen ke
+        cursor = (keys.index(key) + 1) % len(keys)
+        q = antre[key]
+        mtr = meter[key]
+        pts, diterima, buf = q.popleft()
+        # LC-006 (D2): ffmpeg yang tersambung ulang mulai lagi 2 segmen ke
         # belakang (-live_start_index -2), jadi +-15 dtk yang sudah dianalisis
         # datang lagi. Tracker tetap hidup: kendaraan yang sama mendapat ID baru
         # dan bisa terhitung dua kali. Frame yang PTS-nya tidak maju dibuang.
         # Mundur > 600 dtk dianggap putaran PTS / diskontinuitas: diterima.
-        if pts is not None and pts_terakhir is not None and pts <= pts_terakhir:
-            if SOURCE_KIND == "rtsp":
-                # Sumber rekaman bisa mengulang timestamp saat reconnect/loop.
-                # Normalisasi untuk menjaga tracker dan hitung garis tetap maju.
-                pts = pts_terakhir + INTERVAL
-            elif pts_terakhir - pts < 600:
-                continue
+        if pts is not None and pts_terakhir[key] is not None \
+                and pts <= pts_terakhir[key] and pts_terakhir[key] - pts < 600:
+            mtr["dibuang_pts"] += 1
+            continue
         if pts is not None:
-            pts_terakhir = pts
+            pts_terakhir[key] = pts
         if time.time() - keadaan["cek"] > 60:
             keadaan["cek"] = time.time()
             m = _malam()
@@ -299,26 +325,22 @@ def main() -> int:
                 keadaan["ambang"] = max(THRESHOLD, AMBANG_MALAM) if m else THRESHOLD
                 keluar({"jenis": "mulai", "labels": labels, "malam": m, "ambang": keadaan["ambang"],
                         "interval": INTERVAL, "model": os.path.basename(MODEL_DIR.rstrip("/")),
+                        "keys": list(SOURCES),
                         "at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
         # Tertinggal lebih dari TERTINGGAL_MAKS dtk dari frame terbaru: lompati.
         # Frame yang dilewati memang tidak dianalisis, tetapi hasil yang datang
         # setelah frame itu tampil di layar tidak ada gunanya sama sekali.
-        if pts is not None and antre and antre[-1][0] is not None                 and antre[-1][0] - pts > TERTINGGAL_MAKS:
+        if pts is not None and q and q[-1][0] is not None \
+                and q[-1][0] - pts > TERTINGGAL_MAKS:
+            mtr["dibuang_lag"] += 1
             continue
         bgr = np.frombuffer(buf, dtype=np.uint8).reshape(H, W, 3)
         t0 = time.time()
+        detector.tracker = trackers[key]
         hasil = detector.predict_image([bgr[..., ::-1].copy()], visual=False,
-                                       seq_name="langsung", frame_count=frame_id)
+                                       seq_name=f"langsung-{key}", frame_count=frame_id[key])
         tlwhs, skor, ids = hasil[0]
         ms = round((time.time() - t0) * 1000)
-        if SOURCE_KIND == "rtsp" and LIVE_FRAME_PATH:
-            tujuan = Path(LIVE_FRAME_PATH)
-            tujuan.parent.mkdir(parents=True, exist_ok=True)
-            ok, jpg = cv2.imencode(".jpg", bgr, [cv2.IMWRITE_JPEG_QUALITY, 84])
-            if ok:
-                sementara = tujuan.with_suffix(tujuan.suffix + ".tmp")
-                sementara.write_bytes(jpg.tobytes())
-                os.replace(sementara, tujuan)
         kunci = list(tlwhs.keys()) if hasattr(tlwhs, "keys") else range(len(tlwhs))
         tunggangan = [tuple(float(v) for v in tl[:4])
                       for cid in kunci if 0 <= int(cid) < n_kelas
@@ -345,16 +367,30 @@ def main() -> int:
                         label = asli
                 if labels[cid] == "person" and any(
                         tumpang_relatif((x, y, w, h), t) >= AMBANG_PENGENDARA for t in tunggangan):
-                    id_pengendara.add(uid)
+                    id_pengendara[key].add(uid)
+                # Detector/tracker boleh mengeluarkan kotak yang sedikit
+                # melewati tepi frame. Bbox publik harus selalu berada di
+                # dalam kanvas 640x360 agar overlay dan metrik luas tidak
+                # memakai koordinat negatif atau melewati ukuran frame.
+                x1 = max(0.0, min(W, x))
+                y1 = max(0.0, min(H, y))
+                x2 = max(0.0, min(W, x + w))
+                y2 = max(0.0, min(H, y + h))
+                if x2 <= x1 or y2 <= y1:
+                    continue
+                x, y, w, h = x1, y1, x2 - x1, y2 - y1
                 kotak.append([uid, label, round(x, 1), round(y, 1), round(w, 1),
-                              round(h, 1), round(float(sc), 3), uid in id_pengendara])
-        baris = {"jenis": "frame", "pts": pts, "n": frame_id, "ms": ms,
-                 "tunda": round(time.time() - diterima, 2), "kotak": kotak}
-        if time.time() - abu_terakhir >= ABU_TIAP_DTK:
+                              round(h, 1), round(float(sc), 3), uid in id_pengendara[key]])
+        baris = {"jenis": "frame", "key": key, "pts": pts, "n": frame_id[key], "ms": ms,
+                 "tunda": round(time.time() - diterima, 2), "kotak": kotak,
+                 "capture": {**mtr, "antre": len(q),
+                             "dibuang_total": mtr["dibuang_penuh"]
+                             + mtr["dibuang_pts"] + mtr["dibuang_lag"]}}
+        if time.time() - abu_terakhir[key] >= ABU_TIAP_DTK:
             baris["abu"] = abu_kecil(bgr)
-            abu_terakhir = time.time()
+            abu_terakhir[key] = time.time()
         keluar(baris)
-        frame_id += 1
+        frame_id[key] += 1
     return 0
 
 

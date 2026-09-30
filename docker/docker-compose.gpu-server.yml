@@ -11,13 +11,18 @@ services:
   ppvehicle:
     build:
       context: ..
+      # RTX 5060 Ti is x86_64. The ARM64 YOLO shadow image is for a
+      # different host architecture and must not be used here.
       dockerfile: docker/Dockerfile.gpu
-    image: ppvehicle:gpu
+    image: ppvehicle:gpu-x86-live
     environment:
       PPVEHICLE_PROFILE: gpu
       PPVEHICLE_MODELS_DIR: /models
       PPVEHICLE_MAX_JOBS: "2"
       LALIN_DEVICE: GPU
+      PPVEHICLE_LIVE_ENGINE: ultralytics
+      PPVEHICLE_LABEL_MODE: detector_raw
+      PPVEHICLE_YOLO_MODEL: /models/yolo11l.pt
       PPVEHICLE_DB_HOST: db
       PPVEHICLE_DB_PORT: "5432"
       PPVEHICLE_DB_NAME: lalin
@@ -27,9 +32,12 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - models:/models
+      # Gunakan bobot yang sudah ada di proyek host; volume Docker bernama
+      # `models` yang kosong akan menutupi berkas yolo11l.pt.
+      - ../models:/models:ro
       - ../runs:/app/runs
       - ../data/samples:/app/data/samples
+      - ../data/baseline:/app/data/baseline
       - ../src:/app/src
       - ../configs:/app/configs
       - ../data/demo:/app/data/demo

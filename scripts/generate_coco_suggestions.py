@@ -34,6 +34,26 @@ RAW_TO_DISHUB = {
 ALLOWED = set(RAW_TO_DISHUB)
 
 
+def iou(a, b):
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    x1, y1 = max(ax, bx), max(ay, by)
+    x2, y2 = min(ax + aw, bx + bw), min(ay + ah, by + bh)
+    inter = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    union = aw * ah + bw * bh - inter
+    return inter / union if union > 0 else 0.0
+
+
+def suppress_duplicates(items, threshold=0.50):
+    """Keep the strongest detector box when raw COCO labels overlap heavily."""
+    kept = []
+    for item in sorted(items, key=lambda x: float(x["score"]), reverse=True):
+        if any(iou(item["bbox"], old["bbox"]) >= threshold for old in kept):
+            continue
+        kept.append(item)
+    return kept
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=Path, default=Path("/app/runs/training/daylight_v1"))
@@ -87,6 +107,8 @@ def main() -> int:
                     "review_status": "SUGGESTION_NOT_GROUND_TRUTH",
                     "review_note": "confirm box and class; operational mapping is car/bus/truck",
                 })
+    predictions = [p for image_id in {p["image_id"] for p in predictions}
+                   for p in suppress_duplicates([x for x in predictions if x["image_id"] == image_id])]
     output = {"status": "SUGGESTIONS_ONLY_NOT_GROUND_TRUTH", "model": "ppyoloe_plus_l_coco",
               "threshold": args.threshold, "categories": [
                   {"id": 1, "name": "sepeda_motor"}, {"id": 2, "name": "mobil_penumpang"},
